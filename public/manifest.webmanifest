@@ -1,0 +1,25 @@
+{
+  "name": "Rota Certa",
+  "short_name": "Rota Certa",
+  "description": "Cadastro e consulta de clientes e endereços para equipes de campo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0f6f6e",
+  "background_color": "#eef1ec",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

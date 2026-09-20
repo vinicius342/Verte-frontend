@@ -1,24 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import HomePage from "../pages/HomePage";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Rota Certa — Clientes e endereços da equipe de campo" },
+      {
+        name: "description",
+        content:
+          "Consulte e cadastre clientes, endereços e coordenadas da equipe de campo, com abertura direta no mapa.",
+      },
+      { property: "og:title", content: "Rota Certa — Clientes e endereços da equipe de campo" },
+      {
+        property: "og:description",
+        content: "Lista de clientes com busca rápida, endereço completo e atalho para o mapa.",
+      },
+    ],
+  }),
+  component: HomePage,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
