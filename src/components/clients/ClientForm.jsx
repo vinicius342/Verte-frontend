@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../common/Button";
 import { validarCliente, formatarWhatsapp } from "../../utils/validators";
+import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
 
 function estadoInicial(cliente) {
   return {
@@ -10,8 +11,7 @@ function estadoInicial(cliente) {
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
     whatsapp: cliente?.whatsapp ?? "",
-    lat: cliente?.coordenada?.lat != null ? String(cliente.coordenada.lat) : "",
-    lng: cliente?.coordenada?.lng != null ? String(cliente.coordenada.lng) : "",
+    coordenadaTexto: formatarCoordenada(cliente?.coordenada),
   };
 }
 
