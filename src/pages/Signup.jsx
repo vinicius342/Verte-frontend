@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/common/Button";
 import { cadastrarUsuario, traduzirErroAuth } from "../services/authService";
 import { validarLogin } from "../utils/validators";
@@ -24,7 +24,7 @@ export default function SignupPage() {
     setErroGeral(null);
     try {
       await cadastrarUsuario({ nome: nome.trim(), email, senha });
-      navigate({ to: "/" });
+      navigate("/");
     } catch (erro) {
       setErroGeral(erro?.code ? traduzirErroAuth(erro.code) : (erro?.message ?? "Falha no cadastro."));
     } finally {

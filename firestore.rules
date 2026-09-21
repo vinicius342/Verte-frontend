@@ -3,30 +3,41 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Clientes: leitura pública; escrita apenas autenticada.
+    // ---------- Clientes ----------
     match /clientes/{clienteId} {
+
+      // Leitura pública: qualquer pessoa, logada ou não, pode ver a lista
       allow read: if true;
 
+      // Criação: só usuário autenticado, e createdBy/updatedBy devem
+      // bater com o uid de quem está criando
       allow create: if request.auth != null
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.updatedBy == request.auth.uid
-        && request.resource.data.nomeCliente is string
-        && request.resource.data.nomeCliente.size() > 0
-        && request.resource.data.rua is string
-        && request.resource.data.rua.size() > 0;
+        && request.resource.data.updatedBy == request.auth.uid;
 
+      // Atualização: só usuário autenticado, updatedBy deve bater com
+      // quem está alterando, e createdBy nunca pode ser reescrito
       allow update: if request.auth != null
         && request.resource.data.updatedBy == request.auth.uid
-        && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.createdBy == resource.data.createdBy;
 
-      allow delete: if request.auth != null;
+      // Exclusão: desativada por enquanto (não foi pedida no escopo atual)
+      allow delete: if false;
     }
 
-    // Usuários: cada um só acessa o próprio documento.
-    match /usuarios/{uid} {
-      allow read, create, update: if request.auth != null && request.auth.uid == uid;
+    // ---------- Usuários ----------
+    match /usuarios/{userId} {
+
+      // Cada usuário só pode ler, criar e editar o próprio documento
+      allow read, create, update: if request.auth != null
+        && request.auth.uid == userId;
+
       allow delete: if false;
+    }
+
+    // Bloqueia qualquer outra coleção não prevista
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

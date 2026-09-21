@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { logout } from "../../services/authService";
 
@@ -9,7 +9,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
   async function sair() {
     await logout();
     onFechar();
-    navigate({ to: "/" });
+    navigate("/");
   }
 
   return (
@@ -46,7 +46,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
             className="sidebar-item"
             onClick={() => {
               onFechar();
-              navigate({ to: "/login" });
+              navigate("/login");
             }}
           >
             Entrar
