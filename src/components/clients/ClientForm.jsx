@@ -30,13 +30,15 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   async function enviar(e) {
     e.preventDefault();
     const { valido, erros: novos } = validarCliente(dados);
+    const parsed = parseCoordenada(dados.coordenadaTexto);
+    if (!parsed.valido) novos.coordenada = "Use o formato -3.7327, -38.5267.";
     setErros(novos);
-    if (!valido) return;
+    if (!valido || !parsed.valido) return;
 
     setEnviando(true);
     setErroGeral(null);
     try {
-      await onSalvar(dados);
+      await onSalvar({ ...dados, coordenada: parsed.coordenada });
     } catch (erro) {
       setErroGeral(erro?.message ?? "Não foi possível salvar.");
     } finally {
