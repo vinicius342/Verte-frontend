@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LoginPage from "../pages/LoginPage";
+import Login from "../pages/Login";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -10,5 +10,5 @@ export const Route = createFileRoute("/login")({
       { property: "og:description", content: "Acesse sua conta da equipe de campo." },
     ],
   }),
-  component: LoginPage,
+  component: Login,
 });
