@@ -54,7 +54,20 @@ export default function ClientDetailModal({ cliente, onFechar }) {
             </div>
             <div className="detalhe-item">
               <dt>WhatsApp</dt>
-              <dd className="mono">{cliente.whatsapp || "—"}</dd>
+              <dd className="mono">
+                {gerarLinkWhatsapp(cliente.whatsapp) ? (
+                  <a
+                    className="detalhe-link"
+                    href={gerarLinkWhatsapp(cliente.whatsapp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {cliente.whatsapp}
+                  </a>
+                ) : (
+                  cliente.whatsapp || "—"
+                )}
+              </dd>
             </div>
             <div className="detalhe-item">
               <dt>Coordenada</dt>
