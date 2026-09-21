@@ -10,5 +10,5 @@ export const Route = createFileRoute("/signup")({
       { property: "og:description", content: "Cadastro de novos integrantes da equipe de campo." },
     ],
   }),
-  component: SignupPage,
+  component: Signup,
 });

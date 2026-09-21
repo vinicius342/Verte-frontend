@@ -10,5 +10,5 @@ export const Route = createFileRoute("/login")({
       { property: "og:description", content: "Acesse sua conta da equipe de campo." },
     ],
   }),
-  component: LoginPage,
+  component: Login,
 });

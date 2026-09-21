@@ -17,5 +17,5 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: HomePage,
+  component: Home,
 });
