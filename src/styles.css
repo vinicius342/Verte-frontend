@@ -452,8 +452,17 @@ input.mono {
 }
 .campo-linha {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0.75rem;
+}
+.campo-linha > .campo,
+.campo-linha .campo-input {
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .campo-linha {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 .campo-rotulo {
   font-size: 0.78rem;
