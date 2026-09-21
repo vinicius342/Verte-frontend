@@ -5,7 +5,7 @@ import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { atualizarCliente } from "../../services/clientService";
-import { abrirMapa } from "../../utils/mapLinks";
+import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { formatDate, formatUid } from "../../utils/formatDate";
 
 export default function ClientDetailModal({ cliente, onFechar }) {
