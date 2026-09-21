@@ -88,18 +88,17 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         {erros.whatsapp ? <span className="campo-erro">{erros.whatsapp}</span> : null}
       </label>
 
-      <p className="campo-dica">Preencha latitude e longitude apenas quando o endereço não for conhecido.</p>
-      <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Latitude</span>
-          <input className="campo-input mono" value={dados.lat} onChange={alterar("lat")} inputMode="decimal" />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Longitude</span>
-          <input className="campo-input mono" value={dados.lng} onChange={alterar("lng")} inputMode="decimal" />
-        </label>
-      </div>
-      {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
+      <p className="campo-dica">Preencha a coordenada apenas quando o endereço não for conhecido.</p>
+      <label className="campo">
+        <span className="campo-rotulo">Coordenada</span>
+        <input
+          className="campo-input mono"
+          value={dados.coordenadaTexto}
+          onChange={alterar("coordenadaTexto")}
+          placeholder="-3.7327, -38.5267"
+        />
+        {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
+      </label>
       {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
       <div className="formulario-acoes">
