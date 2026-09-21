@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../common/Button";
 import { validarCliente, formatarWhatsapp } from "../../utils/validators";
+import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
 
 function estadoInicial(cliente) {
   return {
@@ -10,8 +11,7 @@ function estadoInicial(cliente) {
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
     whatsapp: cliente?.whatsapp ?? "",
-    lat: cliente?.coordenada?.lat != null ? String(cliente.coordenada.lat) : "",
-    lng: cliente?.coordenada?.lng != null ? String(cliente.coordenada.lng) : "",
+    coordenadaTexto: formatarCoordenada(cliente?.coordenada),
   };
 }
 
@@ -30,13 +30,15 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   async function enviar(e) {
     e.preventDefault();
     const { valido, erros: novos } = validarCliente(dados);
+    const parsed = parseCoordenada(dados.coordenadaTexto);
+    if (!parsed.valido) novos.coordenada = "Use o formato -3.7327, -38.5267.";
     setErros(novos);
-    if (!valido) return;
+    if (!valido || !parsed.valido) return;
 
     setEnviando(true);
     setErroGeral(null);
     try {
-      await onSalvar(dados);
+      await onSalvar({ ...dados, coordenada: parsed.coordenada });
     } catch (erro) {
       setErroGeral(erro?.message ?? "Não foi possível salvar.");
     } finally {
@@ -86,18 +88,17 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         {erros.whatsapp ? <span className="campo-erro">{erros.whatsapp}</span> : null}
       </label>
 
-      <p className="campo-dica">Preencha latitude e longitude apenas quando o endereço não for conhecido.</p>
-      <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Latitude</span>
-          <input className="campo-input mono" value={dados.lat} onChange={alterar("lat")} inputMode="decimal" />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Longitude</span>
-          <input className="campo-input mono" value={dados.lng} onChange={alterar("lng")} inputMode="decimal" />
-        </label>
-      </div>
-      {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
+      <p className="campo-dica">Preencha a coordenada apenas quando o endereço não for conhecido.</p>
+      <label className="campo">
+        <span className="campo-rotulo">Coordenada</span>
+        <input
+          className="campo-input mono"
+          value={dados.coordenadaTexto}
+          onChange={alterar("coordenadaTexto")}
+          placeholder="-3.7327, -38.5267"
+        />
+        {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
+      </label>
       {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
       <div className="formulario-acoes">

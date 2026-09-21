@@ -5,7 +5,7 @@ import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { atualizarCliente } from "../../services/clientService";
-import { abrirMapa } from "../../utils/mapLinks";
+import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { formatDate, formatUid } from "../../utils/formatDate";
 
 export default function ClientDetailModal({ cliente, onFechar }) {
@@ -54,7 +54,20 @@ export default function ClientDetailModal({ cliente, onFechar }) {
             </div>
             <div className="detalhe-item">
               <dt>WhatsApp</dt>
-              <dd className="mono">{cliente.whatsapp || "—"}</dd>
+              <dd className="mono">
+                {gerarLinkWhatsapp(cliente.whatsapp) ? (
+                  <a
+                    className="detalhe-link"
+                    href={gerarLinkWhatsapp(cliente.whatsapp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {cliente.whatsapp}
+                  </a>
+                ) : (
+                  cliente.whatsapp || "—"
+                )}
+              </dd>
             </div>
             <div className="detalhe-item">
               <dt>Coordenada</dt>
