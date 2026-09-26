@@ -14,7 +14,7 @@ export default function Header({ busca, onBuscar, onAbrirMenu }) {
           <span className="marca-nome">Rota Certa</span>
         </div>
       </div>
-      <ClientSearchBar valor={busca} onChange={onBuscar} />
+      {onBuscar ? <ClientSearchBar valor={busca} onChange={onBuscar} /> : null}
     </header>
   );
 }
