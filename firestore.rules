@@ -25,6 +25,16 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // ---------- Configurações ----------
+    match /configuracoes/{userId} {
+
+      // Cada usuário só pode ler, criar e editar o próprio documento
+      allow read, create, update: if request.auth != null
+        && request.auth.uid == userId;
+
+      allow delete: if false;
+    }
+
     // ---------- Usuários ----------
     match /usuarios/{userId} {
 
