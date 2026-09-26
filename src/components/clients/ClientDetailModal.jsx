@@ -30,7 +30,7 @@ export default function ClientDetailModal({ cliente, onFechar }) {
 
     try {
       setExcluindo(true);
-      await excluirCliente(cliente.id);
+      await excluirCliente(cliente.id, cliente.anexos ?? []);
       onFechar();
     } catch (erro) {
       console.error("Falha ao excluir cliente:", erro?.code, erro?.message);

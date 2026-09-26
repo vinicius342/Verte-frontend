@@ -1,8 +1,9 @@
-// Inicialização do app Firebase (Auth + Firestore).
+// Inicialização do app Firebase (Auth + Firestore + Storage).
 // As chaves vêm de variáveis de ambiente (.env) — nunca hardcoded.
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const env = import.meta.env;
 
@@ -36,4 +37,8 @@ export function getFirebaseAuth() {
 
 export function getDb() {
   return getFirestore(getFirebaseApp());
+}
+
+export function getStorageInstance() {
+  return getStorage(getFirebaseApp());
 }
