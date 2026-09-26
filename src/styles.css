@@ -300,6 +300,11 @@ input.mono {
 .estado-erro {
   color: var(--perigo);
 }
+.estado-sucesso {
+  padding: 1rem 0.25rem;
+  color: var(--primaria);
+  font-size: 0.95rem;
+}
 
 .botao-adicionar-fixo {
   position: fixed;
