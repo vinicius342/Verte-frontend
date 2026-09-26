@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
@@ -24,6 +25,15 @@ export default function HomePage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [selecionado, setSelecionado] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("adicionar") === "1" && usuario) {
+      setAdicionando(true);
+      searchParams.delete("adicionar");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, usuario]);
 
   const filtrados = useMemo(() => {
     const termo = normalizar(busca).trim();

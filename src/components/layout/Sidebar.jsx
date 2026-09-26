@@ -26,18 +26,30 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
         {usuario ? (
           <>
             <p className="sidebar-usuario">{nome}</p>
-            {onAdicionar ? (
-              <button
-                type="button"
-                className="sidebar-item"
-                onClick={() => {
-                  onFechar();
+            <button
+              type="button"
+              className="sidebar-item"
+              onClick={() => {
+                onFechar();
+                navigate("/");
+              }}
+            >
+              Início
+            </button>
+            <button
+              type="button"
+              className="sidebar-item"
+              onClick={() => {
+                onFechar();
+                if (onAdicionar) {
                   onAdicionar();
-                }}
-              >
-                Adicionar nova localização
-              </button>
-            ) : null}
+                } else {
+                  navigate("/?adicionar=1");
+                }
+              }}
+            >
+              Adicionar nova localização
+            </button>
             <button
               type="button"
               className="sidebar-item"
