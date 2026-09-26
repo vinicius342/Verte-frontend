@@ -6,7 +6,29 @@ import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { atualizarCliente, excluirCliente } from "../../services/clientService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
-import { formatDate, formatUid } from "../../utils/formatDate";
+
+function CampoWhatsapp({ rotulo, numero }) {
+  if (!numero) return null;
+  const link = gerarLinkWhatsapp(numero);
+  return (
+    <div className="detalhe-item">
+      <dt>{rotulo}</dt>
+      <dd className="mono">
+        {link ? (
+          <a className="detalhe-link" href={link} target="_blank" rel="noopener noreferrer">
+            {numero}
+          </a>
+        ) : (
+          numero
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function iconeAnexo(tipo) {
+  return tipo?.startsWith("image/") ? "🖼️" : "📄";
+}
 
 export default function ClientDetailModal({ cliente, onFechar }) {
   const { uid } = useAuth();
@@ -73,46 +95,38 @@ export default function ClientDetailModal({ cliente, onFechar }) {
                 {cliente.complemento ? ` — ${cliente.complemento}` : ""}
               </dd>
             </div>
-            <div className="detalhe-item">
-              <dt>WhatsApp</dt>
-              <dd className="mono">
-                {gerarLinkWhatsapp(cliente.whatsapp) ? (
-                  <a
-                    className="detalhe-link"
-                    href={gerarLinkWhatsapp(cliente.whatsapp)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {cliente.whatsapp}
-                  </a>
-                ) : (
-                  cliente.whatsapp || "—"
-                )}
-              </dd>
-            </div>
-            <div className="detalhe-item">
-              <dt>Coordenada</dt>
-              <dd className="mono">
-                {cliente.coordenada ? `${cliente.coordenada.lat}, ${cliente.coordenada.lng}` : "—"}
-              </dd>
-            </div>
-            <div className="detalhe-item">
-              <dt>Criado em</dt>
-              <dd className="mono">{formatDate(cliente.createdAt)}</dd>
-            </div>
-            <div className="detalhe-item">
-              <dt>Criado por</dt>
-              <dd className="mono">{formatUid(cliente.createdBy)}</dd>
-            </div>
-            <div className="detalhe-item">
-              <dt>Última alteração</dt>
-              <dd className="mono">{formatDate(cliente.updatedAt)}</dd>
-            </div>
-            <div className="detalhe-item">
-              <dt>Alterado por</dt>
-              <dd className="mono">{formatUid(cliente.updatedBy)}</dd>
-            </div>
+
+            <CampoWhatsapp rotulo="WhatsApp" numero={cliente.whatsapp} />
+            <CampoWhatsapp rotulo="WhatsApp 2" numero={cliente.whatsapp2} />
+            <CampoWhatsapp rotulo="WhatsApp 3" numero={cliente.whatsapp3} />
           </dl>
+
+          {cliente.observacao ? (
+            <div className="detalhe-observacao">
+              <span className="campo-rotulo">Observação</span>
+              <p>{cliente.observacao}</p>
+            </div>
+          ) : null}
+
+          {cliente.anexos?.length > 0 ? (
+            <div className="detalhe-anexos">
+              <span className="campo-rotulo">Anexos</span>
+              <ul className="lista-anexos">
+                {cliente.anexos.map((anexo) => (
+                  <li key={anexo.caminho} className="lista-anexos-item">
+                    {anexo.tipo?.startsWith("image/") ? (
+                      <img src={anexo.url} alt="" className="lista-anexos-miniatura" />
+                    ) : (
+                      <span className="lista-anexos-icone" aria-hidden>📄</span>
+                    )}
+                    <a href={anexo.url} target="_blank" rel="noopener noreferrer">
+                      {anexo.nome}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <ProtectedAction
             fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}

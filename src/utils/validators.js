@@ -18,6 +18,8 @@ export function validarCliente(dados) {
   if (!dados.nomeCliente?.trim()) erros.nomeCliente = "Informe o nome do cliente.";
   if (!dados.rua?.trim()) erros.rua = "Informe a rua.";
   if (!validarWhatsapp(dados.whatsapp)) erros.whatsapp = "WhatsApp inválido.";
+  if (!validarWhatsapp(dados.whatsapp2)) erros.whatsapp2 = "WhatsApp inválido.";
+  if (!validarWhatsapp(dados.whatsapp3)) erros.whatsapp3 = "WhatsApp inválido.";
   const temLat = dados.lat !== "" && dados.lat != null;
   const temLng = dados.lng !== "" && dados.lng != null;
   if (temLat !== temLng) erros.coordenada = "Informe latitude e longitude juntas.";
@@ -25,7 +27,6 @@ export function validarCliente(dados) {
   if (temLng && !Number.isFinite(Number(dados.lng))) erros.coordenada = "Longitude inválida.";
   return { valido: Object.keys(erros).length === 0, erros };
 }
-
 export function validarLogin({ email, senha }) {
   const erros = {};
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email ?? "")) erros.email = "E-mail inválido.";

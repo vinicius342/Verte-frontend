@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "../common/Button";
 import { validarCliente, formatarWhatsapp } from "../../utils/validators";
 import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
@@ -30,6 +30,24 @@ function formatarTamanho(bytes) {
 
 function tipoValido(arquivo) {
   return TIPOS_ACEITOS.some((prefixo) => arquivo.type.startsWith(prefixo));
+}
+
+// Gera e limpa a URL temporária de preview para arquivos ainda não enviados.
+function MiniaturaArquivo({ arquivo }) {
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (!arquivo.type?.startsWith("image/")) {
+      setUrl(null);
+      return undefined;
+    }
+    const objectUrl = URL.createObjectURL(arquivo);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [arquivo]);
+
+  if (!url) return <span className="lista-anexos-icone" aria-hidden>📄</span>;
+  return <img src={url} alt="" className="lista-anexos-miniatura" />;
 }
 
 // Formulário reaproveitado na criação e na edição de clientes.
@@ -110,6 +128,8 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
     }
   }
 
+  const totalAnexos = anexosExistentes.length + anexosNovos.length;
+
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
       <label className="campo">
@@ -186,6 +206,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         />
       </label>
 
+      <p className="campo-dica">Preencha a coordenada apenas quando o endereço não for conhecido.</p>
       <label className="campo">
         <span className="campo-rotulo">Coordenada</span>
         <input
@@ -196,23 +217,30 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         />
         {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
       </label>
-      <p className="campo-dica">Preencha a coordenada apenas quando o endereço não for conhecido.</p>
 
       <div className="campo">
-        <span className="campo-rotulo">Anexos (imagens ou PDF)</span>
+        <span className="campo-rotulo">
+          Anexos (imagens ou PDF) — {totalAnexos}/{MAX_ANEXOS}
+        </span>
         <input
           type="file"
           className="campo-input"
           accept="image/*,application/pdf"
           multiple
+          disabled={totalAnexos >= MAX_ANEXOS}
           onChange={selecionarArquivos}
         />
         {erros.anexos ? <span className="campo-erro">{erros.anexos}</span> : null}
 
-        {(anexosExistentes.length > 0 || anexosNovos.length > 0) && (
+        {totalAnexos > 0 && (
           <ul className="lista-anexos">
             {anexosExistentes.map((anexo) => (
               <li key={anexo.caminho} className="lista-anexos-item">
+                {anexo.tipo?.startsWith("image/") ? (
+                  <img src={anexo.url} alt="" className="lista-anexos-miniatura" />
+                ) : (
+                  <span className="lista-anexos-icone" aria-hidden>📄</span>
+                )}
                 <a href={anexo.url} target="_blank" rel="noopener noreferrer">
                   {anexo.nome}
                 </a>
@@ -229,6 +257,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
             ))}
             {anexosNovos.map((arquivo, indice) => (
               <li key={`${arquivo.name}-${indice}`} className="lista-anexos-item">
+                <MiniaturaArquivo arquivo={arquivo} />
                 <span>{arquivo.name}</span>
                 <span className="mono">{formatarTamanho(arquivo.size)}</span>
                 <button
@@ -243,9 +272,6 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
             ))}
           </ul>
         )}
-        <span className="campo-rotulo">
-          Anexos (imagens ou PDF) — {anexosExistentes.length + anexosNovos.length}/{MAX_ANEXOS}
-        </span>
       </div>
 
       {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
