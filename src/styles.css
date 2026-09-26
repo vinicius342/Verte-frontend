@@ -215,7 +215,7 @@ input.mono {
 .conteudo {
   max-width: 760px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 4rem;
+  padding: 1.25rem 1rem 6rem;
 }
 .conteudo-topo {
   display: flex;
@@ -299,6 +299,64 @@ input.mono {
 }
 .estado-erro {
   color: var(--perigo);
+}
+
+.botao-adicionar-fixo {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--primaria);
+  border: 1px solid rgba(15, 111, 110, 0.18);
+  box-shadow: 0 12px 30px rgba(15, 111, 110, 0.18);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.botao-adicionar-fixo:hover:not(:disabled),
+.botao-adicionar-fixo:focus-visible:not(:disabled) {
+  background: var(--primaria);
+  color: #fff;
+  border-color: var(--primaria);
+  box-shadow: 0 10px 24px rgba(15, 111, 110, 0.22);
+}
+.botao-adicionar-fixo:active {
+  transform: translateY(1px);
+  background: var(--primaria-hover);
+  color: #fff;
+}
+.botao-adicionar-fixo svg {
+  flex: 0 0 auto;
+}
+.botao-adicionar-fixo span {
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .botao-adicionar-fixo {
+    right: max(1rem, env(safe-area-inset-right));
+    left: auto;
+    width: 3.15rem;
+    min-width: 3.15rem;
+    min-height: 3.15rem;
+    padding: 0;
+    border-radius: 999px;
+  }
+
+  .botao-adicionar-fixo span {
+    display: none;
+  }
 }
 
 /* ---------- Sidebar ---------- */

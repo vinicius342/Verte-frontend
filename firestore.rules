@@ -21,8 +21,8 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.createdBy == resource.data.createdBy;
 
-      // Exclusão: desativada por enquanto (não foi pedida no escopo atual)
-      allow delete: if false;
+      // Exclusão: qualquer usuário autenticado pode excluir
+      allow delete: if request.auth != null;
     }
 
     // ---------- Usuários ----------

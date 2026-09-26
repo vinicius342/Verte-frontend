@@ -4,13 +4,14 @@ import Button from "../common/Button";
 import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
-import { atualizarCliente } from "../../services/clientService";
+import { atualizarCliente, excluirCliente } from "../../services/clientService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { formatDate, formatUid } from "../../utils/formatDate";
 
 export default function ClientDetailModal({ cliente, onFechar }) {
   const { uid } = useAuth();
   const [editando, setEditando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     setEditando(false);
@@ -21,6 +22,26 @@ export default function ClientDetailModal({ cliente, onFechar }) {
   async function salvar(dados) {
     await atualizarCliente(cliente.id, dados, uid);
     setEditando(false);
+  }
+
+  async function excluir() {
+    const confirmou = window.confirm("Deseja excluir esta localização?");
+    if (!confirmou) return;
+
+    try {
+      setExcluindo(true);
+      await excluirCliente(cliente.id);
+      onFechar();
+    } catch (erro) {
+      console.error("Falha ao excluir cliente:", erro?.code, erro?.message);
+      const mensagem =
+        erro?.code === "permission-denied"
+          ? "Você não tem permissão para excluir esta localização."
+          : "Não foi possível excluir esta localização. Tente novamente.";
+      window.alert(mensagem);
+    } finally {
+      setExcluindo(false);
+    }
   }
 
   return (
@@ -96,9 +117,14 @@ export default function ClientDetailModal({ cliente, onFechar }) {
           <ProtectedAction
             fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}
           >
-            <Button variant="secondary" onClick={() => setEditando(true)}>
-              Alterar dados
-            </Button>
+            <div className="detalhe-acoes">
+              <Button variant="secondary" onClick={() => setEditando(true)}>
+                Alterar dados
+              </Button>
+              <Button variant="danger" onClick={excluir} disabled={excluindo}>
+                {excluindo ? "Excluindo..." : "Excluir localização"}
+              </Button>
+            </div>
           </ProtectedAction>
         </div>
       )}

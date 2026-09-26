@@ -71,9 +71,6 @@ export default function LoginPage() {
         </form>
 
         <p className="auth-rodape">
-          Ainda não tem conta? <Link to="/signup">Criar conta</Link>
-        </p>
-        <p className="auth-rodape">
           <Link to="/">Voltar para a lista</Link>
         </p>
       </div>
