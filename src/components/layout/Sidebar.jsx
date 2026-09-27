@@ -55,6 +55,16 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
               className="sidebar-item"
               onClick={() => {
                 onFechar();
+                navigate("/comodato");
+              }}
+            >
+              Comodato
+            </button>
+            <button
+              type="button"
+              className="sidebar-item"
+              onClick={() => {
+                onFechar();
                 navigate("/configuracoes");
               }}
             >

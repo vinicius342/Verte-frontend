@@ -45,6 +45,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- Comodatos ----------
+    match /comodatos/{comodatoId} {
+
+      // Leitura: qualquer usuário autenticado pode ver a lista de comodatos
+      allow read: if request.auth != null;
+
+      // Criação: só usuário autenticado, e createdBy deve bater com
+      // o uid de quem está criando
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid;
+
+      // Sem edição nem exclusão por enquanto — comodato é um termo
+      // gerado e não deve ser alterado depois de salvo
+      allow update: if false;
+      allow delete: if false;
+    }
+
     // Bloqueia qualquer outra coleção não prevista
     match /{document=**} {
       allow read, write: if false;
