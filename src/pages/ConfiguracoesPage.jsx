@@ -9,7 +9,9 @@ import { buscarConfiguracao, salvarConfiguracao } from "../services/configServic
 function estadoInicial(config) {
   return {
     codigoRevenda: config?.codigoRevenda ?? "",
+    nomeVendedor: config?.nomeVendedor ?? "",
     codigoVendedor: config?.codigoVendedor ?? "",
+    nomeSupervisor: config?.nomeSupervisor ?? "",
     codigoSupervisor: config?.codigoSupervisor ?? "",
   };
 }
@@ -60,7 +62,9 @@ export default function ConfiguracoesPage() {
     try {
       await salvarConfiguracao(uid, {
         codigoRevenda: dados.codigoRevenda.trim(),
+        nomeVendedor: dados.nomeVendedor.trim(),
         codigoVendedor: dados.codigoVendedor.trim(),
+        nomeSupervisor: dados.nomeSupervisor.trim(),
         codigoSupervisor: dados.codigoSupervisor.trim(),
       });
       setSucesso(true);
@@ -100,23 +104,43 @@ export default function ConfiguracoesPage() {
               />
             </label>
 
-            <label className="campo">
-              <span className="campo-rotulo">Código do vendedor</span>
-              <input
-                className="campo-input mono"
-                value={dados.codigoVendedor}
-                onChange={alterar("codigoVendedor")}
-              />
-            </label>
+            <div className="campo-linha">
+              <label className="campo">
+                <span className="campo-rotulo">Nome do vendedor</span>
+                <input
+                  className="campo-input"
+                  value={dados.nomeVendedor}
+                  onChange={alterar("nomeVendedor")}
+                />
+              </label>
+              <label className="campo">
+                <span className="campo-rotulo">Código do vendedor</span>
+                <input
+                  className="campo-input mono"
+                  value={dados.codigoVendedor}
+                  onChange={alterar("codigoVendedor")}
+                />
+              </label>
+            </div>
 
-            <label className="campo">
-              <span className="campo-rotulo">Código do supervisor</span>
-              <input
-                className="campo-input mono"
-                value={dados.codigoSupervisor}
-                onChange={alterar("codigoSupervisor")}
-              />
-            </label>
+            <div className="campo-linha">
+              <label className="campo">
+                <span className="campo-rotulo">Nome do supervisor</span>
+                <input
+                  className="campo-input"
+                  value={dados.nomeSupervisor}
+                  onChange={alterar("nomeSupervisor")}
+                />
+              </label>
+              <label className="campo">
+                <span className="campo-rotulo">Código do supervisor</span>
+                <input
+                  className="campo-input mono"
+                  value={dados.codigoSupervisor}
+                  onChange={alterar("codigoSupervisor")}
+                />
+              </label>
+            </div>
 
             {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
             {sucesso ? <p className="estado-sucesso">Configurações salvas.</p> : null}

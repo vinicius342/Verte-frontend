@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Button from "../common/Button";
+import { formatarCpfCnpj, validarCpfCnpj } from "../../utils/validators";
 import { buscarConfiguracao } from "../../services/configService";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -10,14 +11,17 @@ function linhaVazia() {
 export default function ComodatoForm({ onSalvar, onCancelar }) {
   const { uid } = useAuth();
   const [dados, setDados] = useState({
-    numeroTermo: "",
     revenda: "",
     vendedor: "",
+    vendedorCodigo: "",
     supervisor: "",
+    supervisorCodigo: "",
     codPdv: "",
     razaoSocial: "",
+    cpf: "",
   });
   const [materiais, setMateriais] = useState([linhaVazia(), linhaVazia()]);
+  const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
   const [carregandoConfig, setCarregandoConfig] = useState(true);
@@ -30,8 +34,10 @@ export default function ComodatoForm({ onSalvar, onCancelar }) {
         setDados((atual) => ({
           ...atual,
           revenda: config.codigoRevenda ?? "",
-          vendedor: config.codigoVendedor ?? "",
-          supervisor: config.codigoSupervisor ?? "",
+          vendedor: [config.nomeVendedor, config.codigoVendedor].filter(Boolean).join(" "),
+          vendedorCodigo: config.codigoVendedor ?? "",
+          supervisor: [config.nomeSupervisor, config.codigoSupervisor].filter(Boolean).join(" "),
+          supervisorCodigo: config.codigoSupervisor ?? "",
         }));
       })
       .finally(() => ativo && setCarregandoConfig(false));
@@ -40,7 +46,12 @@ export default function ComodatoForm({ onSalvar, onCancelar }) {
     };
   }, [uid]);
 
-  const alterar = (campo) => (e) => setDados((atual) => ({ ...atual, [campo]: e.target.value }));
+  function alterar(campo) {
+    return (e) => {
+      const valor = campo === "cpf" ? formatarCpfCnpj(e.target.value) : e.target.value;
+      setDados((atual) => ({ ...atual, [campo]: valor }));
+    };
+  }
 
   function alterarMaterial(indice, campo, valor) {
     setMateriais((atual) => atual.map((linha, i) => (i === indice ? { ...linha, [campo]: valor } : linha)));
@@ -56,11 +67,15 @@ export default function ComodatoForm({ onSalvar, onCancelar }) {
 
   async function enviar(e) {
     e.preventDefault();
-    const materiaisPreenchidos = materiais.filter((m) => m.descricao?.trim());
-    if (materiaisPreenchidos.length === 0) {
-      setErroGeral("Adicione ao menos um material.");
-      return;
-    }
+    const novosErros = {};
+    if (!dados.razaoSocial?.trim()) novosErros.razaoSocial = "Informe o cliente.";
+    if (!validarCpfCnpj(dados.cpf)) novosErros.cpf = "CPF/CNPJ inválido.";
+
+    const materiaisPreenchidos = materiais.filter((m) => m.descricao?.trim() || m.codMaterial?.trim());
+    if (materiaisPreenchidos.length === 0) novosErros.materiais = "Adicione ao menos um material.";
+
+    setErros(novosErros);
+    if (Object.keys(novosErros).length > 0) return;
 
     setEnviando(true);
     setErroGeral(null);
@@ -73,15 +88,17 @@ export default function ComodatoForm({ onSalvar, onCancelar }) {
     }
   }
 
+  if (carregandoConfig) {
+    return (
+      <div className="comodato-carregando-config comodato-carregando-config--formulario">
+        <span className="spinner" aria-hidden="true" />
+        <span>Carregando dados da revenda…</span>
+      </div>
+    );
+  }
+
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
-      {carregandoConfig ? <p className="campo-dica">Carregando dados da revenda...</p> : null}
-
-      <label className="campo">
-        <span className="campo-rotulo">Número do termo</span>
-        <input className="campo-input mono" value={dados.numeroTermo} onChange={alterar("numeroTermo")} />
-      </label>
-
       <div className="campo-linha">
         <label className="campo">
           <span className="campo-rotulo">Revenda</span>
@@ -98,55 +115,88 @@ export default function ComodatoForm({ onSalvar, onCancelar }) {
         <input className="campo-input" value={dados.vendedor} onChange={alterar("vendedor")} />
       </label>
 
-      <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Cód PDV</span>
-          <input className="campo-input mono" value={dados.codPdv} onChange={alterar("codPdv")} />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Razão social</span>
-          <input className="campo-input" value={dados.razaoSocial} onChange={alterar("razaoSocial")} />
-        </label>
-      </div>
+      <label className="campo">
+        <span className="campo-rotulo">Cód PDV</span>
+        <input className="campo-input mono" value={dados.codPdv} onChange={alterar("codPdv")} />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Cliente *</span>
+        <input className="campo-input" value={dados.razaoSocial} onChange={alterar("razaoSocial")} required />
+        {erros.razaoSocial ? <span className="campo-erro">{erros.razaoSocial}</span> : null}
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">CPF/CNPJ *</span>
+        <input
+          className="campo-input mono"
+          value={dados.cpf}
+          onChange={alterar("cpf")}
+          inputMode="numeric"
+          placeholder="000.000.000-00"
+        />
+        {erros.cpf ? <span className="campo-erro">{erros.cpf}</span> : null}
+      </label>
 
       <div className="campo">
-        <span className="campo-rotulo">Materiais</span>
-        <div className="comodato-tabela-materiais">
-          <div className="comodato-linha-material comodato-linha-cabecalho">
-            <span>Cód material</span>
-            <span>Descrição</span>
-            <span>Qtd</span>
-            <span />
-          </div>
+        <div className="comodato-materiais-cabecalho">
+          <span className="campo-rotulo">Materiais</span>
+          <span className="comodato-materiais-contador">
+            {materiais.length} {materiais.length === 1 ? "Item" : "Itens"}
+          </span>
+        </div>
+
+        <div className="comodato-lista-cards-material">
           {materiais.map((linha, indice) => (
-            <div className="comodato-linha-material" key={indice}>
-              <input
-                className="campo-input mono"
-                value={linha.codMaterial}
-                onChange={(e) => alterarMaterial(indice, "codMaterial", e.target.value)}
-              />
-              <input
-                className="campo-input"
-                value={linha.descricao}
-                onChange={(e) => alterarMaterial(indice, "descricao", e.target.value)}
-              />
-              <input
-                className="campo-input mono"
-                value={linha.quantidade}
-                onChange={(e) => alterarMaterial(indice, "quantidade", e.target.value)}
-                inputMode="numeric"
-              />
-              <button
-                type="button"
-                className="lista-anexos-remover"
-                onClick={() => removerLinha(indice)}
-                aria-label="Remover linha"
-              >
-                ×
-              </button>
+            <div className="comodato-card-material" key={indice}>
+              <div className="comodato-card-material-topo">
+                <span className="comodato-card-material-titulo">Material {indice + 1}</span>
+                <button
+                  type="button"
+                  className="comodato-card-material-remover"
+                  onClick={() => removerLinha(indice)}
+                  aria-label="Remover material"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="comodato-card-material-linha">
+                <label className="comodato-campo-mobile">
+                  <span className="comodato-rotulo-mobile">Cód. material</span>
+                  <input
+                    className="campo-input mono"
+                    placeholder="Ex. 0042"
+                    value={linha.codMaterial}
+                    onChange={(e) => alterarMaterial(indice, "codMaterial", e.target.value)}
+                  />
+                </label>
+                <label className="comodato-campo-mobile comodato-campo-qtd">
+                  <span className="comodato-rotulo-mobile">Qtd</span>
+                  <input
+                    className="campo-input mono"
+                    placeholder="0"
+                    value={linha.quantidade}
+                    onChange={(e) => alterarMaterial(indice, "quantidade", e.target.value)}
+                    inputMode="numeric"
+                  />
+                </label>
+              </div>
+
+              <label className="comodato-campo-mobile">
+                <span className="comodato-rotulo-mobile">Descrição</span>
+                <input
+                  className="campo-input"
+                  placeholder="Detalhe do material"
+                  value={linha.descricao}
+                  onChange={(e) => alterarMaterial(indice, "descricao", e.target.value)}
+                />
+              </label>
             </div>
           ))}
         </div>
+
+        {erros.materiais ? <span className="campo-erro">{erros.materiais}</span> : null}
         <Button type="button" variant="ghost" onClick={adicionarLinha}>
           + Adicionar material
         </Button>

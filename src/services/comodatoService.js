@@ -5,13 +5,15 @@ const COLECAO = "comodatos";
 
 export async function criarComodato(dados, uid) {
   const ref = await addDoc(collection(getDb(), COLECAO), {
-    numeroTermo: dados.numeroTermo?.trim() ?? "",
     revenda: dados.revenda?.trim() ?? "",
     vendedor: dados.vendedor?.trim() ?? "",
+    vendedorCodigo: dados.vendedorCodigo?.trim() ?? "",
     supervisor: dados.supervisor?.trim() ?? "",
+    supervisorCodigo: dados.supervisorCodigo?.trim() ?? "",
     codPdv: dados.codPdv?.trim() ?? "",
     razaoSocial: dados.razaoSocial?.trim() ?? "",
-    materiais: dados.materiais.filter((m) => m.descricao?.trim()),
+    cpf: dados.cpf?.trim() ?? "",
+    materiais: dados.materiais.filter((m) => m.descricao?.trim() || m.codMaterial?.trim()),
     createdAt: serverTimestamp(),
     createdBy: uid,
   });

@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import ConfiguracoesPage from "../pages/ConfiguracoesPage";
 import ComodatoPage from "../pages/ComodatoPage";
+import PrivateRoute from "./PrivateRoute"; // ajuste o caminho conforme onde ele está
 // import Signup from "../pages/Signup";
 
 export default function AppRoutes(): JSX.Element {
@@ -11,8 +12,12 @@ export default function AppRoutes(): JSX.Element {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/configuracoes" element={<ConfiguracoesPage />} />
-      <Route path="/comodato" element={<ComodatoPage />} />
+
+      <Route element={<PrivateRoute />}>
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+        <Route path="/comodato" element={<ComodatoPage />} />
+      </Route>
+
       {/* <Route path="/signup" element={<Signup />} /> */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
