@@ -56,10 +56,13 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.createdBy == request.auth.uid;
 
-      // Sem edição nem exclusão por enquanto — comodato é um termo
-      // gerado e não deve ser alterado depois de salvo
-      allow update: if false;
-      allow delete: if false;
+      // Atualização: só usuário autenticado, e createdBy nunca pode
+      // ser reescrito
+      allow update: if request.auth != null
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      // Exclusão: qualquer usuário autenticado pode excluir
+      allow delete: if request.auth != null;
     }
 
     // Bloqueia qualquer outra coleção não prevista

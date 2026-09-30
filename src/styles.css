@@ -1019,3 +1019,42 @@ input.mono {
   object-position: bottom center;
   pointer-events: none;
 }
+
+.assinatura-alternador {
+  display: flex;
+  border-bottom: 1px solid var(--linha);
+}
+.assinatura-aba {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--texto-3);
+  cursor: pointer;
+}
+.assinatura-aba-ativa {
+  color: var(--texto-1);
+  font-weight: 600;
+  border-bottom: 2px solid var(--texto-1);
+}
+
+.assinatura-upload {
+  padding: 1rem;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: #ffffff;
+}
+.assinatura-preview {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+.assinatura-dica-upload {
+  position: static;
+  transform: none;
+}
