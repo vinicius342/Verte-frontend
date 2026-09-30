@@ -17,6 +17,8 @@ const GAP_LABEL_GERENTE = 61;
 const GAP_LINHA_INFERIOR = 99;
 const GAP_LABEL_INFERIOR = 118;
 
+const ASSINATURA_H = 55;
+
 function Caixa({ left, top, width, height, valor }) {
   return (
     <div
@@ -36,7 +38,7 @@ function Rotulo({ left, top, width, children }) {
   );
 }
 
-export default function ComodatoPrintable({ comodato, printRef }) {
+export default function ComodatoPrintable({ comodato, assinaturaVendedor, printRef }) {
   const materiais = comodato.materiais ?? [];
   const totalLinhas = Math.max(LINHAS_PADRAO, materiais.length);
 
@@ -121,6 +123,14 @@ export default function ComodatoPrintable({ comodato, printRef }) {
         GERENTE DA REVENDA
       </div>
 
+      {assinaturaVendedor ? (
+        <img
+          src={assinaturaVendedor}
+          alt="Assinatura do vendedor"
+          className="pdf-assinatura-imagem"
+          style={{ left: 157, top: topLinhaInferior - ASSINATURA_H, width: 282, height: ASSINATURA_H }}
+        />
+      ) : null}
       <div className="pdf-linha-assinatura" style={{ left: 157, top: topLinhaInferior, width: 282 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 157, top: topLabelInferior, width: 282 }}>
         VENDEDOR

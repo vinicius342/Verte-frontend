@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ---------- Anexos de clientes ----------
+    match /clientes-anexos/{clienteId}/{arquivo} {
+
+      // Leitura autenticada: acompanha a política da área logada do app
+      allow read: if request.auth != null;
+
+      // Upload: só usuário autenticado, e só imagem ou PDF, até 10MB
+      allow write: if request.auth != null
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches("image/.*")
+            || request.resource.contentType == "application/pdf");
+
+      // Exclusão: qualquer usuário autenticado pode excluir
+      // (mesma política de "clientes" no Firestore)
+      allow delete: if request.auth != null;
+    }
+
+    // Bloqueia qualquer outro caminho não previsto
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

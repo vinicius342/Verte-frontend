@@ -8,37 +8,66 @@ function linhaVazia() {
   return { codMaterial: "", descricao: "", quantidade: "" };
 }
 
-export default function ComodatoForm({ onSalvar, onCancelar }) {
+function dadosIniciais(comodatoExistente) {
+  return {
+    revenda: comodatoExistente?.revenda ?? "",
+    vendedor: comodatoExistente?.vendedor ?? "",
+    vendedorCodigo: comodatoExistente?.vendedorCodigo ?? "",
+    supervisor: comodatoExistente?.supervisor ?? "",
+    supervisorCodigo: comodatoExistente?.supervisorCodigo ?? "",
+    codPdv: comodatoExistente?.codPdv ?? "",
+    razaoSocial: comodatoExistente?.razaoSocial ?? "",
+    cpf: comodatoExistente?.cpf ?? "",
+  };
+}
+
+function materiaisIniciais(comodatoExistente) {
+  const materiais = comodatoExistente?.materiais ?? [];
+  if (materiais.length === 0) return [linhaVazia(), linhaVazia()];
+
+  return materiais.map((material) => ({
+    codMaterial: material.codMaterial ?? "",
+    descricao: material.descricao ?? "",
+    quantidade: material.quantidade ?? "",
+  }));
+}
+
+function preencherComConfiguracao(atual, config) {
+  const vendedores = [config.nomeVendedor, config.codigoVendedor].filter(Boolean).join(" ");
+  const supervisores = [config.nomeSupervisor, config.codigoSupervisor].filter(Boolean).join(" ");
+
+  return {
+    ...atual,
+    revenda: atual.revenda?.trim() ? atual.revenda : config.codigoRevenda ?? "",
+    vendedor: atual.vendedor?.trim() ? atual.vendedor : vendedores,
+    vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : config.codigoVendedor ?? "",
+    supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisores,
+    supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : config.codigoSupervisor ?? "",
+  };
+}
+
+export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }) {
   const { uid } = useAuth();
-  const [dados, setDados] = useState({
-    revenda: "",
-    vendedor: "",
-    vendedorCodigo: "",
-    supervisor: "",
-    supervisorCodigo: "",
-    codPdv: "",
-    razaoSocial: "",
-    cpf: "",
-  });
-  const [materiais, setMateriais] = useState([linhaVazia(), linhaVazia()]);
+  const [dados, setDados] = useState(() => dadosIniciais(comodatoExistente));
+  const [materiais, setMateriais] = useState(() => materiaisIniciais(comodatoExistente));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
   const [carregandoConfig, setCarregandoConfig] = useState(true);
 
   useEffect(() => {
+    setDados(dadosIniciais(comodatoExistente));
+    setMateriais(materiaisIniciais(comodatoExistente));
+    setErros({});
+    setErroGeral(null);
+  }, [comodatoExistente]);
+
+  useEffect(() => {
     let ativo = true;
     buscarConfiguracao(uid)
       .then((config) => {
         if (!ativo || !config) return;
-        setDados((atual) => ({
-          ...atual,
-          revenda: config.codigoRevenda ?? "",
-          vendedor: [config.nomeVendedor, config.codigoVendedor].filter(Boolean).join(" "),
-          vendedorCodigo: config.codigoVendedor ?? "",
-          supervisor: [config.nomeSupervisor, config.codigoSupervisor].filter(Boolean).join(" "),
-          supervisorCodigo: config.codigoSupervisor ?? "",
-        }));
+        setDados((atual) => preencherComConfiguracao(atual, config));
       })
       .finally(() => ativo && setCarregandoConfig(false));
     return () => {

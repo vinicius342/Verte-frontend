@@ -6,6 +6,7 @@ import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { atualizarCliente, excluirCliente } from "../../services/clientService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
+import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
 
 function CampoWhatsapp({ rotulo, numero }) {
   if (!numero) return null;
@@ -31,9 +32,12 @@ function iconeAnexo(tipo) {
 }
 
 export default function ClientDetailModal({ cliente, onFechar }) {
-  const { uid } = useAuth();
+  const { uid, usuario } = useAuth();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [anexoEmAcao, setAnexoEmAcao] = useState(null);
+  const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
+  const podeVerAnexos = Boolean(uid && usuario);
 
   useEffect(() => {
     setEditando(false);
@@ -63,6 +67,18 @@ export default function ClientDetailModal({ cliente, onFechar }) {
       window.alert(mensagem);
     } finally {
       setExcluindo(false);
+    }
+  }
+
+  async function abrirAnexo(anexo) {
+    try {
+      setAnexoEmAcao(anexo.caminho);
+      await compartilharOuBaixar({ blobOuUrl: anexo.url, nomeArquivo: anexo.nome ?? "anexo" });
+    } catch (erro) {
+      console.error("Falha ao abrir anexo:", erro);
+      window.alert("Não foi possível abrir o anexo.");
+    } finally {
+      setAnexoEmAcao(null);
     }
   }
 
@@ -108,7 +124,7 @@ export default function ClientDetailModal({ cliente, onFechar }) {
             </div>
           ) : null}
 
-          {cliente.anexos?.length > 0 ? (
+          {podeVerAnexos && cliente.anexos?.length > 0 ? (
             <div className="detalhe-anexos">
               <span className="campo-rotulo">Anexos</span>
               <ul className="lista-anexos">
@@ -119,9 +135,14 @@ export default function ClientDetailModal({ cliente, onFechar }) {
                     ) : (
                       <span className="lista-anexos-icone" aria-hidden>📄</span>
                     )}
-                    <a href={anexo.url} target="_blank" rel="noopener noreferrer">
-                      {anexo.nome}
-                    </a>
+                    <span>{anexo.nome}</span>
+                    <Button
+                      variant="ghost"
+                      onClick={() => abrirAnexo(anexo)}
+                      disabled={anexoEmAcao === anexo.caminho}
+                    >
+                      {podeCompartilharArquivo ? "Compartilhar" : "Baixar"}
+                    </Button>
                   </li>
                 ))}
               </ul>

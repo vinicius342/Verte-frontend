@@ -5,6 +5,7 @@ import Sidebar from "../components/layout/Sidebar";
 import Button from "../components/common/Button";
 import { useAuth } from "../hooks/useAuth";
 import { buscarConfiguracao, salvarConfiguracao } from "../services/configService";
+import SignaturePad from "../components/common/SignaturePad";
 
 function estadoInicial(config) {
   return {
@@ -13,6 +14,7 @@ function estadoInicial(config) {
     codigoVendedor: config?.codigoVendedor ?? "",
     nomeSupervisor: config?.nomeSupervisor ?? "",
     codigoSupervisor: config?.codigoSupervisor ?? "",
+    assinatura: config?.assinatura ?? "",
   };
 }
 
@@ -66,6 +68,7 @@ export default function ConfiguracoesPage() {
         codigoVendedor: dados.codigoVendedor.trim(),
         nomeSupervisor: dados.nomeSupervisor.trim(),
         codigoSupervisor: dados.codigoSupervisor.trim(),
+        assinatura: dados.assinatura,
       });
       setSucesso(true);
     } catch (erro) {
@@ -141,6 +144,17 @@ export default function ConfiguracoesPage() {
                 />
               </label>
             </div>
+
+            <div className="campo">
+  <span className="campo-rotulo">Assinatura</span>
+  <SignaturePad
+    valor={dados.assinatura}
+    onAlterar={(dataUrl) => {
+      setSucesso(false);
+      setDados((atual) => ({ ...atual, assinatura: dataUrl }));
+    }}
+  />
+</div>
 
             {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
             {sucesso ? <p className="estado-sucesso">Configurações salvas.</p> : null}

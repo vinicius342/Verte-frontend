@@ -5,13 +5,17 @@ import Login from "../pages/Login";
 import ConfiguracoesPage from "../pages/ConfiguracoesPage";
 import ComodatoPage from "../pages/ComodatoPage";
 import PrivateRoute from "./PrivateRoute"; // ajuste o caminho conforme onde ele está
+import RotaPublica from "./RotaPublica";
 // import Signup from "../pages/Signup";
 
 export default function AppRoutes(): JSX.Element {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
+
+      <Route element={<RotaPublica />}>
+        <Route path="/login" element={<Login />} />
+      </Route>
 
       <Route element={<PrivateRoute />}>
         <Route path="/configuracoes" element={<ConfiguracoesPage />} />
