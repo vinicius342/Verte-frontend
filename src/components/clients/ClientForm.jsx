@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Button from "../common/Button";
-import { validarCliente, formatarWhatsapp } from "../../utils/validators";
+import { validarCliente, formatarWhatsapp, formatarCpfCnpj, validarCpfCnpj } from "../../utils/validators";
 import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
 
 const TAMANHO_MAX_ANEXO = 10 * 1024 * 1024; // 10MB
@@ -11,6 +11,9 @@ function estadoInicial(cliente) {
   return {
     nomeCliente: cliente?.nomeCliente ?? "",
     nomeComercio: cliente?.nomeComercio ?? "",
+    codPdv: cliente?.codPdv ?? "",
+    cpf: cliente?.cpf ?? "",
+    segmento: cliente?.segmento ?? "",
     rua: cliente?.rua ?? "",
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
@@ -62,7 +65,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
 
   const alterar = (campo) => (e) => {
     const ehWhatsapp = campo === "whatsapp" || campo === "whatsapp2" || campo === "whatsapp3";
-    const valor = ehWhatsapp ? formatarWhatsapp(e.target.value) : e.target.value;
+    const valor = campo === "cpf" ? formatarCpfCnpj(e.target.value) : ehWhatsapp ? formatarWhatsapp(e.target.value) : e.target.value;
     setDados((atual) => ({ ...atual, [campo]: valor }));
   };
 
@@ -108,8 +111,9 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
     const { valido, erros: novos } = validarCliente(dados);
     const parsed = parseCoordenada(dados.coordenadaTexto);
     if (!parsed.valido) novos.coordenada = "Use o formato -3.7327, -38.5267.";
+    if (dados.cpf?.trim() && !validarCpfCnpj(dados.cpf)) novos.cpf = "CPF/CNPJ inválido.";
     setErros(novos);
-    if (!valido || !parsed.valido) return;
+    if (!valido || !parsed.valido || novos.cpf) return;
 
     setEnviando(true);
     setErroGeral(null);
@@ -141,6 +145,27 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
       <label className="campo">
         <span className="campo-rotulo">Nome do comércio</span>
         <input className="campo-input" value={dados.nomeComercio} onChange={alterar("nomeComercio")} />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Cód PDV</span>
+        <input className="campo-input mono" value={dados.codPdv} onChange={alterar("codPdv")} />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">CPF/CNPJ</span>
+        <input
+          className="campo-input mono"
+          value={dados.cpf}
+          onChange={alterar("cpf")}
+          inputMode="numeric"
+        />
+        {erros.cpf ? <span className="campo-erro">{erros.cpf}</span> : null}
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Segmento</span>
+        <input className="campo-input" value={dados.segmento} onChange={alterar("segmento")} />
       </label>
 
       <label className="campo">

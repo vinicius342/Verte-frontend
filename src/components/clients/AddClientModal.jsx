@@ -3,7 +3,7 @@ import ClientForm from "./ClientForm";
 import { useAuth } from "../../hooks/useAuth";
 import { criarCliente } from "../../services/clientService";
 
-export default function AddClientModal({ aberto, onFechar }) {
+export default function AddClientModal({ aberto, onFechar, cliente }) {
   const { uid } = useAuth();
 
   async function salvar(dados) {
@@ -12,8 +12,8 @@ export default function AddClientModal({ aberto, onFechar }) {
   }
 
   return (
-    <Modal aberto={aberto} titulo="Adicionar nova localização" onFechar={onFechar}>
-      <ClientForm onSalvar={salvar} onCancelar={onFechar} textoSalvar="Salvar" />
+    <Modal aberto={aberto} titulo="Adicionar novo cliente" onFechar={onFechar}>
+      <ClientForm cliente={cliente} onSalvar={salvar} onCancelar={onFechar} textoSalvar="Salvar" />
     </Modal>
   );
 }

@@ -31,7 +31,7 @@ function iconeAnexo(tipo) {
   return tipo?.startsWith("image/") ? "🖼️" : "📄";
 }
 
-export default function ClientDetailModal({ cliente, onFechar }) {
+export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false }) {
   const { uid, usuario } = useAuth();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -42,6 +42,12 @@ export default function ClientDetailModal({ cliente, onFechar }) {
   useEffect(() => {
     setEditando(false);
   }, [cliente?.id]);
+
+  useEffect(() => {
+    if (cliente && iniciarEdicao) {
+      setEditando(true);
+    }
+  }, [cliente, iniciarEdicao]);
 
   if (!cliente) return null;
 

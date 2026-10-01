@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../common/Button";
-import { formatarCpfCnpj, validarCpfCnpj } from "../../utils/validators";
 import { buscarConfiguracao } from "../../services/configService";
+import { listarClientes } from "../../services/clientService";
 import { useAuth } from "../../hooks/useAuth";
 
 function linhaVazia() {
@@ -10,6 +11,7 @@ function linhaVazia() {
 
 function dadosIniciais(comodatoExistente) {
   return {
+    clienteId: comodatoExistente?.clienteId ?? "",
     revenda: comodatoExistente?.revenda ?? "",
     vendedor: comodatoExistente?.vendedor ?? "",
     vendedorCodigo: comodatoExistente?.vendedorCodigo ?? "",
@@ -18,6 +20,37 @@ function dadosIniciais(comodatoExistente) {
     codPdv: comodatoExistente?.codPdv ?? "",
     razaoSocial: comodatoExistente?.razaoSocial ?? "",
     cpf: comodatoExistente?.cpf ?? "",
+  };
+}
+
+function normalizarTexto(texto) {
+  return (texto ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function localizarClienteInicial(comodatoExistente, clientes) {
+  if (!comodatoExistente) return null;
+
+  if (comodatoExistente.clienteId) {
+    return clientes.find((cliente) => cliente.id === comodatoExistente.clienteId) ?? null;
+  }
+
+  const nomeComodato = normalizarTexto(comodatoExistente.razaoSocial).trim();
+  if (!nomeComodato) return null;
+
+  return clientes.find((cliente) => normalizarTexto(cliente.nomeCliente).trim() === nomeComodato) ?? null;
+}
+
+function aplicarClienteSelecionado(atual, cliente) {
+  return {
+    ...atual,
+    clienteId: cliente.id,
+    razaoSocial: cliente.nomeCliente ?? "",
+    codPdv: cliente.codPdv ?? "",
+    cpf: cliente.cpf ?? "",
   };
 }
 
@@ -48,19 +81,113 @@ function preencherComConfiguracao(atual, config) {
 
 export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }) {
   const { uid } = useAuth();
+  const navigate = useNavigate();
+  const clienteRef = useRef(null);
+  const codPdvRef = useRef(null);
+  const cpfRef = useRef(null);
+  const revendaRef = useRef(null);
+  const supervisorRef = useRef(null);
+  const vendedorRef = useRef(null);
+  const materiaisRef = useRef(null);
   const [dados, setDados] = useState(() => dadosIniciais(comodatoExistente));
   const [materiais, setMateriais] = useState(() => materiaisIniciais(comodatoExistente));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
   const [carregandoConfig, setCarregandoConfig] = useState(true);
+  const [carregandoClientes, setCarregandoClientes] = useState(true);
+  const [clientes, setClientes] = useState([]);
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
+  const [clienteInicialAplicado, setClienteInicialAplicado] = useState(false);
 
   useEffect(() => {
     setDados(dadosIniciais(comodatoExistente));
     setMateriais(materiaisIniciais(comodatoExistente));
     setErros({});
     setErroGeral(null);
+    setErroClienteNaoCadastrado("");
+    setDropdownAberto(false);
+    setClienteInicialAplicado(false);
   }, [comodatoExistente]);
+
+  useEffect(() => {
+    let ativo = true;
+    listarClientes()
+      .then((lista) => {
+        if (!ativo) return;
+        setClientes(lista);
+      })
+      .catch((erro) => {
+        console.error("Falha ao carregar clientes:", erro);
+        if (ativo) setClientes([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregandoClientes(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (carregandoClientes || clienteInicialAplicado) return;
+
+    const clienteEncontrado = localizarClienteInicial(comodatoExistente, clientes);
+    if (clienteEncontrado) {
+      setDados((atual) => aplicarClienteSelecionado(atual, clienteEncontrado));
+      setErroClienteNaoCadastrado("");
+    } else if (comodatoExistente?.razaoSocial) {
+      setDados((atual) => ({
+        ...atual,
+        clienteId: "",
+        razaoSocial: comodatoExistente.razaoSocial ?? "",
+        codPdv: "",
+        cpf: "",
+      }));
+    }
+
+    setClienteInicialAplicado(true);
+  }, [carregandoClientes, clienteInicialAplicado, clientes, comodatoExistente]);
+
+  const clienteSelecionado = useMemo(
+    () => clientes.find((cliente) => cliente.id === dados.clienteId) ?? null,
+    [clientes, dados.clienteId],
+  );
+
+  const camposClienteAusentes = clienteSelecionado
+    ? [!clienteSelecionado.codPdv?.trim() ? "Cód PDV" : null, !clienteSelecionado.cpf?.trim() ? "CPF/CNPJ" : null].filter(Boolean)
+    : [];
+  const clienteSelecionadoIncompleto = camposClienteAusentes.length > 0;
+  const mensagemClienteIncompleto = clienteSelecionadoIncompleto
+    ? `Este cliente está sem ${camposClienteAusentes.join(" / ")}. Atualize o cadastro para continuar.`
+    : "";
+
+  const sugestoesCliente = useMemo(() => {
+    const termo = normalizarTexto(dados.razaoSocial).trim();
+    if (!termo) return [];
+
+    return clientes.filter((cliente) => normalizarTexto(cliente.nomeCliente).includes(termo)).slice(0, 8);
+  }, [clientes, dados.razaoSocial]);
+
+  function rolarParaPrimeiroErro(novosErros, temErroCliente) {
+    const ordem = [
+      temErroCliente ? clienteRef : null,
+      temErroCliente ? codPdvRef : null,
+      temErroCliente ? cpfRef : null,
+      novosErros.revenda ? revendaRef : null,
+      novosErros.supervisor ? supervisorRef : null,
+      novosErros.vendedor ? vendedorRef : null,
+      novosErros.materiais ? materiaisRef : null,
+    ].filter(Boolean);
+
+    if (!ordem.length) return;
+    window.requestAnimationFrame(() => {
+      ordem[0].current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      ordem[0].current?.focus?.();
+    });
+  }
 
   useEffect(() => {
     let ativo = true;
@@ -77,9 +204,34 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   function alterar(campo) {
     return (e) => {
-      const valor = campo === "cpf" ? formatarCpfCnpj(e.target.value) : e.target.value;
+      const valor = e.target.value;
       setDados((atual) => ({ ...atual, [campo]: valor }));
     };
+  }
+
+  function alterarCliente(e) {
+    const valor = e.target.value;
+    setDados((atual) => {
+      const limpandoSelecao = Boolean(atual.clienteId) && valor !== atual.razaoSocial;
+      return {
+        ...atual,
+        razaoSocial: valor,
+        ...(limpandoSelecao ? { clienteId: "", codPdv: "", cpf: "" } : {}),
+      };
+    });
+    setErroClienteNaoCadastrado("");
+    setDropdownAberto(true);
+  }
+
+  function selecionarCliente(cliente) {
+    setDados((atual) => aplicarClienteSelecionado(atual, cliente));
+    setErroClienteNaoCadastrado("");
+    setDropdownAberto(false);
+  }
+
+  function irParaCliente(estado) {
+    onCancelar?.();
+    navigate("/", { replace: true, state: estado });
   }
 
   function alterarMaterial(indice, campo, valor) {
@@ -97,14 +249,30 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   async function enviar(e) {
     e.preventDefault();
     const novosErros = {};
-    if (!dados.razaoSocial?.trim()) novosErros.razaoSocial = "Informe o cliente.";
-    if (!validarCpfCnpj(dados.cpf)) novosErros.cpf = "CPF/CNPJ inválido.";
+    const temErroCliente = !dados.clienteId || !clienteSelecionado || clienteSelecionadoIncompleto;
+
+    if (!dados.clienteId || !clienteSelecionado) {
+      const mensagem = "Cliente não cadastrado. Cadastre o cliente para continuar.";
+      setErroClienteNaoCadastrado(mensagem);
+      setErros(novosErros);
+      rolarParaPrimeiroErro(novosErros, true);
+      return;
+    }
+
+    if (clienteSelecionadoIncompleto) {
+      setErros(novosErros);
+      rolarParaPrimeiroErro(novosErros, true);
+      return;
+    }
 
     const materiaisPreenchidos = materiais.filter((m) => m.descricao?.trim() || m.codMaterial?.trim());
     if (materiaisPreenchidos.length === 0) novosErros.materiais = "Adicione ao menos um material.";
 
     setErros(novosErros);
-    if (Object.keys(novosErros).length > 0) return;
+    if (Object.keys(novosErros).length > 0) {
+      rolarParaPrimeiroErro(novosErros, temErroCliente);
+      return;
+    }
 
     setEnviando(true);
     setErroGeral(null);
@@ -128,46 +296,86 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
+      <label className="campo comodato-autocomplete">
+        <span className="campo-rotulo">Cliente *</span>
+        <input
+          ref={clienteRef}
+          className="campo-input"
+          value={dados.razaoSocial}
+          onChange={alterarCliente}
+          onFocus={() => setDropdownAberto(true)}
+          onBlur={() => {
+            window.setTimeout(() => setDropdownAberto(false), 0);
+          }}
+          autoComplete="off"
+        />
+        {carregandoClientes ? <span className="campo-dica">Carregando clientes…</span> : null}
+        {!carregandoClientes && dropdownAberto && sugestoesCliente.length > 0 ? (
+          <div className="comodato-autocomplete-dropdown" role="listbox">
+            {sugestoesCliente.map((cliente) => (
+              <button
+                key={cliente.id}
+                type="button"
+                className="comodato-autocomplete-item"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  selecionarCliente(cliente);
+                }}
+              >
+                <span className="comodato-autocomplete-nome">{cliente.nomeCliente}</span>
+                {cliente.nomeComercio ? (
+                  <span className="comodato-autocomplete-comercio">{cliente.nomeComercio}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {erroClienteNaoCadastrado ? (
+          <div className="estado-erro comodato-alerta-cliente">
+            <span>{erroClienteNaoCadastrado}</span>
+            <Button type="button" variant="secondary" onClick={() => irParaCliente({ novoCliente: dados.razaoSocial })}>
+              Cadastrar cliente
+            </Button>
+          </div>
+        ) : null}
+      </label>
+
+      {clienteSelecionadoIncompleto ? (
+        <div className="estado-erro comodato-alerta-cliente">
+          <span>{mensagemClienteIncompleto}</span>
+          <Button type="button" variant="secondary" onClick={() => irParaCliente({ editarClienteId: clienteSelecionado.id })}>
+            Atualizar cliente
+          </Button>
+        </div>
+      ) : null}
+
+      <label className="campo">
+        <span className="campo-rotulo">Cód PDV</span>
+        <input ref={codPdvRef} className="campo-input mono" value={dados.codPdv} readOnly />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">CPF/CNPJ</span>
+        <input ref={cpfRef} className="campo-input mono" value={dados.cpf} readOnly inputMode="numeric" />
+      </label>
+
       <div className="campo-linha">
         <label className="campo">
           <span className="campo-rotulo">Revenda</span>
-          <input className="campo-input" value={dados.revenda} onChange={alterar("revenda")} />
+          <input ref={revendaRef} className="campo-input" value={dados.revenda} onChange={alterar("revenda")} />
         </label>
         <label className="campo">
           <span className="campo-rotulo">Supervisor</span>
-          <input className="campo-input" value={dados.supervisor} onChange={alterar("supervisor")} />
+          <input ref={supervisorRef} className="campo-input" value={dados.supervisor} onChange={alterar("supervisor")} />
         </label>
       </div>
 
       <label className="campo">
         <span className="campo-rotulo">Vendedor</span>
-        <input className="campo-input" value={dados.vendedor} onChange={alterar("vendedor")} />
+        <input ref={vendedorRef} className="campo-input" value={dados.vendedor} onChange={alterar("vendedor")} />
       </label>
 
-      <label className="campo">
-        <span className="campo-rotulo">Cód PDV</span>
-        <input className="campo-input mono" value={dados.codPdv} onChange={alterar("codPdv")} />
-      </label>
-
-      <label className="campo">
-        <span className="campo-rotulo">Cliente *</span>
-        <input className="campo-input" value={dados.razaoSocial} onChange={alterar("razaoSocial")} required />
-        {erros.razaoSocial ? <span className="campo-erro">{erros.razaoSocial}</span> : null}
-      </label>
-
-      <label className="campo">
-        <span className="campo-rotulo">CPF/CNPJ *</span>
-        <input
-          className="campo-input mono"
-          value={dados.cpf}
-          onChange={alterar("cpf")}
-          inputMode="numeric"
-          placeholder="000.000.000-00"
-        />
-        {erros.cpf ? <span className="campo-erro">{erros.cpf}</span> : null}
-      </label>
-
-      <div className="campo">
+      <div className="campo" ref={materiaisRef}>
         <div className="comodato-materiais-cabecalho">
           <span className="campo-rotulo">Materiais</span>
           <span className="comodato-materiais-contador">
@@ -237,7 +445,10 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
         <Button variant="ghost" onClick={onCancelar}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={enviando}>
+        <Button
+          type="submit"
+          disabled={enviando || carregandoClientes || clienteSelecionadoIncompleto || (Boolean(dados.clienteId) && !clienteSelecionado)}
+        >
           {enviando ? "Salvando…" : "Salvar"}
         </Button>
       </div>

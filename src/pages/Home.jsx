@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
@@ -24,8 +24,12 @@ export default function HomePage() {
   const [busca, setBusca] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
-  const [selecionado, setSelecionado] = useState(null);
+  const [novoCliente, setNovoCliente] = useState("");
+  const [selecionadoId, setSelecionadoId] = useState(null);
+  const [iniciarEdicaoSelecionado, setIniciarEdicaoSelecionado] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (searchParams.get("adicionar") === "1" && usuario) {
@@ -35,6 +39,23 @@ export default function HomePage() {
     }
   }, [searchParams, setSearchParams, usuario]);
 
+  useEffect(() => {
+    const estado = location.state;
+    if (!estado) return;
+
+    if (typeof estado.novoCliente === "string") {
+      setNovoCliente(estado.novoCliente);
+      setAdicionando(true);
+    }
+
+    if (estado.editarClienteId) {
+      setSelecionadoId(estado.editarClienteId);
+      setIniciarEdicaoSelecionado(true);
+    }
+
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
+
   const filtrados = useMemo(() => {
     const termo = normalizar(busca).trim();
     if (!termo) return clientes;
@@ -43,7 +64,7 @@ export default function HomePage() {
     );
   }, [clientes, busca]);
 
-  const atual = selecionado ? (clientes.find((c) => c.id === selecionado.id) ?? selecionado) : null;
+  const atual = selecionadoId ? clientes.find((c) => c.id === selecionadoId) ?? null : null;
 
   return (
     <div className="pagina">
@@ -63,23 +84,43 @@ export default function HomePage() {
           clientes={filtrados}
           loading={loading}
           erro={erro}
-          onSelecionar={setSelecionado}
+          onSelecionar={(cliente) => {
+            setSelecionadoId(cliente.id);
+            setIniciarEdicaoSelecionado(false);
+          }}
         />
       </main>
 
       {usuario && (
         <Button
           className="botao-adicionar-fixo"
-          aria-label="Adicionar nova localização"
-          onClick={() => setAdicionando(true)}
+          aria-label="Novo cliente"
+          onClick={() => {
+            setNovoCliente("");
+            setAdicionando(true);
+          }}
         >
           <Plus aria-hidden="true" size={22} strokeWidth={2.4} />
-          <span>Nova localização</span>
+          <span>Novo cliente</span>
         </Button>
       )}
 
-      <AddClientModal aberto={adicionando} onFechar={() => setAdicionando(false)} />
-      <ClientDetailModal cliente={atual} onFechar={() => setSelecionado(null)} />
+      <AddClientModal
+        aberto={adicionando}
+        cliente={novoCliente ? { nomeCliente: novoCliente } : undefined}
+        onFechar={() => {
+          setAdicionando(false);
+          setNovoCliente("");
+        }}
+      />
+      <ClientDetailModal
+        cliente={atual}
+        iniciarEdicao={iniciarEdicaoSelecionado}
+        onFechar={() => {
+          setSelecionadoId(null);
+          setIniciarEdicaoSelecionado(false);
+        }}
+      />
     </div>
   );
 }

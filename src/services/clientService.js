@@ -30,6 +30,9 @@ function normalizar(dados) {
   return {
     nomeCliente: (dados.nomeCliente ?? "").trim(),
     nomeComercio: dados.nomeComercio?.trim() || null,
+    codPdv: (dados.codPdv ?? "").trim(),
+    cpf: (dados.cpf ?? "").trim(),
+    segmento: (dados.segmento ?? "").trim(),
     rua: (dados.rua ?? "").trim(),
     numero: dados.numero?.trim() ?? "",
     complemento: dados.complemento?.trim() || null,

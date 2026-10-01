@@ -15,6 +15,7 @@ const COLECAO = "comodatos";
 
 function montarDadosComodato(dados) {
   return {
+    clienteId: dados.clienteId?.trim() ?? "",
     revenda: dados.revenda?.trim() ?? "",
     vendedor: dados.vendedor?.trim() ?? "",
     vendedorCodigo: dados.vendedorCodigo?.trim() ?? "",

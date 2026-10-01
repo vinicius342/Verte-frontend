@@ -551,6 +551,50 @@ input.mono {
   color: var(--perigo);
   font-size: 0.8rem;
 }
+.comodato-autocomplete {
+  position: relative;
+}
+.comodato-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+.comodato-autocomplete-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+}
+.comodato-autocomplete-item:hover,
+.comodato-autocomplete-item:focus {
+  background: var(--fundo);
+}
+.comodato-autocomplete-nome {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.comodato-autocomplete-comercio {
+  color: var(--texto-3);
+  font-size: 0.8rem;
+}
+.comodato-alerta-cliente {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 .campo-dica {
   font-size: 0.8rem;
   color: var(--texto-3);
