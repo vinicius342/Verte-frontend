@@ -13,7 +13,8 @@ function estadoInicial(cliente) {
     nomeComercio: cliente?.nomeComercio ?? "",
     codPdv: cliente?.codPdv ?? "",
     cpf: cliente?.cpf ?? "",
-    segmento: cliente?.segmento ?? "",
+    seguimento: cliente?.seguimento ?? cliente?.segmento ?? "",
+    responsavel: cliente?.responsavel ?? "",
     rua: cliente?.rua ?? "",
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
@@ -164,8 +165,18 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">Segmento</span>
-        <input className="campo-input" value={dados.segmento} onChange={alterar("segmento")} />
+        <span className="campo-rotulo">Seguimento</span>
+        <input className="campo-input" value={dados.seguimento} onChange={alterar("seguimento")} />
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Responsável</span>
+        <input
+          className="campo-input"
+          value={dados.responsavel}
+          onChange={alterar("responsavel")}
+          placeholder="Ex. Sr Joelio"
+        />
       </label>
 
       <label className="campo">

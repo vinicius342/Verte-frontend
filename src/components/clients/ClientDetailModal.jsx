@@ -118,6 +118,20 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
               </dd>
             </div>
 
+            {(cliente.seguimento ?? cliente.segmento) ? (
+              <div className="detalhe-item">
+                <dt>Seguimento</dt>
+                <dd>{cliente.seguimento ?? cliente.segmento}</dd>
+              </div>
+            ) : null}
+
+            {cliente.responsavel ? (
+              <div className="detalhe-item">
+                <dt>Responsável</dt>
+                <dd>{cliente.responsavel}</dd>
+              </div>
+            ) : null}
+
             <CampoWhatsapp rotulo="WhatsApp" numero={cliente.whatsapp} />
             <CampoWhatsapp rotulo="WhatsApp 2" numero={cliente.whatsapp2} />
             <CampoWhatsapp rotulo="WhatsApp 3" numero={cliente.whatsapp3} />

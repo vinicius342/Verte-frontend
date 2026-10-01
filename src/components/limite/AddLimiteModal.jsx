@@ -13,7 +13,7 @@ export default function AddLimiteModal({ aberto, onFechar, onSalvo }) {
 
   return (
     <Modal aberto={aberto} titulo="Nova solicitação de limite" onFechar={onFechar}>
-      {aberto ? <LimiteForm onSalvar={salvar} onCancelar={onFechar} /> : null}
+      {aberto ? <LimiteForm onSalvar={salvar} onCancelar={onFechar} onFecharFormulario={onFechar} /> : null}
     </Modal>
   );
 }

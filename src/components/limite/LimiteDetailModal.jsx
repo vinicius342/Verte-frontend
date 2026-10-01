@@ -64,7 +64,12 @@ export default function LimiteDetailModal({ limite, onFechar }) {
       onFechar={onFechar}
     >
       {editando ? (
-        <LimiteForm limiteExistente={atual} onSalvar={salvar} onCancelar={() => setEditando(false)} />
+        <LimiteForm
+          limiteExistente={atual}
+          onSalvar={salvar}
+          onCancelar={() => setEditando(false)}
+          onFecharFormulario={onFechar}
+        />
       ) : (
         <div className="detalhe">
           <pre className="limite-texto-copia">{texto}</pre>

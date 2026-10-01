@@ -19,6 +19,7 @@ function texto(valor) {
 
 function montarDadosLimite(dados) {
   return {
+    clienteId: texto(dados.clienteId),
     rota: texto(dados.rota),
     codPdv: texto(dados.codPdv),
     razaoSocial: texto(dados.razaoSocial),
