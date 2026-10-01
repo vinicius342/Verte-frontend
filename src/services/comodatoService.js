@@ -27,13 +27,15 @@ function montarDadosComodato(dados) {
   };
 }
 
+// comodatoService.js: retornar também os dados normalizados
 export async function criarComodato(dados, uid) {
+  const montados = montarDadosComodato(dados);
   const ref = await addDoc(collection(getDb(), COLECAO), {
-    ...montarDadosComodato(dados),
+    ...montados,
     createdAt: serverTimestamp(),
     createdBy: uid,
   });
-  return ref.id;
+  return { id: ref.id, ...montados };
 }
 
 export async function atualizarComodato(id, dados) {

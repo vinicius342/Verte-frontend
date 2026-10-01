@@ -1058,3 +1058,33 @@ input.mono {
   position: static;
   transform: none;
 }
+
+/* Limite */
+
+.limite-texto-copia {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: rgba(127, 127, 127, 0.1);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 0 0 16px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.limite-texto-copia {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: rgba(127, 127, 127, 0.1);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 0 0 16px;
+  max-height: 55vh;
+  overflow-y: auto;
+}

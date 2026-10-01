@@ -7,8 +7,8 @@ export default function AddComodatoModal({ aberto, onFechar, onSalvo }) {
   const { uid } = useAuth();
 
   async function salvar(dados) {
-    await criarComodato(dados, uid);
-    onSalvo(dados);
+    const salvo = await criarComodato(dados, uid);
+    onSalvo(salvo);
   }
 
   return (

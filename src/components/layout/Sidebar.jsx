@@ -41,24 +41,20 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
               className="sidebar-item"
               onClick={() => {
                 onFechar();
-                if (onAdicionar) {
-                  onAdicionar();
-                } else {
-                  navigate("/?adicionar=1");
-                }
+                navigate("/comodato");
               }}
             >
-              Adicionar nova localização
+              Comodato
             </button>
             <button
               type="button"
               className="sidebar-item"
               onClick={() => {
                 onFechar();
-                navigate("/comodato");
+                navigate("/limite");
               }}
             >
-              Comodato
+              Solicitação de limites
             </button>
             <button
               type="button"

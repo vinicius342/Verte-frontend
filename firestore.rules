@@ -69,5 +69,25 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if false;
     }
+
+        // ---------- Limites ----------
+    match /limites/{limiteId} {
+
+      // Leitura: qualquer usuário autenticado pode ver a lista
+      allow read: if request.auth != null;
+
+      // Criação: só usuário autenticado, e createdBy deve bater com
+      // o uid de quem está criando
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid;
+
+      // Atualização: só usuário autenticado, e createdBy nunca pode
+      // ser reescrito
+      allow update: if request.auth != null
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      // Exclusão: qualquer usuário autenticado pode excluir
+      allow delete: if request.auth != null;
+    }
   }
 }
