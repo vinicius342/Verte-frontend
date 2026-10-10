@@ -5,6 +5,7 @@ import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { atualizarCliente, excluirCliente } from "../../services/clientService";
+import { buscarConfiguracao } from "../../services/configService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
 
@@ -27,8 +28,21 @@ function CampoWhatsapp({ rotulo, numero }) {
   );
 }
 
-function iconeAnexo(tipo) {
-  return tipo?.startsWith("image/") ? "🖼️" : "📄";
+function textoCadastroContatos(cliente, rota) {
+  const telefones = [cliente.whatsapp, cliente.whatsapp2, cliente.whatsapp3]
+    .filter((t) => t?.trim())
+    .map((t) => `*Tel:* ${t.trim()}`);
+
+  return [
+    `*CADASTRAR NUM DE TEL ROTA ${rota ?? ""}*`.trim(),
+    "",
+    `*Cod PDV:* ${cliente.codPdv ?? ""}`,
+    `*Razão PDV:* ${cliente.nomeCliente ?? ""}`,
+    `*Fantasia:* ${cliente.nomeComercio ?? ""}`,
+    `*Seguimento:* ${cliente.seguimento ?? cliente.segmento ?? ""}`,
+    ...telefones,
+    `*Resp:* ${cliente.responsavel ?? ""}`,
+  ].join("\n");
 }
 
 export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false }) {
@@ -36,8 +50,11 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [anexoEmAcao, setAnexoEmAcao] = useState(null);
+  const [rota, setRota] = useState("");
+  const [copiado, setCopiado] = useState(false);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
-  const podeVerAnexos = Boolean(uid && usuario);
+  const logado = Boolean(uid && usuario);
+  const podeVerAnexos = logado;
 
   useEffect(() => {
     setEditando(false);
@@ -48,6 +65,19 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
       setEditando(true);
     }
   }, [cliente, iniciarEdicao]);
+
+  useEffect(() => {
+    if (!cliente || !logado) return;
+    let ativo = true;
+    buscarConfiguracao(uid)
+      .then((config) => {
+        if (ativo) setRota(config?.codigoVendedor ?? "");
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [cliente, uid, logado]);
 
   if (!cliente) return null;
 
@@ -73,6 +103,17 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
       window.alert(mensagem);
     } finally {
       setExcluindo(false);
+    }
+  }
+
+  async function copiarContatos() {
+    try {
+      await navigator.clipboard.writeText(textoCadastroContatos(cliente, rota));
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch (erro) {
+      console.error("Falha ao copiar:", erro);
+      window.alert("Não foi possível copiar.");
     }
   }
 
@@ -141,6 +182,18 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             <div className="detalhe-observacao">
               <span className="campo-rotulo">Observação</span>
               <p>{cliente.observacao}</p>
+            </div>
+          ) : null}
+
+          {logado ? (
+            <div
+              className="detalhe-copia-contatos"
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+            >
+              <span className="campo-rotulo">Cadastro de contatos</span>
+              <Button variant="ghost" onClick={copiarContatos}>
+                {copiado ? "Copiado!" : "Copiar"}
+              </Button>
             </div>
           ) : null}
 

@@ -19,27 +19,43 @@
   --mapa-fundo: #fbe9dd;
   --perigo: #ac2b1f;
   --foco: #0f6f6e;
+  --cabecalho: #0f4f4e;
+  --cabecalho-texto: #ffffff;
+  --cabecalho-pino: #ffb27a;
+  /* Derivadas do cabeçalho (usadas na sidebar) */
+  --cabecalho-texto-suave: color-mix(in oklab, var(--cabecalho-texto) 65%, transparent);
+  --cabecalho-linha: color-mix(in oklab, var(--cabecalho-texto) 15%, transparent);
+  --cabecalho-perigo: #ffb4a8;
+  --cabecalho-perigo-hover: #ffd0c8;
+  --cabecalho-borda: color-mix(in oklab, var(--cabecalho-texto) 35%, transparent);
+  /* Modais (por padrão, iguais ao cabeçalho) */
+  --modal-cabecalho: var(--cabecalho);
+  --modal-cabecalho-texto: var(--cabecalho-texto);
+  --modal-cabecalho-destaque: var(--cabecalho-pino);
   --fonte-titulo: "Archivo", system-ui, sans-serif;
   --fonte-texto: "Inter", system-ui, sans-serif;
   --fonte-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
-    --fundo: #101513;
-    --superficie: #19201e;
-    --texto: #eef1ec;
-    --texto-2: #b3bdb7;
-    --texto-3: #7d8983;
-    --linha: #2b3431;
-    --primaria: #4cc3bf;
-    --primaria-hover: #7ad8d4;
-    --mapa: #ff9b5c;
-    --mapa-fundo: #3a2115;
-    --perigo: #ff7a6b;
-    --foco: #4cc3bf;
+    --fundo: #e9eee8;
+    --superficie: #ffffff;
+    --texto: #14201d;
+    --texto-2: #4f5f5a;
+    --texto-3: #7f8c86;
+    --linha: #cfd8cf;
+    --primaria: #0f6f6e;
+    --primaria-hover: #0b4f4f;
+    --mapa: #c2410c;
+    --mapa-fundo: #fde6d6;
+    --perigo: #ac2b1f;
+    --foco: #0f6f6e;
+    --cabecalho: #0f4f4e;
+    --cabecalho-texto: #ffffff;
+    --cabecalho-pino: #ffb27a;
   }
-}
+} */
 
 * {
   box-sizing: border-box;
@@ -147,8 +163,8 @@ input.mono {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--superficie);
-  border-bottom: 1px solid var(--linha);
+  background: var(--cabecalho);
+  color: var(--cabecalho-texto);
   padding: 0.75rem 1rem 0.9rem;
 }
 .cabecalho-topo {
@@ -159,9 +175,9 @@ input.mono {
 }
 .menu-botao {
   background: transparent;
-  border: 1px solid var(--linha);
+  border: 1px solid var(--cabecalho-borda);
   border-radius: 4px;
-  color: var(--texto);
+  color: var(--cabecalho-texto);
   font-size: 1.1rem;
   padding: 0.35rem 0.6rem;
   cursor: pointer;
@@ -172,7 +188,7 @@ input.mono {
   gap: 0.45rem;
 }
 .marca-pino {
-  color: var(--mapa);
+  color: var(--cabecalho-pino);
   font-size: 1.4rem;
   line-height: 1;
 }
@@ -385,8 +401,8 @@ input.mono {
   left: 0;
   bottom: 0;
   width: min(300px, 85vw);
-  background: var(--superficie);
-  border-right: 1px solid var(--linha);
+  background: var(--cabecalho);
+  color: var(--cabecalho-texto);
   transform: translateX(-100%);
   transition: transform 0.22s ease;
   z-index: 40;
@@ -410,33 +426,33 @@ input.mono {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.8rem;
-  color: var(--texto-3);
+  color: var(--cabecalho-pino);
 }
 .sidebar-usuario {
   font-size: 0.85rem;
-  color: var(--texto-3);
+  color: var(--cabecalho-texto-suave);
   margin: 0 0 0.5rem;
 }
 .sidebar-item {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--linha);
+  border-bottom: 1px solid var(--cabecalho-linha);
   text-align: left;
   padding: 0.85rem 0.25rem;
   font-family: var(--fonte-texto);
   font-size: 1rem;
   font-weight: 600;
-  color: var(--texto);
+  color: var(--cabecalho-texto);
   cursor: pointer;
 }
 .sidebar-item:hover {
-  color: var(--primaria);
+  color: var(--cabecalho-pino);
 }
 .sidebar-sair {
-  color: var(--perigo);
+  color: var(--cabecalho-perigo);
 }
 .sidebar-sair:hover {
-  color: var(--perigo);
+  color: var(--cabecalho-perigo-hover);
 }
 
 /* ---------- Modais ---------- */
@@ -454,7 +470,7 @@ input.mono {
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
-  border-top: 3px solid var(--primaria);
+  border-top: 3px solid var(--modal-cabecalho);
   animation: subir 0.2s ease-out;
 }
 @keyframes subir {
@@ -469,10 +485,10 @@ input.mono {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid var(--linha);
   position: sticky;
   top: 0;
-  background: var(--superficie);
+  background: var(--modal-cabecalho);
+  color: var(--modal-cabecalho-texto);
 }
 .modal-titulo {
   font-family: var(--fonte-titulo);
@@ -483,7 +499,7 @@ input.mono {
 .modal-fechar {
   background: transparent;
   border: none;
-  color: var(--texto-2);
+  color: var(--modal-cabecalho-texto);
   font-size: 1rem;
   cursor: pointer;
   padding: 0.3rem 0.45rem;
@@ -534,6 +550,7 @@ input.mono {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--texto-2);
+  margin-top: 0.5rem;
 }
 .campo-input {
   border: 1px solid var(--linha);
