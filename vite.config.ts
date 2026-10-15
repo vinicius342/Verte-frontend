@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "icons/icon-512.png"],
       manifest: {
-        name: "Rota Certa",
-        short_name: "Rota Certa",
+        name: "Verte",
+        short_name: "Verte",
         description: "Clientes e endereços da equipe de campo.",
         lang: "pt-BR",
         display: "standalone",

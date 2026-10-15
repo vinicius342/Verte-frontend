@@ -1,4 +1,4 @@
-# Rota Certa Pro
+# Verte Pro
 
 IMPORTANTE — TRABALHE COM ECONOMIA DE CRÉDITOS:
 
@@ -34,7 +34,7 @@ Ordem de prioridade para construir o projeto (do essencial ao complementar):
 
 ---
 
-Crie um projeto Vite + React (JavaScript ou TypeScript) chamado "Rota Certa": um sistema de cadastro e consulta de clientes/endereços para uma equipe de campo, integrado ao Firebase (Auth + Firestore), com suporte a PWA.
+Crie um projeto Vite + React (JavaScript ou TypeScript) chamado "Verte": um sistema de cadastro e consulta de clientes/endereços para uma equipe de campo, integrado ao Firebase (Auth + Firestore), com suporte a PWA.
 
 ## Stack e configuração geral
 
@@ -42,7 +42,7 @@ Crie um projeto Vite + React (JavaScript ou TypeScript) chamado "Rota Certa": um
 
 - Firebase: Authentication (email/senha) e Firestore como banco de dados
 
-- vite-plugin-pwa configurado com manifest (nome "Rota Certa", ícone com pino de mapa, theme_color #0f6f6e, background_color #eef1ec) e service worker com cache das rotas principais e da última lista de clientes carregada, para que usuários deslogados e logados tenham carregamento rápido mesmo com conexão instável
+- vite-plugin-pwa configurado com manifest (nome "Verte", ícone com pino de mapa, theme_color #0f6f6e, background_color #eef1ec) e service worker com cache das rotas principais e da última lista de clientes carregada, para que usuários deslogados e logados tenham carregamento rápido mesmo com conexão instável
 
 - Variáveis de ambiente (.env) para as chaves do Firebase, nunca hardcoded
 

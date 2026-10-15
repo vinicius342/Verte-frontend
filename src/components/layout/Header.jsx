@@ -11,7 +11,7 @@ export default function Header({ busca, onBuscar, onAbrirMenu }) {
           <span className="marca-pino" aria-hidden>
             ⚲
           </span>
-          <span className="marca-nome">Rota Certa</span>
+          <span className="marca-nome">Verte</span>
         </div>
       </div>
       {onBuscar ? <ClientSearchBar valor={busca} onChange={onBuscar} /> : null}

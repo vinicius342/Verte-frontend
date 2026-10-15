@@ -73,7 +73,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
       .then((config) => {
         if (ativo) setRota(config?.codigoVendedor ?? "");
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       ativo = false;
     };
@@ -186,10 +186,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
           ) : null}
 
           {logado ? (
-            <div
-              className="detalhe-copia-contatos"
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
-            >
+            <div className="detalhe-copia-contatos">
               <span className="campo-rotulo">Cadastro de contatos</span>
               <Button variant="ghost" onClick={copiarContatos}>
                 {copiado ? "Copiado!" : "Copiar"}
@@ -227,10 +224,10 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
           >
             <div className="detalhe-acoes">
               <Button variant="secondary" onClick={() => setEditando(true)}>
-                Alterar dados
+                Alterar
               </Button>
               <Button variant="danger" onClick={excluir} disabled={excluindo}>
-                {excluindo ? "Excluindo..." : "Excluir localização"}
+                {excluindo ? "Excluindo..." : "Excluir"}
               </Button>
             </div>
           </ProtectedAction>

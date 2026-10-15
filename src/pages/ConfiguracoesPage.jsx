@@ -97,7 +97,7 @@ export default function ConfiguracoesPage() {
             <Link to="/login">Fazer login</Link>
           </p>
         ) : (
-          <form className="formulario" onSubmit={enviar} noValidate>
+          <form className="formulario formulario-cartao" onSubmit={enviar} noValidate>
             <label className="campo">
               <span className="campo-rotulo">Código de revenda</span>
               <input

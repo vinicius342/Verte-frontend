@@ -39,7 +39,7 @@ export default function SignupPage() {
           <span className="marca-pino" aria-hidden>
             ⚲
           </span>
-          <span className="marca-nome">Rota Certa</span>
+          <span className="marca-nome">Verte</span>
         </div>
         <h1 className="auth-titulo">Criar conta</h1>
 

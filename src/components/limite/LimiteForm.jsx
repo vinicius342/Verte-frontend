@@ -268,7 +268,7 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
       <Campo {...p} campo="seguimento" rotulo="Seguimento" placeholder="Ex. Subdistribuidor" />
       <Campo {...p} campo="responsavel" rotulo="Responsável" placeholder="Ex. Sr Joelio" />
 
-      <div className="campo">
+      <div className="campo campo-telefones">
         <span className="campo-rotulo">Telefones</span>
         {dados.telefones.map((tel, i) => (
           <div className="campo-linha" key={i}>
