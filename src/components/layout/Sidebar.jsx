@@ -20,7 +20,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
   return (
     <>
       <div className={`overlay ${aberta ? "overlay-visivel" : ""}`} onClick={onFechar} role="presentation" />
-      <aside className={`sidebar ${aberta ? "sidebar-aberta" : ""}`} aria-hidden={!aberta}>
+      <aside className={`sidebar ${aberta ? "sidebar-aberta" : ""}`} inert={!aberta}>
         <div className="sidebar-cabecalho">
           <div className="sidebar-marca">
             <span className="marca-pino sidebar-marca-pino" aria-hidden>
@@ -43,6 +43,9 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
             </button>
             <button type="button" className="sidebar-item" onClick={() => irPara("/limite")}>
               Solicitação de limites
+            </button>
+            <button type="button" className="sidebar-item" onClick={() => irPara("/ativos")}>
+              Ativos
             </button>
             <button type="button" className="sidebar-item" onClick={() => irPara("/configuracoes")}>
               Configurações
