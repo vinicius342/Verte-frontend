@@ -3,7 +3,7 @@ import AtivoForm from "./AtivoForm";
 import { criarAtivo } from "../../services/ativoService";
 import { useAuth } from "../../hooks/useAuth";
 
-export default function AddAtivoModal({ aberto, onFechar, onSalvo }) {
+export default function AddAtivoModal({ aberto, onFechar, onSalvo, valoresIniciais }) {
   const { uid } = useAuth();
 
   async function salvar(dados) {
@@ -13,7 +13,7 @@ export default function AddAtivoModal({ aberto, onFechar, onSalvo }) {
 
   return (
     <Modal aberto={aberto} onFechar={onFechar} titulo="Novo ativo">
-      {aberto ? <AtivoForm onSalvar={salvar} onCancelar={onFechar} /> : null}
+      {aberto ? <AtivoForm ativoExistente={valoresIniciais} onSalvar={salvar} onCancelar={onFechar} /> : null}
     </Modal>
   );
 }

@@ -47,7 +47,12 @@ export default function AtivoForm({ onSalvar, onCancelar, ativoExistente }) {
     try {
       await onSalvar(dados);
     } catch (erro) {
-      setErroGeral(erro?.message ?? "Não foi possível salvar.");
+      if (erro?.code === "ativo-duplicado") {
+        setErros((atual) => ({ ...atual, codigo: erro.message }));
+        refs.codigo.current?.focus();
+      } else {
+        setErroGeral(erro?.message ?? "Não foi possível salvar.");
+      }
     } finally {
       setEnviando(false);
     }

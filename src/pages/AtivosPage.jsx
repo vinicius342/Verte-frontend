@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
@@ -15,6 +16,17 @@ export default function AtivosPage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [selecionado, setSelecionado] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [valoresIniciais, setValoresIniciais] = useState(null);
+
+  useEffect(() => {
+    const novo = location.state?.novoAtivo;
+    if (!novo) return;
+    setValoresIniciais(novo);
+    setAdicionando(true);
+    navigate(location.pathname, { replace: true, state: null }); // evita reabrir ao recarregar
+  }, [location, navigate]);
 
   return (
     <div className="pagina">
@@ -38,9 +50,14 @@ export default function AtivosPage() {
 
       <AddAtivoModal
         aberto={adicionando}
-        onFechar={() => setAdicionando(false)}
+        valoresIniciais={valoresIniciais}
+        onFechar={() => {
+          setAdicionando(false);
+          setValoresIniciais(null);
+        }}
         onSalvo={(ativo) => {
           setAdicionando(false);
+          setValoresIniciais(null);
           setSelecionado(ativo);
         }}
       />

@@ -5,10 +5,25 @@ import ClienteAutocomplete from "../common/ClienteAutocomplete";
 import { buscarConfiguracao } from "../../services/configService";
 import { listarClientes } from "../../services/clientService";
 import { useAuth } from "../../hooks/useAuth";
+import AtivoAutocomplete from "../ativo/AtivoAutoComplete";
+import { listarAtivos } from "../../services/ativoService";
 
 function linhaVazia() {
-  return { codMaterial: "", descricao: "", quantidade: "" };
+  return { ativoId: "", codMaterial: "", descricao: "", quantidade: "" };
 }
+
+function materiaisIniciais(comodatoExistente) {
+  const materiais = comodatoExistente?.materiais ?? [];
+  if (materiais.length === 0) return [linhaVazia(), linhaVazia()];
+
+  return materiais.map((material) => ({
+    ativoId: "",
+    codMaterial: material.codMaterial ?? "",
+    descricao: material.descricao ?? "",
+    quantidade: material.quantidade ?? "",
+  }));
+}
+
 
 function dadosIniciais(comodatoExistente) {
   return {
@@ -55,17 +70,6 @@ function aplicarClienteSelecionado(atual, cliente) {
   };
 }
 
-function materiaisIniciais(comodatoExistente) {
-  const materiais = comodatoExistente?.materiais ?? [];
-  if (materiais.length === 0) return [linhaVazia(), linhaVazia()];
-
-  return materiais.map((material) => ({
-    codMaterial: material.codMaterial ?? "",
-    descricao: material.descricao ?? "",
-    quantidade: material.quantidade ?? "",
-  }));
-}
-
 function preencherComConfiguracao(atual, config) {
   const vendedores = [config.nomeVendedor, config.codigoVendedor].filter(Boolean).join(" ");
   const supervisores = [config.nomeSupervisor, config.codigoSupervisor].filter(Boolean).join(" ");
@@ -100,6 +104,38 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [clientes, setClientes] = useState([]);
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
   const [clienteInicialAplicado, setClienteInicialAplicado] = useState(false);
+  const [ativos, setAtivos] = useState([]);
+  const [carregandoAtivos, setCarregandoAtivos] = useState(true);
+  const [ativosIniciaisAplicados, setAtivosIniciaisAplicados] = useState(false);
+  const [tentouEnviar, setTentouEnviar] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    listarAtivos()
+      .then((lista) => ativo && setAtivos(lista))
+      .catch((erro) => {
+        console.error("Falha ao carregar ativos:", erro);
+        if (ativo) setAtivos([]);
+      })
+      .finally(() => ativo && setCarregandoAtivos(false));
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (carregandoAtivos || ativosIniciaisAplicados) return;
+
+    setMateriais((atual) =>
+      atual.map((linha) => {
+        const codigo = normalizarTexto(linha.codMaterial).trim();
+        if (linha.ativoId || !codigo) return linha;
+        const encontrado = ativos.find((a) => normalizarTexto(a.codigo).trim() === codigo);
+        return encontrado ? { ...linha, ativoId: encontrado.id } : linha;
+      }),
+    );
+    setAtivosIniciaisAplicados(true);
+  }, [carregandoAtivos, ativosIniciaisAplicados, ativos]);
 
   useEffect(() => {
     setDados(dadosIniciais(comodatoExistente));
@@ -108,6 +144,8 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     setErroGeral(null);
     setErroClienteNaoCadastrado("");
     setClienteInicialAplicado(false);
+    setAtivosIniciaisAplicados(false);
+    setTentouEnviar(false);
   }, [comodatoExistente]);
 
   useEffect(() => {
@@ -159,6 +197,40 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     ? [!clienteSelecionado.codPdv?.trim() ? "Cód PDV" : null, !clienteSelecionado.cpf?.trim() ? "CPF/CNPJ" : null].filter(Boolean)
     : [];
   const clienteSelecionadoIncompleto = camposClienteAusentes.length > 0;
+
+  function digitarMaterial(indice, campo, valor) {
+    const outro = campo === "codMaterial" ? "descricao" : "codMaterial";
+    setMateriais((atual) =>
+      atual.map((linha, i) =>
+        i !== indice
+          ? linha
+          : {
+            ...linha,
+            [campo]: valor,
+            // igual ao cliente: mexer num ativo já selecionado desfaz a seleção
+            ...(linha.ativoId ? { ativoId: "", [outro]: "" } : {}),
+          },
+      ),
+    );
+  }
+
+  function selecionarMaterial(indice, ativo) {
+    setMateriais((atual) =>
+      atual.map((linha, i) =>
+        i === indice
+          ? { ...linha, ativoId: ativo.id, codMaterial: ativo.codigo ?? "", descricao: ativo.material ?? "" }
+          : linha,
+      ),
+    );
+  }
+
+  function irParaAtivos(linha) {
+    onCancelar?.();
+    navigate("/ativos", {
+      replace: true,
+      state: { novoAtivo: { codigo: linha.codMaterial, material: linha.descricao } },
+    });
+  }
 
   function rolarParaPrimeiroErro(novosErros, temErroCliente) {
     const ordem = [
@@ -254,6 +326,13 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     const materiaisPreenchidos = materiais.filter((m) => m.descricao?.trim() || m.codMaterial?.trim());
     if (materiaisPreenchidos.length === 0) novosErros.materiais = "Adicione ao menos um material.";
 
+    setTentouEnviar(true);
+
+    const idsCadastrados = new Set(ativos.map((a) => a.id));
+    if (materiaisPreenchidos.some((m) => !idsCadastrados.has(m.ativoId))) {
+      novosErros.materiais = "Há materiais não cadastrados. Cadastre o ativo para continuar.";
+    }
+
     setErros(novosErros);
     if (Object.keys(novosErros).length > 0) {
       rolarParaPrimeiroErro(novosErros, temErroCliente);
@@ -263,7 +342,10 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     setEnviando(true);
     setErroGeral(null);
     try {
-      await onSalvar({ ...dados, materiais: materiaisPreenchidos });
+      await onSalvar({
+        ...dados,
+        materiais: materiaisPreenchidos.map(({ codMaterial, descricao, quantidade }) => ({ codMaterial, descricao, quantidade })),
+      });
     } catch (erro) {
       setErroGeral(erro?.message ?? "Não foi possível salvar.");
     } finally {
@@ -345,15 +427,22 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
               </div>
 
               <div className="comodato-card-material-linha">
-                <label className="comodato-campo-mobile">
+                <div className="comodato-campo-mobile">
                   <span className="comodato-rotulo-mobile">Cód. material</span>
-                  <input
-                    className="campo-input mono"
+                  <AtivoAutocomplete
+                    campo="codigo"
+                    mono
                     placeholder="Ex. 0042"
-                    value={linha.codMaterial}
-                    onChange={(e) => alterarMaterial(indice, "codMaterial", e.target.value)}
+                    valor={linha.codMaterial}
+                    selecionado={Boolean(linha.ativoId)}
+                    ativos={ativos}
+                    loading={carregandoAtivos}
+                    erro={tentouEnviar}
+                    onDigitar={(v) => digitarMaterial(indice, "codMaterial", v)}
+                    onSelecionar={(ativo) => selecionarMaterial(indice, ativo)}
+                    onIrParaAtivos={() => irParaAtivos(linha)}
                   />
-                </label>
+                </div>
                 <label className="comodato-campo-mobile comodato-campo-qtd">
                   <span className="comodato-rotulo-mobile">Qtd</span>
                   <input
@@ -366,15 +455,21 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
                 </label>
               </div>
 
-              <label className="comodato-campo-mobile">
+              <div className="comodato-campo-mobile">
                 <span className="comodato-rotulo-mobile">Descrição</span>
-                <input
-                  className="campo-input"
+                <AtivoAutocomplete
+                  campo="material"
                   placeholder="Detalhe do material"
-                  value={linha.descricao}
-                  onChange={(e) => alterarMaterial(indice, "descricao", e.target.value)}
+                  valor={linha.descricao}
+                  selecionado={Boolean(linha.ativoId)}
+                  ativos={ativos}
+                  loading={carregandoAtivos}
+                  erro={tentouEnviar}
+                  onDigitar={(v) => digitarMaterial(indice, "descricao", v)}
+                  onSelecionar={(ativo) => selecionarMaterial(indice, ativo)}
+                  onIrParaAtivos={() => irParaAtivos(linha)}
                 />
-              </label>
+              </div>
             </div>
           ))}
         </div>
