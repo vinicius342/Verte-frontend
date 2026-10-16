@@ -1,7 +1,5 @@
 import {
-  collection,
   addDoc,
-  doc,
   deleteDoc,
   onSnapshot,
   orderBy,
@@ -9,7 +7,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { getDb } from "../firebase/config";
+import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
 
 const COLECAO = "limites";
 
@@ -41,9 +39,9 @@ function montarDadosLimite(dados) {
   };
 }
 
-export async function criarLimite(dados, uid) {
+export async function criarLimite(revendedoraId, dados, uid) {
   const montados = montarDadosLimite(dados);
-  const ref = await addDoc(collection(getDb(), COLECAO), {
+  const ref = await addDoc(colecaoDaRevendedora(revendedoraId, COLECAO), {
     ...montados,
     createdAt: serverTimestamp(),
     createdBy: uid,
@@ -51,19 +49,19 @@ export async function criarLimite(dados, uid) {
   return { id: ref.id, ...montados };
 }
 
-export async function atualizarLimite(id, dados) {
+export async function atualizarLimite(revendedoraId, id, dados) {
   const montados = montarDadosLimite(dados);
-  await updateDoc(doc(getDb(), COLECAO, id), montados);
+  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), montados);
   return montados;
 }
 
-export async function excluirLimite(id) {
-  await deleteDoc(doc(getDb(), COLECAO, id));
+export async function excluirLimite(revendedoraId, id) {
+  await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
 }
 
-export function observarLimites(callback, onError) {
+export function observarLimites(revendedoraId, callback, onError) {
   return onSnapshot(
-    query(collection(getDb(), COLECAO), orderBy("createdAt", "desc")),
+    query(colecaoDaRevendedora(revendedoraId, COLECAO), orderBy("createdAt", "desc")),
     (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     (erro) => onError?.(erro),
   );

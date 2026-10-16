@@ -4,8 +4,10 @@ import Button from "../common/Button";
 import LimiteForm from "./LimiteForm";
 import { atualizarLimite, excluirLimite } from "../../services/limiteService";
 import { textoLimite } from "../../utils/limiteTexto";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LimiteDetailModal({ limite, onFechar }) {
+  const { revendedoraId } = useAuth();
   const [atual, setAtual] = useState(limite);
   const [editando, setEditando] = useState(false);
   const [processando, setProcessando] = useState(false);
@@ -24,7 +26,7 @@ export default function LimiteDetailModal({ limite, onFechar }) {
 
   async function salvar(dados) {
     setErroGeral(null);
-    const normalizado = await atualizarLimite(atual.id, dados);
+    const normalizado = await atualizarLimite(revendedoraId, atual.id, dados);
     setAtual((anterior) => ({ ...anterior, ...normalizado }));
     setEditando(false);
   }
@@ -36,7 +38,7 @@ export default function LimiteDetailModal({ limite, onFechar }) {
     try {
       setProcessando(true);
       setErroGeral(null);
-      await excluirLimite(atual.id);
+      await excluirLimite(revendedoraId, atual.id);
       onFechar();
     } catch (erro) {
       console.error("Falha ao excluir limite:", erro);

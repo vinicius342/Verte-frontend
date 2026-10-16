@@ -1,27 +1,29 @@
 import { useEffect, useState } from "react";
 import { observarClientes } from "../services/clientService";
 import { isFirebaseConfigured } from "../firebase/config";
+import { useAuth } from "./useAuth";
 
-const CACHE_KEY = "rota-certa:clientes";
+const chaveCache = (revendedoraId) => `rota-certa:clientes:${revendedoraId}`;
 
-function lerCache() {
+function lerCache(revendedoraId) {
   try {
-    const bruto = localStorage.getItem(CACHE_KEY);
+    const bruto = localStorage.getItem(chaveCache(revendedoraId));
     return bruto ? JSON.parse(bruto) : null;
   } catch {
     return null;
   }
 }
 
-// Encapsula a escuta em tempo real dos clientes + loading/erro,
-// com cache local para abrir rápido mesmo com conexão instável.
 export function useClients() {
+  const { revendedoraId } = useAuth();
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
-    const cache = lerCache();
+    if (!revendedoraId) return;
+
+    const cache = lerCache(revendedoraId);
     if (cache?.length) {
       setClientes(cache);
       setLoading(false);
@@ -36,12 +38,13 @@ export function useClients() {
     let cancelar = () => {};
     try {
       cancelar = observarClientes(
+        revendedoraId,
         (lista) => {
           setClientes(lista);
           setErro(null);
           setLoading(false);
           try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(lista));
+            localStorage.setItem(chaveCache(revendedoraId), JSON.stringify(lista));
           } catch {
             /* cache é opcional */
           }
@@ -56,7 +59,7 @@ export function useClients() {
       setLoading(false);
     }
     return () => cancelar();
-  }, []);
+  }, [revendedoraId]);
 
   return { clientes, loading, erro };
 }

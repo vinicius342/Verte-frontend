@@ -85,7 +85,7 @@ function preencherComConfiguracao(atual, config) {
 }
 
 export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }) {
-  const { uid } = useAuth();
+  const { uid, revendedoraId } = useAuth();
   const navigate = useNavigate();
   const clienteRef = useRef(null);
   const codPdvRef = useRef(null);
@@ -111,7 +111,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   useEffect(() => {
     let ativo = true;
-    listarAtivos()
+    listarAtivos(revendedoraId)
       .then((lista) => ativo && setAtivos(lista))
       .catch((erro) => {
         console.error("Falha ao carregar ativos:", erro);
@@ -121,7 +121,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [revendedoraId]);
 
   useEffect(() => {
     if (carregandoAtivos || ativosIniciaisAplicados) return;
@@ -150,7 +150,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   useEffect(() => {
     let ativo = true;
-    listarClientes()
+    listarClientes(revendedoraId)
       .then((lista) => {
         if (!ativo) return;
         setClientes(lista);
@@ -166,7 +166,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [revendedoraId]);
 
   useEffect(() => {
     if (carregandoClientes || clienteInicialAplicado) return;
@@ -426,6 +426,22 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
                 </button>
               </div>
 
+              <div className="comodato-campo-mobile">
+                <span className="comodato-rotulo-mobile">Nome do material</span>
+                <AtivoAutocomplete
+                  campo="material"
+                  placeholder="Detalhe do material"
+                  valor={linha.descricao}
+                  selecionado={Boolean(linha.ativoId)}
+                  ativos={ativos}
+                  loading={carregandoAtivos}
+                  erro={tentouEnviar}
+                  onDigitar={(v) => digitarMaterial(indice, "descricao", v)}
+                  onSelecionar={(ativo) => selecionarMaterial(indice, ativo)}
+                  onIrParaAtivos={() => irParaAtivos(linha)}
+                />
+              </div>
+
               <div className="comodato-card-material-linha">
                 <div className="comodato-campo-mobile">
                   <span className="comodato-rotulo-mobile">Cód. material</span>
@@ -455,21 +471,6 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
                 </label>
               </div>
 
-              <div className="comodato-campo-mobile">
-                <span className="comodato-rotulo-mobile">Descrição</span>
-                <AtivoAutocomplete
-                  campo="material"
-                  placeholder="Detalhe do material"
-                  valor={linha.descricao}
-                  selecionado={Boolean(linha.ativoId)}
-                  ativos={ativos}
-                  loading={carregandoAtivos}
-                  erro={tentouEnviar}
-                  onDigitar={(v) => digitarMaterial(indice, "descricao", v)}
-                  onSelecionar={(ativo) => selecionarMaterial(indice, ativo)}
-                  onIrParaAtivos={() => irParaAtivos(linha)}
-                />
-              </div>
             </div>
           ))}
         </div>

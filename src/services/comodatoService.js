@@ -1,7 +1,5 @@
 import {
-  collection,
   addDoc,
-  doc,
   deleteDoc,
   onSnapshot,
   orderBy,
@@ -9,7 +7,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { getDb } from "../firebase/config";
+import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
 
 const COLECAO = "comodatos";
 
@@ -28,10 +26,9 @@ function montarDadosComodato(dados) {
   };
 }
 
-// comodatoService.js: retornar também os dados normalizados
-export async function criarComodato(dados, uid) {
+export async function criarComodato(revendedoraId, dados, uid) {
   const montados = montarDadosComodato(dados);
-  const ref = await addDoc(collection(getDb(), COLECAO), {
+  const ref = await addDoc(colecaoDaRevendedora(revendedoraId, COLECAO), {
     ...montados,
     createdAt: serverTimestamp(),
     createdBy: uid,
@@ -39,19 +36,19 @@ export async function criarComodato(dados, uid) {
   return { id: ref.id, ...montados };
 }
 
-export async function atualizarComodato(id, dados) {
-  await updateDoc(doc(getDb(), COLECAO, id), {
+export async function atualizarComodato(revendedoraId, id, dados) {
+  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), {
     ...montarDadosComodato(dados),
   });
 }
 
-export async function excluirComodato(id) {
-  await deleteDoc(doc(getDb(), COLECAO, id));
+export async function excluirComodato(revendedoraId, id) {
+  await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
 }
 
-export function observarComodatos(callback, onError) {
+export function observarComodatos(revendedoraId, callback, onError) {
   return onSnapshot(
-    query(collection(getDb(), COLECAO), orderBy("createdAt", "desc")),
+    query(colecaoDaRevendedora(revendedoraId, COLECAO), orderBy("createdAt", "desc")),
     (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     (erro) => onError?.(erro),
   );

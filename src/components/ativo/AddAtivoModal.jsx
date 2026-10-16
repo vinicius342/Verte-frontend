@@ -4,10 +4,10 @@ import { criarAtivo } from "../../services/ativoService";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function AddAtivoModal({ aberto, onFechar, onSalvo, valoresIniciais }) {
-  const { uid } = useAuth();
+  const { uid, revendedoraId } = useAuth();
 
   async function salvar(dados) {
-    const ativo = await criarAtivo(uid, dados);
+    const ativo = await criarAtivo(revendedoraId, uid, dados);
     onSalvo?.(ativo);
   }
 

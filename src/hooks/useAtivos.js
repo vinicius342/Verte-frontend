@@ -3,16 +3,16 @@ import { observarAtivos } from "../services/ativoService";
 import { useAuth } from "./useAuth";
 
 export function useAtivos() {
-  const { uid } = useAuth();
+  const { revendedoraId } = useAuth();
   const [ativos, setAtivos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!revendedoraId) return;
     setLoading(true);
     const cancelar = observarAtivos(
-      uid,
+      revendedoraId,
       (lista) => {
         setAtivos(lista);
         setErro(null);
@@ -25,7 +25,7 @@ export function useAtivos() {
       },
     );
     return cancelar;
-  }, [uid]);
+  }, [revendedoraId]);
 
   return { ativos, loading, erro };
 }

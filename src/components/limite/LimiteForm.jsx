@@ -76,7 +76,7 @@ function Campo({ dados, erros, alterar, campo, rotulo, obrigatorio, mono, ...res
 
 export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, limiteExistente }) {
   const navigate = useNavigate();
-  const { uid } = useAuth();
+  const { uid, revendedoraId } = useAuth();
   const [dados, setDados] = useState(() => dadosIniciais(limiteExistente));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
@@ -117,7 +117,7 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
 
   useEffect(() => {
     let ativo = true;
-    listarClientes()
+    listarClientes(revendedoraId)
       .then((lista) => {
         if (!ativo) return;
         setClientes(lista);
@@ -133,7 +133,7 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [revendedoraId]);
 
   useEffect(() => {
     if (carregandoClientes || clienteInicialAplicado) return;

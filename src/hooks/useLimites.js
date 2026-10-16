@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { observarLimites } from "../services/limiteService";
+import { useAuth } from "./useAuth";
 
 export function useLimites() {
+  const { revendedoraId } = useAuth();
   const [limites, setLimites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
+    if (!revendedoraId) return;
+    setLoading(true);
     const cancelar = observarLimites(
+      revendedoraId,
       (dados) => {
         setLimites(dados);
+        setErro(null);
         setLoading(false);
       },
       (erroSnapshot) => {
@@ -23,7 +29,7 @@ export function useLimites() {
       },
     );
     return cancelar;
-  }, []);
+  }, [revendedoraId]);
 
   return { limites, loading, erro };
 }

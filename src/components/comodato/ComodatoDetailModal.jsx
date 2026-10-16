@@ -30,7 +30,7 @@ function textoParaCopiar(comodato) {
 }
 
 export default function ComodatoDetailModal({ comodato, onFechar }) {
-  const { uid } = useAuth();
+  const { uid, revendedoraId } = useAuth();
   const printRef = useRef(null);
   const [processando, setProcessando] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -59,7 +59,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
 
   async function salvar(dados) {
     setErroGeral(null);
-    await atualizarComodato(comodato.id, dados);
+    await atualizarComodato(revendedoraId, comodato.id, dados);
     onFechar();
   }
 
@@ -70,7 +70,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
     try {
       setProcessando(true);
       setErroGeral(null);
-      await excluirComodato(comodato.id);
+      await excluirComodato(revendedoraId, comodato.id);
       onFechar();
     } catch (erro) {
       console.error("Falha ao excluir comodato:", erro);

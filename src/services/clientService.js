@@ -1,7 +1,4 @@
 import {
-  collection,
-  doc,
-  addDoc,
   setDoc,
   getDoc,
   getDocs,
@@ -11,10 +8,12 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  doc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getDb, getStorageInstance } from "../firebase/config";
+import { getStorageInstance } from "../firebase/config";
 import { comprimirImagem } from "../utils/imageCompressor";
+import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
 
 const COLECAO = "clientes";
 const PASTA_ANEXOS = "clientes-anexos";
@@ -49,6 +48,8 @@ function normalizar(dados) {
   };
 }
 
+// Os arquivos do Storage continuam em clientes-anexos/{clienteId}/..., o clienteId é único,
+// então não é preciso mover nada no Storage.
 async function enviarAnexo(clienteId, arquivo) {
   const arquivoFinal = await comprimirImagem(arquivo);
   const caminho = `${PASTA_ANEXOS}/${clienteId}/${Date.now()}-${arquivoFinal.name}`;
@@ -73,8 +74,8 @@ async function excluirAnexo(caminho) {
   }
 }
 
-export async function criarCliente(dados, uid) {
-  const referenciaDoc = doc(collection(getDb(), COLECAO));
+export async function criarCliente(revendedoraId, dados, uid) {
+  const referenciaDoc = doc(colecaoDaRevendedora(revendedoraId, COLECAO));
 
   const anexos = await Promise.all(
     (dados.anexosNovos ?? []).map((arquivo) => enviarAnexo(referenciaDoc.id, arquivo)),
@@ -92,17 +93,19 @@ export async function criarCliente(dados, uid) {
   return referenciaDoc.id;
 }
 
-export async function listarClientes() {
-  const snap = await getDocs(query(collection(getDb(), COLECAO), orderBy("nomeCliente")));
+export async function listarClientes(revendedoraId) {
+  const snap = await getDocs(
+    query(colecaoDaRevendedora(revendedoraId, COLECAO), orderBy("nomeCliente")),
+  );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function buscarClientePorId(id) {
-  const snap = await getDoc(doc(getDb(), COLECAO, id));
+export async function buscarClientePorId(revendedoraId, id) {
+  const snap = await getDoc(docDaRevendedora(revendedoraId, COLECAO, id));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-export async function atualizarCliente(id, dados, uid) {
+export async function atualizarCliente(revendedoraId, id, dados, uid) {
   const removidos = dados.anexosRemovidos ?? [];
 
   await Promise.all(removidos.map((caminho) => excluirAnexo(caminho)));
@@ -116,7 +119,7 @@ export async function atualizarCliente(id, dados, uid) {
   );
 
   // createdBy/createdAt nunca são sobrescritos.
-  await updateDoc(doc(getDb(), COLECAO, id), {
+  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), {
     ...normalizar(dados),
     anexos: [...anexosMantidos, ...anexosNovos],
     updatedAt: serverTimestamp(),
@@ -124,14 +127,14 @@ export async function atualizarCliente(id, dados, uid) {
   });
 }
 
-export async function excluirCliente(id, anexos = []) {
+export async function excluirCliente(revendedoraId, id, anexos = []) {
   await Promise.all(anexos.map((anexo) => excluirAnexo(anexo.caminho)));
-  await deleteDoc(doc(getDb(), COLECAO, id));
+  await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
 }
 
-export function observarClientes(callback, onError) {
+export function observarClientes(revendedoraId, callback, onError) {
   return onSnapshot(
-    query(collection(getDb(), COLECAO), orderBy("nomeCliente")),
+    query(colecaoDaRevendedora(revendedoraId, COLECAO), orderBy("nomeCliente")),
     (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     (erro) => onError?.(erro),
   );

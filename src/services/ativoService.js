@@ -1,22 +1,18 @@
 import {
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
-  where,
   getDocs,
 } from "firebase/firestore";
-import { getDb } from "../firebase/config";
+import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
 
 const COLECAO = "ativos";
-const db = getDb();
 
-export async function criarAtivo(uid, { codigo, material, tipo }) {
-  if (await codigoJaExiste(codigo)) throw erroDuplicado();
+export async function criarAtivo(revendedoraId, uid, { codigo, material, tipo }) {
+  if (await codigoJaExiste(revendedoraId, codigo)) throw erroDuplicado();
   const dados = {
     createdBy: uid,
     codigo: codigo.trim(),
@@ -24,7 +20,7 @@ export async function criarAtivo(uid, { codigo, material, tipo }) {
     tipo: tipo.trim(),
     createdAt: serverTimestamp(),
   };
-  const ref = await addDoc(collection(db, COLECAO), dados);
+  const ref = await addDoc(colecaoDaRevendedora(revendedoraId, COLECAO), dados);
   return { id: ref.id, ...dados, createdAt: new Date() };
 }
 
@@ -37,9 +33,10 @@ function normalizar(texto) {
     .trim();
 }
 
-async function codigoJaExiste(codigo, ignorarId) {
+// Duplicidade checada dentro da revendedora (todos os usuários dela compartilham os ativos).
+async function codigoJaExiste(revendedoraId, codigo, ignorarId) {
   const alvo = normalizar(codigo);
-  const snap = await getDocs(collection(db, COLECAO));
+  const snap = await getDocs(colecaoDaRevendedora(revendedoraId, COLECAO));
   return snap.docs.some((d) => d.id !== ignorarId && normalizar(d.data().codigo) === alvo);
 }
 
@@ -49,15 +46,14 @@ function erroDuplicado() {
   return erro;
 }
 
-export async function listarAtivos() {
-  const snap = await getDocs(collection(db, COLECAO));
+export async function listarAtivos(revendedoraId) {
+  const snap = await getDocs(colecaoDaRevendedora(revendedoraId, COLECAO));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export function observarAtivos(uid, onDados, onErro) {
-  const q = query(collection(db, COLECAO), where("createdBy", "==", uid));
+export function observarAtivos(revendedoraId, onDados, onErro) {
   return onSnapshot(
-    q,
+    query(colecaoDaRevendedora(revendedoraId, COLECAO)),
     (snap) => {
       const lista = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
@@ -68,9 +64,9 @@ export function observarAtivos(uid, onDados, onErro) {
   );
 }
 
-export async function atualizarAtivo(id, { codigo, material, tipo }) {
-  if (await codigoJaExiste(codigo, id)) throw erroDuplicado();
-  await updateDoc(doc(db, COLECAO, id), {
+export async function atualizarAtivo(revendedoraId, id, { codigo, material, tipo }) {
+  if (await codigoJaExiste(revendedoraId, codigo, id)) throw erroDuplicado();
+  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), {
     codigo: codigo.trim(),
     material: material.trim(),
     tipo: tipo.trim(),
@@ -78,6 +74,6 @@ export async function atualizarAtivo(id, { codigo, material, tipo }) {
   });
 }
 
-export async function excluirAtivo(id) {
-  await deleteDoc(doc(db, COLECAO, id));
+export async function excluirAtivo(revendedoraId, id) {
+  await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
 }

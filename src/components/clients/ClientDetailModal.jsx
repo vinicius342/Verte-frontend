@@ -46,7 +46,7 @@ function textoCadastroContatos(cliente, rota) {
 }
 
 export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false }) {
-  const { uid, usuario } = useAuth();
+  const { uid, usuario, revendedoraId } = useAuth();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [anexoEmAcao, setAnexoEmAcao] = useState(null);
@@ -82,7 +82,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   if (!cliente) return null;
 
   async function salvar(dados) {
-    await atualizarCliente(cliente.id, dados, uid);
+    await atualizarCliente(revendedoraId, cliente.id, dados, uid);
     setEditando(false);
   }
 
@@ -92,7 +92,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
 
     try {
       setExcluindo(true);
-      await excluirCliente(cliente.id, cliente.anexos ?? []);
+      await excluirCliente(revendedoraId, cliente.id, cliente.anexos ?? []);
       onFechar();
     } catch (erro) {
       console.error("Falha ao excluir cliente:", erro?.code, erro?.message);

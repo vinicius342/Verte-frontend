@@ -3,8 +3,10 @@ import Modal from "../common/Modal";
 import Button from "../common/Button";
 import AtivoForm from "./AtivoForm";
 import { atualizarAtivo, excluirAtivo } from "../../services/ativoService";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function AtivoDetailModal({ ativo, onFechar }) {
+  const { revendedoraId } = useAuth();
   const [editando, setEditando] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
@@ -18,7 +20,7 @@ export default function AtivoDetailModal({ ativo, onFechar }) {
   }
 
   async function salvar(dados) {
-    await atualizarAtivo(ativo.id, dados);
+    await atualizarAtivo(revendedoraId, ativo.id, dados);
     fechar();
   }
 
@@ -28,7 +30,7 @@ export default function AtivoDetailModal({ ativo, onFechar }) {
     try {
       setProcessando(true);
       setErroGeral(null);
-      await excluirAtivo(ativo.id);
+      await excluirAtivo(revendedoraId, ativo.id);
       fechar();
     } catch (erro) {
       console.error("Falha ao excluir ativo:", erro);
