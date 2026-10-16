@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../common/Button";
 import ClienteAutocomplete from "../common/ClienteAutocomplete";
-import { buscarConfiguracao } from "../../services/configService";
+import { useConfiguracoes } from "../../hooks/useConfiguracoes";
 import { listarClientes } from "../../services/clientService";
 import { useAuth } from "../../hooks/useAuth";
 import AtivoAutocomplete from "../ativo/AtivoAutoComplete";
@@ -70,22 +70,22 @@ function aplicarClienteSelecionado(atual, cliente) {
   };
 }
 
-function preencherComConfiguracao(atual, config) {
-  const vendedores = [config.nomeVendedor, config.codigoVendedor].filter(Boolean).join(" ");
-  const supervisores = [config.nomeSupervisor, config.codigoSupervisor].filter(Boolean).join(" ");
+function preencherComConfiguracao(atual, perfil, revendedora) {
+  const p = perfil ?? {};
+  const vendedores = [p.vendedor, p.vendedorCodigo].filter(Boolean).join(" ");
+  const supervisores = [p.supervisor, p.supervisorCodigo].filter(Boolean).join(" ");
 
   return {
     ...atual,
-    revenda: atual.revenda?.trim() ? atual.revenda : config.codigoRevenda ?? "",
+    revenda: atual.revenda?.trim() ? atual.revenda : revendedora?.codigoRevenda ?? "",
     vendedor: atual.vendedor?.trim() ? atual.vendedor : vendedores,
-    vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : config.codigoVendedor ?? "",
+    vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : p.vendedorCodigo ?? "",
     supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisores,
-    supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : config.codigoSupervisor ?? "",
+    supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : p.supervisorCodigo ?? "",
   };
 }
 
 export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }) {
-  const { uid, revendedoraId } = useAuth();
   const navigate = useNavigate();
   const clienteRef = useRef(null);
   const codPdvRef = useRef(null);
@@ -99,7 +99,8 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
-  const [carregandoConfig, setCarregandoConfig] = useState(true);
+  const { revendedoraId } = useAuth();
+  const { perfil, revendedora, loading: carregandoConfig } = useConfiguracoes();
   const [carregandoClientes, setCarregandoClientes] = useState(true);
   const [clientes, setClientes] = useState([]);
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
@@ -251,17 +252,9 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   }
 
   useEffect(() => {
-    let ativo = true;
-    buscarConfiguracao(uid)
-      .then((config) => {
-        if (!ativo || !config) return;
-        setDados((atual) => preencherComConfiguracao(atual, config));
-      })
-      .finally(() => ativo && setCarregandoConfig(false));
-    return () => {
-      ativo = false;
-    };
-  }, [uid]);
+    if (carregandoConfig || (!perfil && !revendedora)) return;
+    setDados((atual) => preencherComConfiguracao(atual, perfil, revendedora));
+  }, [carregandoConfig, perfil, revendedora]);
 
   function alterar(campo) {
     return (e) => {

@@ -6,6 +6,11 @@ import { getDb } from "../firebase/config";
 // Hoje só existe uma revendedora; novos cadastros caem nela por padrão.
 export const REVENDEDORA_PADRAO = "fortaleza-6391";
 
+export async function buscarVinculo(uid) {
+  const u = await buscarUsuario(uid);
+  return { revendedoraId: u?.revendedoraId ?? null, papel: u?.papel ?? null };
+}
+
 export async function criarPerfilUsuario(uid, dados) {
   await setDoc(
     doc(getDb(), "usuarios", uid),
@@ -13,6 +18,7 @@ export async function criarPerfilUsuario(uid, dados) {
       nome: dados.nome ?? null,
       email: dados.email ?? null,
       revendedoraId: dados.revendedoraId ?? REVENDEDORA_PADRAO,
+      papel: "vendedor",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },

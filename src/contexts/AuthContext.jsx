@@ -5,7 +5,7 @@ import {
   cadastrarUsuario as cadastrarService,
   observarUsuarioLogado,
 } from "../services/authService";
-import { buscarRevendedoraId } from "../services/userService";
+import { buscarVinculo } from "../services/userService";
 import { isFirebaseConfigured } from "../firebase/config";
 
 export const AuthContext = createContext(null);
@@ -13,20 +13,24 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [revendedoraId, setRevendedoraId] = useState(null);
+  const [papel, setPapel] = useState(null);
   const [loading, setLoading] = useState(true);
   const requisicao = useRef(0);
 
   // Só a busca mais recente vale: evita que uma resposta antiga sobrescreva a nova.
   const carregarPerfil = useCallback(async (uid) => {
     const minha = ++requisicao.current;
-    let id = null;
+    let vinculo = { revendedoraId: null, papel: null };
     try {
-      id = await buscarRevendedoraId(uid);
+      vinculo = await buscarVinculo(uid);
     } catch (e) {
-      console.error("Falha ao buscar a revendedora do usuário:", e);
+      console.error("Falha ao buscar o vínculo do usuário:", e);
     }
-    if (minha === requisicao.current) setRevendedoraId(id);
-    return id;
+    if (minha === requisicao.current) {
+      setRevendedoraId(vinculo.revendedoraId);
+      setPapel(vinculo.papel);
+    }
+    return vinculo.revendedoraId;
   }, []);
 
   useEffect(() => {
@@ -35,6 +39,7 @@ export function AuthProvider({ children }) {
       if (!u) {
         requisicao.current++;
         setRevendedoraId(null);
+        setPapel(null);
         setLoading(false);
         return;
       }
@@ -50,6 +55,8 @@ export function AuthProvider({ children }) {
       usuario,
       uid: usuario?.uid ?? null,
       revendedoraId,
+      papel,
+      podeConfigurar: papel === "admin" || papel === "gerente",
       nome: usuario?.displayName ?? usuario?.email ?? null,
       loading,
       configurado: isFirebaseConfigured(),
@@ -62,7 +69,7 @@ export function AuthProvider({ children }) {
         return u;
       },
     }),
-    [usuario, revendedoraId, loading, carregarPerfil],
+    [usuario, revendedoraId, papel, loading, carregarPerfil],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
