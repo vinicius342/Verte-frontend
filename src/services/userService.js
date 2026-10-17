@@ -8,7 +8,7 @@ export const REVENDEDORA_PADRAO = "fortaleza-6391";
 
 export async function buscarVinculo(uid) {
   const u = await buscarUsuario(uid);
-  return { revendedoraId: u?.revendedoraId ?? null, papel: u?.papel ?? null };
+  return { revendedoraId: u?.revendedoraId ?? null, papel: u?.papel ?? null, ativo: u?.ativo !== false };
 }
 
 export async function criarPerfilUsuario(uid, dados) {

@@ -3,7 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { logout } from "../../services/authService";
 
 export default function Sidebar({ aberta, onFechar, onAdicionar }) {
-  const { usuario, nome } = useAuth();
+  const { usuario, nome, podeConfigurar } = useAuth();
   const navigate = useNavigate();
 
   async function sair() {
@@ -47,6 +47,11 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
             <button type="button" className="sidebar-item" onClick={() => irPara("/ativos")}>
               Ativos
             </button>
+            {podeConfigurar && (
+              <button type="button" className="sidebar-item" onClick={() => irPara("/usuarios")}>
+                Usuários
+              </button>
+            )}
             <button type="button" className="sidebar-item" onClick={() => irPara("/configuracoes")}>
               Configurações
             </button>

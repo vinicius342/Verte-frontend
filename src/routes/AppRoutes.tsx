@@ -8,7 +8,9 @@ import PrivateRoute from "./PrivateRoute"; // ajuste o caminho conforme onde ele
 import RotaPublica from "./RotaPublica";
 import LimitePage from "@/pages/LimitePage";
 import AtivosPage from "@/pages/AtivosPage";
-// import Signup from "../pages/Signup";
+import UsuariosPage from "@/pages/Usuarios";
+import RotaGerente from "./RotaGerente";
+import Signup from "../pages/Signup";
 
 export default function AppRoutes(): JSX.Element {
   return (
@@ -24,9 +26,12 @@ export default function AppRoutes(): JSX.Element {
         <Route path="/comodato" element={<ComodatoPage />} />
         <Route path="/limite" element={<LimitePage />} />
         <Route path="/ativos" element={<AtivosPage />} />
+        <Route element={<RotaGerente />}>
+          <Route path="/usuarios" element={<UsuariosPage />} />
+        </Route>
       </Route>
 
-      {/* <Route path="/signup" element={<Signup />} /> */}
+      <Route path="/signup" element={<Signup />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

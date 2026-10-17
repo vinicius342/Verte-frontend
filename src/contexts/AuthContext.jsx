@@ -20,16 +20,22 @@ export function AuthProvider({ children }) {
   // Só a busca mais recente vale: evita que uma resposta antiga sobrescreva a nova.
   const carregarPerfil = useCallback(async (uid) => {
     const minha = ++requisicao.current;
-    let vinculo = { revendedoraId: null, papel: null };
+    let vinculo = { revendedoraId: null, papel: null, ativo: true };
     try {
       vinculo = await buscarVinculo(uid);
     } catch (e) {
       console.error("Falha ao buscar o vínculo do usuário:", e);
     }
-    if (minha === requisicao.current) {
-      setRevendedoraId(vinculo.revendedoraId);
-      setPapel(vinculo.papel);
+    if (minha !== requisicao.current) return vinculo.revendedoraId;
+
+    // Conta desativada: encerra a sessão; o listener de auth limpa o estado.
+    if (vinculo.ativo === false) {
+      await logoutService();
+      return null;
     }
+
+    setRevendedoraId(vinculo.revendedoraId);
+    setPapel(vinculo.papel);
     return vinculo.revendedoraId;
   }, []);
 
