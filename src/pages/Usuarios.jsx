@@ -1,14 +1,28 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import {
+  Plus, Pencil, UserX, UserCheck, Shield, BadgeDollarSign, Eye, Briefcase,
+  Users, AlertTriangle, CheckCircle2, Truck
+} from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
-import Button from "../components/common/Button";
 import UsuarioModal from "../components/users/UsuarioModal";
 import { useAuth } from "../hooks/useAuth";
 import { useUsuarios } from "../hooks/useUsuarios";
 import { definirAtivo } from "../services/usuarioAdminService";
+import "../styles/usuarios.css";
 
-const ROTULO_PAPEL = { vendedor: "Vendedor", supervisor: "Supervisor", gerente: "Gerente", admin: "Admin" };
+const PAPEIS = {
+  admin: { rotulo: "Admin", Icone: Shield },
+  gerente: { rotulo: "Gerente", Icone: Briefcase },
+  supervisor: { rotulo: "Supervisor", Icone: Eye },
+  vendedor: { rotulo: "Vendedor", Icone: BadgeDollarSign },
+  motorista: { rotulo: "Motorista", Icone: Truck },
+};
+
+function iniciais(u) {
+  const base = (u.nome || u.email || "?").trim();
+  return base.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
+}
 
 export default function UsuariosPage() {
   const { uid, papel: meuPapel } = useAuth();
@@ -17,12 +31,13 @@ export default function UsuariosPage() {
   const [modal, setModal] = useState(null); // null | { usuario?: obj }
   const [aviso, setAviso] = useState(null);
   const [erroAcao, setErroAcao] = useState(null);
+  const [acaoId, setAcaoId] = useState(null);
 
-  // Admin gerencia todos (menos a si mesmo); gerente só vendedores
+  // Admin gerencia todos (menos a si mesmo); gerente só vendedor/supervisor
   function podeGerenciar(u) {
     if (u.id === uid) return false;
     if (meuPapel === "admin") return true;
-    return meuPapel === "gerente" && ["vendedor", "supervisor"].includes(u.papel);
+    return meuPapel === "gerente" && ["vendedor", "motorista", "supervisor"].includes(u.papel);
   }
 
   async function alternarAtivo(u) {
@@ -33,61 +48,137 @@ export default function UsuariosPage() {
     if (!window.confirm(msg)) return;
 
     setErroAcao(null);
+    setAcaoId(u.id);
     try {
       await definirAtivo(u.id, !desativar);
       setAviso(desativar ? "Usuário desativado." : "Usuário reativado.");
       recarregar();
     } catch {
       setErroAcao("Não foi possível alterar o usuário.");
+    } finally {
+      setAcaoId(null);
     }
   }
 
   return (
-    <div className="pagina">
+    <div className="pagina usuarios-pagina">
       <Header onAbrirMenu={() => setMenuAberto(true)} />
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
-      <main className="conteudo">
-        <div className="conteudo-topo">
-          <h1 className="titulo-secao">Usuários</h1>
-          <span className="contador mono">{usuarios.length}</span>
+      <main className="conteudo usuarios-conteudo">
+        <div className="usuarios-topo">
+          <h1 className="usuarios-topo__titulo">Usuários</h1>
+          <span className="usuarios-contador">
+            {usuarios.length} {usuarios.length === 1 ? "usuário" : "usuários"}
+          </span>
         </div>
 
-        {aviso ? <p className="campo-dica">{aviso}</p> : null}
-        {erroAcao ? <p className="estado-erro">{erroAcao}</p> : null}
-        {loading ? <p className="estado-vazio">Carregando usuários…</p> : null}
-        {erro ? <p className="estado-erro">{erro}</p> : null}
+        {aviso ? (
+          <div className="usuarios-aviso usuarios-aviso--sucesso">
+            <CheckCircle2 size={18} aria-hidden="true" />
+            {aviso}
+          </div>
+        ) : null}
+        {erroAcao ? (
+          <div className="usuarios-aviso usuarios-aviso--erro">
+            <AlertTriangle size={18} aria-hidden="true" />
+            {erroAcao}
+          </div>
+        ) : null}
 
-        {!loading && !erro ? (
-          <ul className="lista-clientes">
+        {loading ? (
+          <div className="usuarios-lista" aria-busy="true">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="usuarios-esqueleto" />
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && erro ? (
+          <div className="usuarios-estado usuarios-estado--erro">
+            <AlertTriangle aria-hidden="true" />
+            <p className="usuarios-estado__titulo">Não foi possível carregar</p>
+            <p>{erro}</p>
+          </div>
+        ) : null}
+
+        {!loading && !erro && usuarios.length === 0 ? (
+          <div className="usuarios-estado">
+            <Users aria-hidden="true" />
+            <p className="usuarios-estado__titulo">Nenhum usuário ainda</p>
+            <p>Toque em "Novo usuário" para começar.</p>
+          </div>
+        ) : null}
+
+        {!loading && !erro && usuarios.length > 0 ? (
+          <ul className="usuarios-lista">
             {usuarios.map((u) => {
               const inativo = u.ativo === false;
+              const souEu = u.id === uid;
+              const info = PAPEIS[u.papel];
+              const Icone = info?.Icone;
+              const ocupado = acaoId === u.id;
+
               return (
-                <li key={u.id} className="linha-cliente" style={inativo ? { opacity: 0.55 } : undefined}>
-                  <div className="linha-botao">
-                    <span className="linha-texto">
-                      <span className="linha-nome">
-                        {u.nome || "Sem nome"}
-                        {u.id === uid ? " (você)" : ""}
-                      </span>
-                      <span className="linha-endereco">{u.email}</span>
-                    </span>
-                    <span className="mono">
-                      {ROTULO_PAPEL[u.papel] ?? "—"}
-                      {inativo ? " · Inativo" : ""}
-                    </span>
+                <li key={u.id} className={`usuario-linha ${inativo ? "usuario-linha--inativo" : ""}`}>
+                  <div className="usuario-linha__info">
+                    <div className="usuario-linha__avatar" aria-hidden="true">
+                      {iniciais(u)}
+                    </div>
+                    <div className="usuario-linha__textos">
+                      <div className="usuario-linha__nome-linha">
+                        <span className="usuario-linha__nome">{u.nome || "Sem nome"}</span>
+                        {souEu ? <span className="usuario-linha__voce">você</span> : null}
+                      </div>
+                      <p className="usuario-linha__email">{u.email}</p>
+                    </div>
                   </div>
-                  <div className="formulario-acoes">
-                    {(podeGerenciar(u) || u.id === uid) && (
-                      <Button variant="ghost" onClick={() => setModal({ usuario: u })}>
-                        Editar
-                      </Button>
-                    )}
-                    {podeGerenciar(u) && (
-                      <Button variant="ghost" onClick={() => alternarAtivo(u)}>
-                        {inativo ? "Reativar" : "Desativar"}
-                      </Button>
-                    )}
+
+                  <div className="usuario-linha__acoes">
+                    {inativo ? (
+                      <span className="usuario-selo usuario-selo--inativo">
+                        <UserX aria-hidden="true" />
+                        Inativo
+                      </span>
+                    ) : info ? (
+                      <span className={`usuario-selo usuario-selo--${u.papel}`}>
+                        <Icone aria-hidden="true" />
+                        {info.rotulo}
+                      </span>
+                    ) : null}
+
+                    <div className="usuario-linha__botoes">
+                      {(podeGerenciar(u) || souEu) && (
+                        <button
+                          type="button"
+                          className="usuarios-botao usuarios-botao--contorno"
+                          onClick={() => setModal({ usuario: u })}
+                        >
+                          <Pencil aria-hidden="true" /> Editar
+                        </button>
+                      )}
+
+                      {podeGerenciar(u) &&
+                        (inativo ? (
+                          <button
+                            type="button"
+                            className={`usuarios-botao usuarios-botao--sucesso ${ocupado ? "usuarios-botao--carregando" : ""}`}
+                            disabled={ocupado}
+                            onClick={() => alternarAtivo(u)}
+                          >
+                            <UserCheck aria-hidden="true" /> Reativar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`usuarios-botao usuarios-botao--perigo ${ocupado ? "usuarios-botao--carregando" : ""}`}
+                            disabled={ocupado}
+                            onClick={() => alternarAtivo(u)}
+                          >
+                            <UserX aria-hidden="true" /> Desativar
+                          </button>
+                        ))}
+                    </div>
                   </div>
                 </li>
               );
@@ -96,24 +187,31 @@ export default function UsuariosPage() {
         ) : null}
       </main>
 
-      <Button
-        className="botao-adicionar-fixo"
+      <button
+        type="button"
+        className="usuarios-fab"
         aria-label="Novo usuário"
         onClick={() => {
           setAviso(null);
+          setErroAcao(null);
           setModal({});
         }}
       >
-        <Plus aria-hidden="true" size={22} strokeWidth={2.4} />
+        <Plus aria-hidden="true" />
         <span>Novo usuário</span>
-      </Button>
+      </button>
 
       {modal && (
         <UsuarioModal
           usuario={modal.usuario}
+          usuarios={usuarios}
           onFechar={() => setModal(null)}
           onSalvo={(nome, editou) => {
             setAviso(editou ? `Usuário ${nome} atualizado.` : `Usuário ${nome} criado.`);
+            recarregar();
+          }}
+          onExcluido={(nome) => {
+            setAviso(`Usuário ${nome} excluído.`);
             recarregar();
           }}
         />
