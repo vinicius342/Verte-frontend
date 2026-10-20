@@ -52,9 +52,14 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
                 Usuários
               </button>
             )}
-            <button type="button" className="sidebar-item" onClick={() => irPara("/configuracoes")}>
-              Configurações
+            <button type="button" className="sidebar-item" onClick={() => irPara("/perfil")}>
+              Meu perfil
             </button>
+            {podeConfigurar && (
+              <button type="button" className="sidebar-item" onClick={() => irPara("/configuracoes")}>
+                Configurações
+              </button>
+            )}
             <button type="button" className="sidebar-item sidebar-sair" onClick={sair}>
               Sair
             </button>

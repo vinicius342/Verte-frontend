@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import ConfiguracoesPage from "../pages/ConfiguracoesPage";
+import PerfilPage from "../pages/PerfilPage";
 import ComodatoPage from "../pages/ComodatoPage";
 import PrivateRoute from "./PrivateRoute"; // ajuste o caminho conforme onde ele está
 import RotaPublica from "./RotaPublica";
@@ -22,11 +23,12 @@ export default function AppRoutes(): JSX.Element {
       </Route>
 
       <Route element={<PrivateRoute />}>
-        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
         <Route path="/comodato" element={<ComodatoPage />} />
         <Route path="/limite" element={<LimitePage />} />
         <Route path="/ativos" element={<AtivosPage />} />
         <Route element={<RotaGerente />}>
+          <Route path="/configuracoes" element={<ConfiguracoesPage />} />
           <Route path="/usuarios" element={<UsuariosPage />} />
         </Route>
       </Route>
