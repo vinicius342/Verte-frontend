@@ -1,8 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "./Button";
+import AssinaturaTelaCheia from "./AssinaturaTelaCheia";
+import "../../styles/assinatura.css";
 
 const LARGURA_MAX = 500;
 const ALTURA_MAX = 200;
+
+// Celular (toque) ou tela estreita: desenhar abre uma tela cheia em vez do canvas pequeno.
+const CONSULTA_MOBILE = "(pointer: coarse), (max-width: 640px)";
+
+function useEhMobile() {
+  const [mobile, setMobile] = useState(() => window.matchMedia(CONSULTA_MOBILE).matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia(CONSULTA_MOBILE);
+    const aoMudar = (e) => setMobile(e.matches);
+    mq.addEventListener("change", aoMudar);
+    return () => mq.removeEventListener("change", aoMudar);
+  }, []);
+
+  return mobile;
+}
 
 function redimensionarImagem(arquivo) {
   return new Promise((resolve, reject) => {
@@ -36,13 +54,16 @@ export default function SignaturePad({ valor, onAlterar }) {
   const desenhandoRef = useRef(false);
   const ultimoPontoRef = useRef(null);
   const inputArquivoRef = useRef(null);
+  const mobile = useEhMobile();
   const [vazio, setVazio] = useState(!valor);
   const [modo, setModo] = useState("desenhar"); // "desenhar" | "imagem"
   const [erroImagem, setErroImagem] = useState(null);
+  const [telaCheia, setTelaCheia] = useState(false);
 
   useEffect(() => {
-    if (modo !== "desenhar") return;
+    if (modo !== "desenhar" || mobile) return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     const largura = canvas.offsetWidth;
@@ -57,12 +78,18 @@ export default function SignaturePad({ valor, onAlterar }) {
 
     if (valor) {
       const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, largura, altura);
+      img.onload = () => {
+        // Mantém a proporção (assinaturas feitas no celular têm tamanho próprio)
+        const escala = Math.min(largura / img.width, altura / img.height);
+        const w = img.width * escala;
+        const h = img.height * escala;
+        ctx.drawImage(img, (largura - w) / 2, (altura - h) / 2, w, h);
+      };
       img.src = valor;
       setVazio(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modo]);
+  }, [modo, mobile]);
 
   function posicaoRelativa(evento) {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -96,8 +123,8 @@ export default function SignaturePad({ valor, onAlterar }) {
   }
 
   function limpar() {
-    if (modo === "desenhar") {
-      const canvas = canvasRef.current;
+    const canvas = canvasRef.current;
+    if (modo === "desenhar" && canvas) {
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
@@ -133,6 +160,8 @@ export default function SignaturePad({ valor, onAlterar }) {
     onAlterar("");
   }
 
+  const temAssinatura = Boolean(valor) && !vazio;
+
   return (
     <div className="assinatura-campo">
       <div className="assinatura-alternador">
@@ -153,18 +182,33 @@ export default function SignaturePad({ valor, onAlterar }) {
       </div>
 
       {modo === "desenhar" ? (
-        <>
-          <canvas
-            ref={canvasRef}
-            className="assinatura-canvas"
-            onPointerDown={iniciar}
-            onPointerMove={desenhar}
-            onPointerUp={finalizar}
-            onPointerLeave={finalizar}
-            onPointerCancel={finalizar}
-          />
-          {vazio ? <span className="assinatura-dica">Assine aqui</span> : null}
-        </>
+        mobile ? (
+          <div className="assinatura-mobile">
+            <div className="assinatura-mobile__previa">
+              {temAssinatura ? (
+                <img src={valor} alt="Sua assinatura" className="assinatura-mobile__imagem" />
+              ) : (
+                <span className="assinatura-mobile__vazio">Nenhuma assinatura</span>
+              )}
+            </div>
+            <button type="button" className="assinatura-mobile__botao" onClick={() => setTelaCheia(true)}>
+              {temAssinatura ? "Refazer assinatura" : "Assinar"}
+            </button>
+          </div>
+        ) : (
+          <>
+            <canvas
+              ref={canvasRef}
+              className="assinatura-canvas"
+              onPointerDown={iniciar}
+              onPointerMove={desenhar}
+              onPointerUp={finalizar}
+              onPointerLeave={finalizar}
+              onPointerCancel={finalizar}
+            />
+            {vazio ? <span className="assinatura-dica">Assine aqui</span> : null}
+          </>
+        )
       ) : (
         <div className="assinatura-upload">
           {valor && !vazio ? (
@@ -188,6 +232,17 @@ export default function SignaturePad({ valor, onAlterar }) {
           Limpar
         </Button>
       </div>
+
+      {telaCheia ? (
+        <AssinaturaTelaCheia
+          onCancelar={() => setTelaCheia(false)}
+          onConfirmar={(dataUrl) => {
+            onAlterar(dataUrl);
+            setVazio(false);
+            setTelaCheia(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

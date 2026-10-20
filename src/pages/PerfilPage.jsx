@@ -8,22 +8,20 @@ import { useAuth } from "../hooks/useAuth";
 import { usePerfil } from "../hooks/usePerfil";
 import { salvarPerfil } from "../services/perfilService";
 
-function PerfilForm({ perfil, uid, revendedoraId }) {
-  const [dados, setDados] = useState({
-    vendedor: perfil?.vendedor ?? "",
-    vendedorCodigo: perfil?.vendedorCodigo ?? "",
-    supervisor: perfil?.supervisor ?? "",
-    supervisorCodigo: perfil?.supervisorCodigo ?? "",
-    assinatura: perfil?.assinatura ?? "",
-  });
+function CampoLeitura({ rotulo, valor, mono = false }) {
+  return (
+    <div className="campo">
+      <span className="campo-rotulo">{rotulo}</span>
+      <span className={`campo-valor ${mono ? "mono" : ""}`}>{valor || "—"}</span>
+    </div>
+  );
+}
+
+function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorErro, uid, revendedoraId }) {
+  const [assinatura, setAssinatura] = useState(perfil?.assinatura ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
   const [sucesso, setSucesso] = useState(false);
-
-  const alterar = (campo) => (e) => {
-    setSucesso(false);
-    setDados((atual) => ({ ...atual, [campo]: e.target.value }));
-  };
 
   async function enviar(e) {
     e.preventDefault();
@@ -31,7 +29,7 @@ function PerfilForm({ perfil, uid, revendedoraId }) {
     setSucesso(false);
     setSalvando(true);
     try {
-      await salvarPerfil(revendedoraId, uid, dados);
+      await salvarPerfil(revendedoraId, uid, { assinatura });
       setSucesso(true);
     } catch (err) {
       console.error("Erro ao salvar perfil:", err);
@@ -43,47 +41,43 @@ function PerfilForm({ perfil, uid, revendedoraId }) {
 
   return (
     <form className="formulario formulario-cartao" onSubmit={enviar} noValidate>
-      <h2 className="titulo-secao">Meu perfil</h2>
-
       <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Nome do vendedor</span>
-          <input className="campo-input" value={dados.vendedor} onChange={alterar("vendedor")} />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Código do vendedor</span>
-          <input className="campo-input mono" value={dados.vendedorCodigo} onChange={alterar("vendedorCodigo")} />
-        </label>
+        <CampoLeitura rotulo="Nome" valor={perfil?.vendedor} />
+        <CampoLeitura rotulo="Código" valor={perfil?.vendedorCodigo} mono />
       </div>
 
-      <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Nome do supervisor</span>
-          <input className="campo-input" value={dados.supervisor} onChange={alterar("supervisor")} />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Código do supervisor</span>
-          <input className="campo-input mono" value={dados.supervisorCodigo} onChange={alterar("supervisorCodigo")} />
-        </label>
-      </div>
+      {exigeSupervisor ? (
+        supervisorEncontrado ? (
+          <div className="campo-linha">
+            <CampoLeitura rotulo="Supervisor" valor={perfil?.supervisor} />
+            <CampoLeitura rotulo="Código do supervisor" valor={perfil?.supervisorCodigo} mono />
+          </div>
+        ) : (
+          <p className="estado-erro">
+            {supervisorErro
+              ? "Não foi possível carregar os dados do seu supervisor. Tente novamente ou entre em contato com seu gerente ou administrador."
+              : "Você ainda não tem um supervisor vinculado. Entre em contato com seu gerente ou administrador para resolver."}
+          </p>
+        )
+      ) : null}
 
       <div className="campo">
         <span className="campo-rotulo">Assinatura</span>
         <SignaturePad
-          valor={dados.assinatura}
+          valor={assinatura}
           onAlterar={(dataUrl) => {
             setSucesso(false);
-            setDados((atual) => ({ ...atual, assinatura: dataUrl }));
+            setAssinatura(dataUrl);
           }}
         />
       </div>
 
       {erro ? <p className="estado-erro">{erro}</p> : null}
-      {sucesso ? <p className="estado-sucesso">Perfil salvo.</p> : null}
+      {sucesso ? <p className="estado-sucesso">Assinatura salva.</p> : null}
 
       <div className="formulario-acoes">
         <Button type="submit" disabled={salvando}>
-          {salvando ? "Salvando…" : "Salvar perfil"}
+          {salvando ? "Salvando…" : "Salvar assinatura"}
         </Button>
       </div>
     </form>
@@ -91,14 +85,14 @@ function PerfilForm({ perfil, uid, revendedoraId }) {
 }
 
 export default function PerfilPage() {
-  const { usuario, uid, revendedoraId, loading: loadingAuth } = useAuth();
-  const { perfil, loading, erro } = usePerfil();
+  const { usuario: usuarioAuth, uid, revendedoraId, loading: loadingAuth } = useAuth();
+  const { perfil, supervisor, exigeSupervisor, supervisorErro, loading, erro } = usePerfil();
   const [menuAberto, setMenuAberto] = useState(false);
 
   let conteudo;
   if (loadingAuth || loading) {
     conteudo = <p className="estado-vazio">Carregando…</p>;
-  } else if (!usuario) {
+  } else if (!usuarioAuth) {
     conteudo = (
       <p className="estado-vazio">
         Entre com sua conta para acessar seu perfil. <Link to="/login">Fazer login</Link>
@@ -109,7 +103,16 @@ export default function PerfilPage() {
   } else if (erro) {
     conteudo = <p className="estado-erro">{erro}</p>;
   } else {
-    conteudo = <PerfilForm perfil={perfil} uid={uid} revendedoraId={revendedoraId} />;
+    conteudo = (
+      <PerfilForm
+        perfil={perfil}
+        exigeSupervisor={exigeSupervisor}
+        supervisorEncontrado={Boolean(supervisor)}
+        supervisorErro={supervisorErro}
+        uid={uid}
+        revendedoraId={revendedoraId}
+      />
+    );
   }
 
   return (

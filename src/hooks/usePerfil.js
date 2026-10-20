@@ -1,11 +1,25 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 import { buscarPerfil } from "../services/perfilService";
+import { buscarUsuario } from "../services/userService";
 
-// Carrega o perfil (vendedor, supervisor, assinatura) do usuário logado.
+const PAPEIS_COM_SUPERVISOR = ["vendedor", "motorista"];
+
+const ESTADO_INICIAL = {
+  perfil: null,
+  usuario: null,
+  supervisor: null,
+  exigeSupervisor: false,
+  supervisorErro: false,
+};
+
+// Carrega o perfil do usuário logado. Nome, código e supervisor vêm do cadastro
+// em "usuarios" (editado por admin/gerente); só a assinatura é do próprio usuário.
+// O `perfil` retornado já traz vendedor/vendedorCodigo/supervisor/supervisorCodigo
+// atualizados, então quem consome (Comodato, Limite...) não precisa mudar.
 export function usePerfil() {
   const { uid, revendedoraId, loading: loadingAuth } = useAuth();
-  const [perfil, setPerfil] = useState(null);
+  const [estado, setEstado] = useState(ESTADO_INICIAL);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
@@ -17,25 +31,51 @@ export function usePerfil() {
     }
 
     let cancelado = false;
-    setLoading(true);
-    setErro(null);
 
-    buscarPerfil(revendedoraId, uid)
-      .then((dados) => {
-        if (!cancelado) setPerfil(dados);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar perfil:", err);
-        if (!cancelado) setErro(err?.message ?? "Não foi possível carregar o perfil.");
-      })
-      .finally(() => {
+    async function carregar() {
+      setLoading(true);
+      setErro(null);
+      try {
+        const [perfilDoc, usuario] = await Promise.all([
+          buscarPerfil(revendedoraId, uid),
+          buscarUsuario(uid),
+        ]);
+
+        const exigeSupervisor = PAPEIS_COM_SUPERVISOR.includes(usuario?.papel);
+
+        let supervisor = null;
+        let supervisorErro = false;
+        if (exigeSupervisor && usuario?.supervisorId) {
+          try {
+            supervisor = await buscarUsuario(usuario.supervisorId);
+          } catch (e) {
+            console.error("Erro ao carregar supervisor:", e);
+            supervisorErro = true;
+          }
+        }
+
+        const perfil = {
+          ...(perfilDoc ?? {}),
+          vendedor: usuario?.nome ?? perfilDoc?.vendedor ?? "",
+          vendedorCodigo: usuario?.codigo ?? perfilDoc?.vendedorCodigo ?? "",
+          supervisor: supervisor?.nome ?? "",
+          supervisorCodigo: supervisor?.codigo ?? "",
+        };
+
+        if (!cancelado) setEstado({ perfil, usuario, supervisor, exigeSupervisor, supervisorErro });
+      } catch (e) {
+        console.error("Erro ao carregar perfil:", e);
+        if (!cancelado) setErro(e?.message ?? "Não foi possível carregar o perfil.");
+      } finally {
         if (!cancelado) setLoading(false);
-      });
+      }
+    }
 
+    carregar();
     return () => {
       cancelado = true;
     };
   }, [uid, revendedoraId, loadingAuth]);
 
-  return { perfil, loading, erro };
+  return { ...estado, loading, erro };
 }
