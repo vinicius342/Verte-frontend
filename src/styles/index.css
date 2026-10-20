@@ -167,13 +167,23 @@ input.mono {
   color: var(--cabecalho-texto);
   padding: 0.75rem 1rem 0.9rem;
 }
+.cabecalho-conteudo {
+  max-width: 992px;
+  margin-inline: auto;
+}
 .cabecalho-topo {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 0.75rem;
-  min-height: 2.25rem;
+  min-height: 2.5rem;
+}
+/* Linha separadora só aparece quando há barra de busca abaixo */
+.cabecalho-topo-com-busca {
+  padding-bottom: 0.9rem;
+  /* margin-bottom: 0.9rem; */
+  /* border-bottom: 1px solid var(--cabecalho-linha); */
 }
 .menu-botao {
   background: transparent;
@@ -189,6 +199,60 @@ input.mono {
   transition:
     background-color 0.2s ease,
     transform 0.2s ease;
+}
+
+/* Avatar do usuário (cabeçalho) + dropdown Meu perfil / Sair */
+.cabecalho-usuario {
+  position: relative;
+  margin-left: auto;
+}
+.cabecalho-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--cabecalho-borda);
+  background: var(--mapa);
+  color: #fff;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.cabecalho-avatar:focus-visible {
+  outline: 2px solid var(--cabecalho-pino);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.cabecalho-usuario-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  z-index: 30;
+  min-width: 12.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem;
+  border: 1px solid var(--cabecalho-linha);
+  border-radius: 14px;
+  background: color-mix(in oklab, black 22%, var(--cabecalho));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  animation: cabecalho-menu-descer 0.16s ease-out;
+}
+@keyframes cabecalho-menu-descer {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cabecalho-usuario-menu {
+    animation: none;
+  }
 }
 .marca {
   position: absolute;
@@ -210,6 +274,15 @@ input.mono {
   font-weight: 800;
   letter-spacing: -0.01em;
   font-size: 1.15rem;
+}
+/* Pino em SVG no cabeçalho (o SVG já é centralizado pelo flex, sem o ajuste do glifo) */
+.marca-pino-icone {
+  display: flex;
+  transform: none;
+}
+.marca-pino-icone svg {
+  width: 1.4rem;
+  height: 1.4rem;
 }
 
 .busca {
@@ -239,6 +312,41 @@ input.mono {
 }
 .busca-campo:focus {
   outline: none;
+}
+
+/* Busca dentro do cabeçalho (sobre fundo escuro) */
+.cabecalho .busca {
+  gap: 0.65rem;
+  padding: 0 1rem;
+  border-radius: 14px;
+  border-color: var(--cabecalho-linha);
+  background: color-mix(in oklab, var(--cabecalho-texto) 10%, transparent);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.cabecalho .busca:focus-within {
+  border-color: color-mix(in oklab, var(--cabecalho-texto) 45%, transparent);
+  background: color-mix(in oklab, var(--cabecalho-texto) 14%, transparent);
+}
+.cabecalho .busca-icone {
+  display: flex;
+  color: var(--cabecalho-texto-suave);
+}
+.cabecalho .busca-icone svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.cabecalho .busca-campo {
+  color: var(--cabecalho-texto);
+  padding: 0.8rem 0;
+}
+.cabecalho .busca-campo::placeholder {
+  color: var(--cabecalho-texto-suave);
+  opacity: 1;
+}
+.cabecalho .busca-campo::-webkit-search-cancel-button {
+  filter: invert(1);
 }
 
 /* ---------- Conteúdo e lista ---------- */
@@ -461,8 +569,12 @@ input.mono {
   gap: 0.6rem;
 }
 .sidebar-marca-pino {
-  font-size: 2.2rem;
+  display: flex;
   transform: translateY(0); /* ajuste o valor até alinhar */
+}
+.sidebar-marca-pino .sidebar-icone {
+  width: 1.9rem;
+  height: 1.9rem;
 }
 .sidebar-marca-nome {
   font-size: 1.9rem;
@@ -474,17 +586,148 @@ input.mono {
   right: 0;
   color: var(--cabecalho-texto);
 }
-.sidebar-rodape {
+
+/* Navegação principal */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+  overflow-y: auto;
+}
+.sidebar-icone {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+.sidebar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  text-align: left;
+  padding: 0.8rem 0.85rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cabecalho-texto-suave);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.sidebar-item span {
+  min-width: 0;
+}
+.sidebar-item:hover {
+  background: color-mix(in oklab, var(--cabecalho-texto) 7%, transparent);
+  color: var(--cabecalho-texto);
+}
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--cabecalho-pino);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+.sidebar-item-ativo,
+.sidebar-item-ativo:hover {
+  background: color-mix(in oklab, var(--cabecalho-texto) 12%, transparent);
+  color: var(--cabecalho-texto);
+}
+.sidebar-item-ativo::before {
+  content: "";
+  position: absolute;
+  left: -0.8rem;
+  top: 50%;
+  width: 3px;
+  height: 1.4rem;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background: var(--cabecalho-pino);
+}
+.sidebar-sair {
+  color: var(--cabecalho-perigo);
+}
+.sidebar-sair:hover {
+  color: var(--cabecalho-perigo-hover);
+}
+
+/* Usuário (rodapé) + dropdown Meu perfil / Sair */
+.sidebar-usuario {
   margin-top: auto;
   margin-inline: -1rem;
   margin-bottom: -1rem;
-  padding: 1rem;
+}
+.sidebar-menu-usuario {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  text-align: center;
-  background: var(--sidebar-rodape-fundo);
+  gap: 0.1rem;
+  margin: 0 0.75rem 0.75rem;
+  padding: 0.35rem;
+  border: 1px solid var(--cabecalho-linha);
+  border-radius: 14px;
+  background: color-mix(in oklab, black 22%, var(--cabecalho));
+  animation: sidebar-menu-subir 0.16s ease-out;
+}
+.sidebar-item-menu {
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+@keyframes sidebar-menu-subir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-menu-usuario {
+    animation: none;
+  }
+}
+.sidebar-rodape {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  background: color-mix(in oklab, black 15%, var(--cabecalho));
+  border: none;
   border-top: 1px solid var(--cabecalho-linha);
+  text-align: left;
+  font-family: var(--fonte-texto);
+  color: var(--cabecalho-texto);
+  cursor: pointer;
+}
+.sidebar-rodape:focus-visible {
+  outline: 2px solid var(--cabecalho-pino);
+  outline-offset: -2px;
+  border-radius: 0;
+}
+.sidebar-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mapa);
+  color: #fff;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+.sidebar-rodape-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
 }
 .sidebar-rodape-rotulo {
   font-size: 0.72rem;
@@ -501,26 +744,14 @@ input.mono {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sidebar-item {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--cabecalho-linha);
-  text-align: left;
-  padding: 0.85rem 0.25rem;
-  font-family: var(--fonte-texto);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--cabecalho-texto);
-  cursor: pointer;
+.sidebar-rodape-seta {
+  display: flex;
+  color: var(--cabecalho-texto-suave);
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
 }
-.sidebar-item:hover {
-  color: var(--cabecalho-pino);
-}
-.sidebar-sair {
-  color: var(--cabecalho-perigo);
-}
-.sidebar-sair:hover {
-  color: var(--cabecalho-perigo-hover);
+.sidebar-rodape-seta-aberta {
+  transform: rotate(0deg);
 }
 
 /* ---------- Modais ---------- */
