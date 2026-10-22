@@ -7,6 +7,7 @@ import { listarClientes } from "../../services/clientService";
 import { useAuth } from "../../hooks/useAuth";
 import AtivoAutocomplete from "../ativo/AtivoAutoComplete";
 import { listarAtivos } from "../../services/ativoService";
+import { usePerfil } from "../../hooks/usePerfil";
 
 function linhaVazia() {
   return { ativoId: "", codMaterial: "", descricao: "", quantidade: "" };
@@ -91,16 +92,15 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const codPdvRef = useRef(null);
   const cpfRef = useRef(null);
   const revendaRef = useRef(null);
-  const supervisorRef = useRef(null);
-  const vendedorRef = useRef(null);
   const materiaisRef = useRef(null);
   const [dados, setDados] = useState(() => dadosIniciais(comodatoExistente));
   const [materiais, setMateriais] = useState(() => materiaisIniciais(comodatoExistente));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
-  const { revendedoraId } = useAuth();
-  const { perfil, revendedora, loading: carregandoConfig } = useConfiguracoes();
+  const { revendedoraId, papel } = useAuth();
+  const { revendedora, loading: carregandoRevendedora } = useConfiguracoes();
+  const { perfil, supervisor: supervisorVinculado, supervisorErro, loading: carregandoPerfil } = usePerfil();
   const [carregandoClientes, setCarregandoClientes] = useState(true);
   const [clientes, setClientes] = useState([]);
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
@@ -109,6 +109,14 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [carregandoAtivos, setCarregandoAtivos] = useState(true);
   const [ativosIniciaisAplicados, setAtivosIniciaisAplicados] = useState(false);
   const [tentouEnviar, setTentouEnviar] = useState(false);
+  const carregandoConfig = carregandoRevendedora || carregandoPerfil;
+
+  const ocultarVendedor = papel === "vendedor";
+  const ocultarSupervisor = papel === "supervisor" || papel === "vendedor";
+  const semSupervisor = papel === "vendedor" && !supervisorVinculado;
+  const mensagemSemSupervisor = supervisorErro
+    ? "Não foi possível carregar o seu supervisor. Tente novamente."
+    : "Você não tem supervisor vinculado. Peça a um gerente ou administrador para vincular um supervisor ao seu usuário.";
 
   useEffect(() => {
     let ativo = true;
@@ -215,6 +223,23 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     );
   }
 
+  function preencherComConfiguracao(atual, perfil, revendedora, papel) {
+    const p = perfil ?? {};
+    const ehVendedor = papel === "vendedor";
+
+    const vendedores = ehVendedor ? [p.vendedor, p.vendedorCodigo].filter(Boolean).join(" ") : "";
+    const supervisores = ehVendedor ? [p.supervisor, p.supervisorCodigo].filter(Boolean).join(" ") : "";
+
+    return {
+      ...atual,
+      revenda: atual.revenda?.trim() ? atual.revenda : revendedora?.codigoRevenda ?? "",
+      vendedor: atual.vendedor?.trim() ? atual.vendedor : vendedores,
+      vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : ehVendedor ? p.vendedorCodigo ?? "" : "",
+      supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisores,
+      supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : ehVendedor ? p.supervisorCodigo ?? "" : "",
+    };
+  }
+
   function selecionarMaterial(indice, ativo) {
     setMateriais((atual) =>
       atual.map((linha, i) =>
@@ -239,8 +264,6 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
       temErroCliente ? codPdvRef : null,
       temErroCliente ? cpfRef : null,
       novosErros.revenda ? revendaRef : null,
-      novosErros.supervisor ? supervisorRef : null,
-      novosErros.vendedor ? vendedorRef : null,
       novosErros.materiais ? materiaisRef : null,
     ].filter(Boolean);
 
@@ -253,8 +276,8 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   useEffect(() => {
     if (carregandoConfig || (!perfil && !revendedora)) return;
-    setDados((atual) => preencherComConfiguracao(atual, perfil, revendedora));
-  }, [carregandoConfig, perfil, revendedora]);
+    setDados((atual) => preencherComConfiguracao(atual, perfil, revendedora, papel));
+  }, [carregandoConfig, perfil, revendedora, papel]);
 
   function alterar(campo) {
     return (e) => {
@@ -299,6 +322,10 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
 
   async function enviar(e) {
     e.preventDefault();
+    if (semSupervisor) {
+      setErroGeral(mensagemSemSupervisor);
+      return;
+    }
     const novosErros = {};
     const temErroCliente = !dados.clienteId || !clienteSelecionado || clienteSelecionadoIncompleto;
 
@@ -314,6 +341,10 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
       setErros(novosErros);
       rolarParaPrimeiroErro(novosErros, true);
       return;
+    }
+
+    if (!dados.revenda?.trim()) {
+      novosErros.revenda = "Revenda não informada. Configure o código da revenda em Configurações para continuar.";
     }
 
     const materiaisPreenchidos = materiais.filter((m) => m.descricao?.trim() || m.codMaterial?.trim());
@@ -381,20 +412,21 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
       </label>
 
       <div className="campo-linha">
-        <label className="campo">
+        <div className="campo" ref={revendaRef}>
           <span className="campo-rotulo">Revenda</span>
-          <input ref={revendaRef} className="campo-input" value={dados.revenda} onChange={alterar("revenda")} />
-        </label>
-        <label className="campo">
+          <span className="campo-valor">{dados.revenda || "—"}</span>
+          {erros.revenda ? <span className="campo-erro">{erros.revenda}</span> : null}
+        </div>
+        <div className="campo">
           <span className="campo-rotulo">Supervisor</span>
-          <input ref={supervisorRef} className="campo-input" value={dados.supervisor} onChange={alterar("supervisor")} />
-        </label>
+          <span className="campo-valor">{dados.supervisor || "—"}</span>
+        </div>
       </div>
 
-      <label className="campo">
+      <div className="campo">
         <span className="campo-rotulo">Vendedor</span>
-        <input ref={vendedorRef} className="campo-input" value={dados.vendedor} onChange={alterar("vendedor")} />
-      </label>
+        <span className="campo-valor">{dados.vendedor || "—"}</span>
+      </div>
 
       <div className="campo" ref={materiaisRef}>
         <div className="comodato-materiais-cabecalho">
@@ -474,6 +506,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
         </Button>
       </div>
 
+      {semSupervisor ? <p className="estado-erro">{mensagemSemSupervisor}</p> : null}
       {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
       <div className="formulario-acoes">
@@ -482,7 +515,13 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
         </Button>
         <Button
           type="submit"
-          disabled={enviando || carregandoClientes || clienteSelecionadoIncompleto || (Boolean(dados.clienteId) && !clienteSelecionado)}
+          disabled={
+            enviando ||
+            carregandoClientes ||
+            semSupervisor ||
+            clienteSelecionadoIncompleto ||
+            (Boolean(dados.clienteId) && !clienteSelecionado)
+          }
         >
           {enviando ? "Salvando…" : "Salvar"}
         </Button>

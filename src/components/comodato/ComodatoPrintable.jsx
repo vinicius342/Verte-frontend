@@ -38,7 +38,7 @@ function Rotulo({ left, top, width, children }) {
   );
 }
 
-export default function ComodatoPrintable({ comodato, assinaturaVendedor, printRef }) {
+export default function ComodatoPrintable({ comodato, assinatura, papelAssinante, printRef }) {
   const materiais = comodato.materiais ?? [];
   const totalLinhas = Math.max(LINHAS_PADRAO, materiais.length);
 
@@ -50,6 +50,18 @@ export default function ComodatoPrintable({ comodato, assinaturaVendedor, printR
   const topLinhaInferior = baseTabela + GAP_LINHA_INFERIOR;
   const topLabelInferior = baseTabela + GAP_LABEL_INFERIOR;
   const alturaPagina = topLabelInferior + 40;
+
+  function ImagemAssinatura({ src, left, top, width }) {
+    if (!src) return null;
+    return (
+      <img
+        src={src}
+        alt="Assinatura"
+        className="pdf-assinatura-imagem"
+        style={{ left, top: top - ASSINATURA_H, width, height: ASSINATURA_H }}
+      />
+    );
+  }
 
   return (
     <div ref={printRef} className="comodato-papel-pdf" style={{ width: PAGE_W, height: alturaPagina }}>
@@ -118,24 +130,25 @@ export default function ComodatoPrintable({ comodato, assinaturaVendedor, printR
       </div>
 
       {/* Assinaturas — sempre logo abaixo da tabela, não importa a altura dela */}
+      {papelAssinante === "gerente" && (
+        <ImagemAssinatura src={assinatura} left={462} top={topLinhaGerente} width={351} />
+      )}
       <div className="pdf-linha-assinatura" style={{ left: 462, top: topLinhaGerente, width: 351 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 462, top: topLabelGerente, width: 351 }}>
         GERENTE DA REVENDA
       </div>
 
-      {assinaturaVendedor ? (
-        <img
-          src={assinaturaVendedor}
-          alt="Assinatura do vendedor"
-          className="pdf-assinatura-imagem"
-          style={{ left: 157, top: topLinhaInferior - ASSINATURA_H, width: 282, height: ASSINATURA_H }}
-        />
-      ) : null}
+      {papelAssinante === "vendedor" && (
+        <ImagemAssinatura src={assinatura} left={157} top={topLinhaInferior} width={282} />
+      )}
       <div className="pdf-linha-assinatura" style={{ left: 157, top: topLinhaInferior, width: 282 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 157, top: topLabelInferior, width: 282 }}>
         VENDEDOR
       </div>
 
+      {papelAssinante === "supervisor" && (
+        <ImagemAssinatura src={assinatura} left={813} top={topLinhaInferior} width={293} />
+      )}
       <div className="pdf-linha-assinatura" style={{ left: 813, top: topLinhaInferior, width: 293 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 813, top: topLabelInferior, width: 293 }}>
         SUPERVISOR DE VENDAS

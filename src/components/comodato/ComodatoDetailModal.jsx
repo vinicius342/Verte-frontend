@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import ComodatoForm from "./ComodatoForm";
 import { atualizarComodato, excluirComodato } from "../../services/comodatoService";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
+import { buscarPerfil } from "../../services/perfilService";
 
 function textoParaCopiar(comodato) {
   const blocosMateriais = (comodato.materiais ?? [])
@@ -30,24 +31,26 @@ function textoParaCopiar(comodato) {
 }
 
 export default function ComodatoDetailModal({ comodato, onFechar }) {
-  const { uid, revendedoraId } = useAuth();
+  const { uid, revendedoraId, papel } = useAuth();
+  const [assinatura, setAssinatura] = useState("");
   const printRef = useRef(null);
   const [processando, setProcessando] = useState(false);
   const [copiado, setCopiado] = useState(false);
-  const [assinaturaVendedor, setAssinaturaVendedor] = useState("");
   const [editando, setEditando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
 
   useEffect(() => {
-    if (!comodato || !uid) return;
+    if (!comodato || !uid || !revendedoraId) return;
     let ativo = true;
-    buscarConfiguracao(uid).then((config) => {
-      if (ativo) setAssinaturaVendedor(config?.assinatura ?? "");
-    });
+    buscarPerfil(revendedoraId, uid)
+      .then((p) => {
+        if (ativo) setAssinatura(p?.assinatura ?? "");
+      })
+      .catch((erro) => console.error("Falha ao carregar assinatura:", erro));
     return () => {
       ativo = false;
     };
-  }, [comodato, uid]);
+  }, [comodato, uid, revendedoraId]);
 
   if (!comodato) return null;
 
@@ -209,7 +212,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
 
       {/* Fora da área visível — usado só para gerar a imagem/PDF, não aparece na tela */}
       <div className="comodato-papel-oculto">
-        <ComodatoPrintable comodato={comodato} assinaturaVendedor={assinaturaVendedor} printRef={printRef} />
+        <ComodatoPrintable comodato={comodato} assinatura={assinatura} papelAssinante={papel} printRef={printRef} />
       </div>
     </Modal>
   );

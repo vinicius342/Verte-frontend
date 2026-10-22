@@ -858,6 +858,11 @@ input.mono {
 .campo-linha .campo-input {
   width: 100%;
 }
+.campo-valor {
+  display: block;
+  padding: 0.5rem 0;
+  font-weight: 500;
+}
 @media (min-width: 640px) {
   .campo-linha {
     grid-template-columns: 1fr 1fr;
