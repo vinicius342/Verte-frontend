@@ -4,6 +4,7 @@ import Button from "../common/Button";
 import ClienteAutocomplete from "../common/ClienteAutocomplete";
 import { useConfiguracoes } from "../../hooks/useConfiguracoes";
 import { listarClientes } from "../../services/clientService";
+import { buscarUsuario } from "../../services/userService";
 import { useAuth } from "../../hooks/useAuth";
 import AtivoAutocomplete from "../ativo/AtivoAutoComplete";
 import { listarAtivos } from "../../services/ativoService";
@@ -98,10 +99,12 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
-  const { revendedoraId, papel } = useAuth();
+  const { revendedoraId, papel, uid, nome } = useAuth();
   const { revendedora, loading: carregandoRevendedora } = useConfiguracoes();
   const { perfil, supervisor: supervisorVinculado, supervisorErro, loading: carregandoPerfil } = usePerfil();
   const [carregandoClientes, setCarregandoClientes] = useState(true);
+  const [usuarioSupervisor, setUsuarioSupervisor] = useState(null);
+  const [usuarioSupervisorCarregado, setUsuarioSupervisorCarregado] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
   const [clienteInicialAplicado, setClienteInicialAplicado] = useState(false);
@@ -109,7 +112,8 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [carregandoAtivos, setCarregandoAtivos] = useState(true);
   const [ativosIniciaisAplicados, setAtivosIniciaisAplicados] = useState(false);
   const [tentouEnviar, setTentouEnviar] = useState(false);
-  const carregandoConfig = carregandoRevendedora || carregandoPerfil;
+  const carregandoUsuarioSupervisor = papel === "supervisor" && Boolean(uid) && !usuarioSupervisorCarregado;
+  const carregandoConfig = carregandoRevendedora || carregandoPerfil || carregandoUsuarioSupervisor;
 
   const ocultarVendedor = papel === "vendedor";
   const ocultarSupervisor = papel === "supervisor" || papel === "vendedor";
@@ -117,6 +121,35 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const mensagemSemSupervisor = supervisorErro
     ? "Não foi possível carregar o seu supervisor. Tente novamente."
     : "Você não tem supervisor vinculado. Peça a um gerente ou administrador para vincular um supervisor ao seu usuário.";
+
+  useEffect(() => {
+    let ativo = true;
+
+    if (papel !== "supervisor" || !uid) {
+      setUsuarioSupervisor(null);
+      setUsuarioSupervisorCarregado(true);
+      return () => {
+        ativo = false;
+      };
+    }
+
+    setUsuarioSupervisorCarregado(false);
+    buscarUsuario(uid)
+      .then((usuario) => {
+        if (ativo) setUsuarioSupervisor(usuario);
+      })
+      .catch((erro) => {
+        console.error("Falha ao carregar usuário supervisor:", erro);
+        if (ativo) setUsuarioSupervisor(null);
+      })
+      .finally(() => {
+        if (ativo) setUsuarioSupervisorCarregado(true);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [papel, uid]);
 
   useEffect(() => {
     let ativo = true;
@@ -223,20 +256,32 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     );
   }
 
-  function preencherComConfiguracao(atual, perfil, revendedora, papel) {
+  function preencherComConfiguracao(atual, perfil, revendedora, papel, usuarioSupervisor) {
     const p = perfil ?? {};
     const ehVendedor = papel === "vendedor";
+    const ehSupervisor = papel === "supervisor";
 
     const vendedores = ehVendedor ? [p.vendedor, p.vendedorCodigo].filter(Boolean).join(" ") : "";
     const supervisores = ehVendedor ? [p.supervisor, p.supervisorCodigo].filter(Boolean).join(" ") : "";
+    const nomeSupervisor = usuarioSupervisor?.nome ?? nome;
+    const codigoSupervisor = usuarioSupervisor?.codigo ?? "";
+    const supervisorAtual = ehSupervisor
+      ? [nomeSupervisor, codigoSupervisor].filter(Boolean).join(" ")
+      : supervisores;
 
     return {
       ...atual,
       revenda: atual.revenda?.trim() ? atual.revenda : revendedora?.codigoRevenda ?? "",
       vendedor: atual.vendedor?.trim() ? atual.vendedor : vendedores,
       vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : ehVendedor ? p.vendedorCodigo ?? "" : "",
-      supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisores,
-      supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : ehVendedor ? p.supervisorCodigo ?? "" : "",
+      supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisorAtual,
+      supervisorCodigo: atual.supervisorCodigo?.trim()
+        ? atual.supervisorCodigo
+        : ehSupervisor
+          ? codigoSupervisor
+          : ehVendedor
+            ? p.supervisorCodigo ?? ""
+            : "",
     };
   }
 
@@ -275,9 +320,9 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   }
 
   useEffect(() => {
-    if (carregandoConfig || (!perfil && !revendedora)) return;
-    setDados((atual) => preencherComConfiguracao(atual, perfil, revendedora, papel));
-  }, [carregandoConfig, perfil, revendedora, papel]);
+    if (carregandoConfig || (!perfil && !revendedora && papel !== "supervisor")) return;
+    setDados((atual) => preencherComConfiguracao(atual, perfil, revendedora, papel, usuarioSupervisor));
+  }, [carregandoConfig, perfil, revendedora, papel, usuarioSupervisor, nome]);
 
   function alterar(campo) {
     return (e) => {
