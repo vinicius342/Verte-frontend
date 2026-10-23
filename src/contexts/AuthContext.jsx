@@ -62,6 +62,7 @@ export function AuthProvider({ children }) {
       uid: usuario?.uid ?? null,
       revendedoraId,
       papel,
+      ehMotorista: papel === "motorista",
       podeConfigurar: papel === "admin" || papel === "gerente",
       nome: usuario?.displayName ?? usuario?.email ?? null,
       loading,

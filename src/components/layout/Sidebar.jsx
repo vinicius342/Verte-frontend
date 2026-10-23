@@ -101,9 +101,9 @@ const icones = {
 /* Itens do menu principal. `restrito` = só aparece se podeConfigurar. */
 const itensMenu = [
   { caminho: "/", rotulo: "Início", icone: icones.inicio },
-  { caminho: "/comodato", rotulo: "Comodato", icone: icones.comodato },
-  { caminho: "/limite", rotulo: "Solicitação de limites", icone: icones.limite },
-  { caminho: "/ativos", rotulo: "Ativos", icone: icones.ativos },
+  { caminho: "/comodato", rotulo: "Comodato", icone: icones.comodato, ocultoMotorista: true },
+  { caminho: "/limite", rotulo: "Solicitação de limites", icone: icones.limite, ocultoMotorista: true },
+  { caminho: "/ativos", rotulo: "Ativos", icone: icones.ativos, ocultoMotorista: true },
   { caminho: "/usuarios", rotulo: "Usuários", icone: icones.usuarios, restrito: true },
   { caminho: "/configuracoes", rotulo: "Configurações", icone: icones.configuracoes, restrito: true },
 ];
@@ -117,7 +117,7 @@ function iniciais(nome) {
 }
 
 export default function Sidebar({ aberta, onFechar, onAdicionar }) {
-  const { usuario, nome, podeConfigurar } = useAuth();
+  const { usuario, nome, podeConfigurar, ehMotorista } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
@@ -163,7 +163,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
           <>
             <nav className="sidebar-nav" aria-label="Menu principal">
               {itensMenu
-                .filter((item) => !item.restrito || podeConfigurar)
+                .filter((item) => (!item.restrito || podeConfigurar) && (!item.ocultoMotorista || !ehMotorista))
                 .map((item) => {
                   const ativo = estaAtivo(item.caminho);
                   return (

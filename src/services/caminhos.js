@@ -21,3 +21,6 @@ export const colecaoDaRevendedora = (revendedoraId, nome) =>
 
 export const docDaRevendedora = (revendedoraId, nome, id) =>
   doc(getDb(), RAIZ, exigirRevendedora(revendedoraId), nome, id);
+
+export const docPrivadoCliente = (revendedoraId, id) =>
+  doc(getDb(), RAIZ, exigirRevendedora(revendedoraId), "clientes", id, "privado", "dados");

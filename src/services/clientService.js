@@ -1,19 +1,19 @@
 import {
-  setDoc,
   getDoc,
   getDocs,
-  updateDoc,
   deleteDoc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   doc,
+  writeBatch,
+  deleteField,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getStorageInstance } from "../firebase/config";
+import { getDb, getStorageInstance } from "../firebase/config";
 import { comprimirImagem } from "../utils/imageCompressor";
-import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
+import { colecaoDaRevendedora, docDaRevendedora, docPrivadoCliente } from "./caminhos";
 
 const COLECAO = "clientes";
 const PASTA_ANEXOS = "clientes-anexos";
@@ -36,9 +36,6 @@ function normalizar(dados) {
     rua: (dados.rua ?? "").trim(),
     numero: dados.numero?.trim() ?? "",
     complemento: dados.complemento?.trim() || null,
-    whatsapp: dados.whatsapp?.trim() ?? "",
-    whatsapp2: dados.whatsapp2?.trim() || null,
-    whatsapp3: dados.whatsapp3?.trim() || null,
     observacao: dados.observacao?.trim() || null,
     coordenada: dados.coordenada?.lat != null
       ? { lat: Number(dados.coordenada.lat), lng: Number(dados.coordenada.lng) }
@@ -46,6 +43,23 @@ function normalizar(dados) {
         ? { lat, lng }
         : null,
   };
+}
+
+function normalizarPrivado(dados) {
+  return {
+    whatsapp: dados.whatsapp?.trim() ?? "",
+    whatsapp2: dados.whatsapp2?.trim() || null,
+    whatsapp3: dados.whatsapp3?.trim() || null,
+    anexos: dados.anexos ?? [],
+  };
+}
+
+export async function buscarPrivadoCliente(revendedoraId, id) {
+  const principalRef = docDaRevendedora(revendedoraId, COLECAO, id);
+  const privadoSnap = await getDoc(docPrivadoCliente(revendedoraId, id));
+  if (privadoSnap.exists()) return normalizarPrivado(privadoSnap.data());
+  const principalSnap = await getDoc(principalRef);
+  return principalSnap.exists() ? normalizarPrivado(principalSnap.data()) : normalizarPrivado({});
 }
 
 // Os arquivos do Storage continuam em clientes-anexos/{clienteId}/..., o clienteId é único,
@@ -81,14 +95,16 @@ export async function criarCliente(revendedoraId, dados, uid) {
     (dados.anexosNovos ?? []).map((arquivo) => enviarAnexo(referenciaDoc.id, arquivo)),
   );
 
-  await setDoc(referenciaDoc, {
+  const batch = writeBatch(getDb());
+  batch.set(referenciaDoc, {
     ...normalizar(dados),
-    anexos,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     createdBy: uid,
     updatedBy: uid,
   });
+  batch.set(docPrivadoCliente(revendedoraId, referenciaDoc.id), normalizarPrivado({ ...dados, anexos }));
+  await batch.commit();
 
   return referenciaDoc.id;
 }
@@ -119,16 +135,31 @@ export async function atualizarCliente(revendedoraId, id, dados, uid) {
   );
 
   // createdBy/createdAt nunca são sobrescritos.
-  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), {
+  const principalRef = docDaRevendedora(revendedoraId, COLECAO, id);
+  const batch = writeBatch(getDb());
+  batch.update(principalRef, {
     ...normalizar(dados),
-    anexos: [...anexosMantidos, ...anexosNovos],
+    whatsapp: deleteField(), whatsapp2: deleteField(), whatsapp3: deleteField(), anexos: deleteField(),
     updatedAt: serverTimestamp(),
     updatedBy: uid,
   });
+  batch.set(docPrivadoCliente(revendedoraId, id), normalizarPrivado({
+    ...dados,
+    anexos: [...anexosMantidos, ...anexosNovos],
+  }));
+  await batch.commit();
 }
 
-export async function excluirCliente(revendedoraId, id, anexos = []) {
+export async function excluirCliente(revendedoraId, id) {
+  const privadoRef = docPrivadoCliente(revendedoraId, id);
+  const privadoSnap = await getDoc(privadoRef);
+  let anexos = privadoSnap.exists() ? privadoSnap.data().anexos ?? [] : [];
+  if (!privadoSnap.exists()) {
+    const principalSnap = await getDoc(docDaRevendedora(revendedoraId, COLECAO, id));
+    anexos = principalSnap.exists() ? principalSnap.data().anexos ?? [] : [];
+  }
   await Promise.all(anexos.map((anexo) => excluirAnexo(anexo.caminho)));
+  await deleteDoc(privadoRef);
   await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
 }
 

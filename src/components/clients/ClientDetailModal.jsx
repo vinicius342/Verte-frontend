@@ -4,7 +4,7 @@ import Button from "../common/Button";
 import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
-import { atualizarCliente, excluirCliente } from "../../services/clientService";
+import { atualizarCliente, excluirCliente, buscarPrivadoCliente } from "../../services/clientService";
 import { buscarConfiguracao } from "../../services/configService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
@@ -46,28 +46,43 @@ function textoCadastroContatos(cliente, rota) {
 }
 
 export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false }) {
-  const { uid, usuario, revendedoraId } = useAuth();
+  const { uid, usuario, revendedoraId, ehMotorista } = useAuth();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [anexoEmAcao, setAnexoEmAcao] = useState(null);
   const [rota, setRota] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [privado, setPrivado] = useState(null);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const logado = Boolean(uid && usuario);
-  const podeVerAnexos = logado;
+  const podeVerAnexos = logado && !ehMotorista;
 
   useEffect(() => {
     setEditando(false);
+    setPrivado(null);
   }, [cliente?.id]);
 
   useEffect(() => {
-    if (cliente && iniciarEdicao) {
-      setEditando(true);
-    }
-  }, [cliente, iniciarEdicao]);
+    if (ehMotorista) setEditando(false);
+  }, [ehMotorista]);
 
   useEffect(() => {
-    if (!cliente || !logado) return;
+    if (cliente && iniciarEdicao && !ehMotorista) {
+      setEditando(true);
+    }
+  }, [cliente, iniciarEdicao, ehMotorista]);
+
+  useEffect(() => {
+    if (!cliente || ehMotorista || !revendedoraId) return;
+    let ativo = true;
+    buscarPrivadoCliente(revendedoraId, cliente.id)
+      .then((dados) => { if (ativo) setPrivado(dados); })
+      .catch((erro) => console.error("Falha ao buscar dados privados do cliente:", erro));
+    return () => { ativo = false; };
+  }, [cliente?.id, revendedoraId, ehMotorista]);
+
+  useEffect(() => {
+    if (!cliente || !logado || ehMotorista) return;
     let ativo = true;
     buscarConfiguracao(uid)
       .then((config) => {
@@ -77,9 +92,10 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     return () => {
       ativo = false;
     };
-  }, [cliente, uid, logado]);
+  }, [cliente, uid, logado, ehMotorista]);
 
   if (!cliente) return null;
+  const clientePrivado = ehMotorista ? cliente : { ...cliente, ...(privado ?? {}) };
 
   async function salvar(dados) {
     await atualizarCliente(revendedoraId, cliente.id, dados, uid);
@@ -92,7 +108,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
 
     try {
       setExcluindo(true);
-      await excluirCliente(revendedoraId, cliente.id, cliente.anexos ?? []);
+      await excluirCliente(revendedoraId, cliente.id);
       onFechar();
     } catch (erro) {
       console.error("Falha ao excluir cliente:", erro?.code, erro?.message);
@@ -108,7 +124,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
 
   async function copiarContatos() {
     try {
-      await navigator.clipboard.writeText(textoCadastroContatos(cliente, rota));
+      await navigator.clipboard.writeText(textoCadastroContatos(clientePrivado, rota));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch (erro) {
@@ -133,7 +149,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     <Modal aberto={Boolean(cliente)} titulo={editando ? "Alterar dados" : cliente.nomeCliente} onFechar={onFechar}>
       {editando ? (
         <ClientForm
-          cliente={cliente}
+          cliente={clientePrivado}
           onSalvar={salvar}
           onCancelar={() => setEditando(false)}
           textoSalvar="Salvar alterações"
@@ -173,9 +189,11 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
               </div>
             ) : null}
 
-            <CampoWhatsapp rotulo="WhatsApp" numero={cliente.whatsapp} />
-            <CampoWhatsapp rotulo="WhatsApp 2" numero={cliente.whatsapp2} />
-            <CampoWhatsapp rotulo="WhatsApp 3" numero={cliente.whatsapp3} />
+            {!ehMotorista && <>
+              <CampoWhatsapp rotulo="WhatsApp" numero={clientePrivado.whatsapp} />
+              <CampoWhatsapp rotulo="WhatsApp 2" numero={clientePrivado.whatsapp2} />
+              <CampoWhatsapp rotulo="WhatsApp 3" numero={clientePrivado.whatsapp3} />
+            </>}
           </dl>
 
           {cliente.observacao ? (
@@ -185,7 +203,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             </div>
           ) : null}
 
-          {logado ? (
+          {!ehMotorista && logado ? (
             <div className="detalhe-copia-contatos">
               <span className="campo-rotulo">Cadastro de contatos</span>
               <Button variant="ghost" onClick={copiarContatos}>
@@ -194,11 +212,11 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             </div>
           ) : null}
 
-          {podeVerAnexos && cliente.anexos?.length > 0 ? (
+          {podeVerAnexos && clientePrivado.anexos?.length > 0 ? (
             <div className="detalhe-anexos">
               <span className="campo-rotulo">Anexos</span>
               <ul className="lista-anexos">
-                {cliente.anexos.map((anexo) => (
+                {clientePrivado.anexos.map((anexo) => (
                   <li key={anexo.caminho} className="lista-anexos-item">
                     {anexo.tipo?.startsWith("image/") ? (
                       <img src={anexo.url} alt="" className="lista-anexos-miniatura" />
@@ -219,7 +237,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             </div>
           ) : null}
 
-          <ProtectedAction
+          {!ehMotorista && <ProtectedAction
             fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}
           >
             <div className="detalhe-acoes">
@@ -230,7 +248,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
                 {excluindo ? "Excluindo..." : "Excluir"}
               </Button>
             </div>
-          </ProtectedAction>
+          </ProtectedAction>}
         </div>
       )}
     </Modal>

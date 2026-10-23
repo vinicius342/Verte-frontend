@@ -20,7 +20,7 @@ function normalizar(texto) {
 
 export default function HomePage() {
   const { clientes, loading, erro } = useClients();
-  const { usuario } = useAuth();
+  const { usuario, ehMotorista, loading: authLoading } = useAuth();
   const [busca, setBusca] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
@@ -32,16 +32,22 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (searchParams.get("adicionar") === "1" && usuario) {
-      setAdicionando(true);
+    if (authLoading) return;
+    if (searchParams.get("adicionar") === "1") {
+      if (usuario && !ehMotorista) setAdicionando(true);
       searchParams.delete("adicionar");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, usuario]);
+  }, [searchParams, setSearchParams, usuario, ehMotorista, authLoading]);
 
   useEffect(() => {
     const estado = location.state;
-    if (!estado) return;
+    if (authLoading || !estado) return;
+
+    if (ehMotorista) {
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
 
     if (typeof estado.novoCliente === "string") {
       setNovoCliente(estado.novoCliente);
@@ -54,7 +60,7 @@ export default function HomePage() {
     }
 
     navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+  }, [location.pathname, location.state, navigate, ehMotorista, authLoading]);
 
   const filtrados = useMemo(() => {
     const termo = normalizar(busca).trim();
@@ -91,7 +97,7 @@ export default function HomePage() {
         />
       </main>
 
-      {usuario && (
+      {usuario && !ehMotorista && (
         <Button
           className="botao-adicionar-fixo"
           aria-label="Novo cliente"
@@ -105,14 +111,14 @@ export default function HomePage() {
         </Button>
       )}
 
-      <AddClientModal
+      {!ehMotorista && <AddClientModal
         aberto={adicionando}
         cliente={novoCliente ? { nomeCliente: novoCliente } : undefined}
         onFechar={() => {
           setAdicionando(false);
           setNovoCliente("");
         }}
-      />
+      />}
       <ClientDetailModal
         cliente={atual}
         iniciarEdicao={iniciarEdicaoSelecionado}
