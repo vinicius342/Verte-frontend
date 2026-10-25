@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
+import Avatar from "../components/common/Avatar";
 import UsuarioModal from "../components/users/UsuarioModal";
 import { useAuth } from "../hooks/useAuth";
 import { useUsuarios } from "../hooks/useUsuarios";
@@ -18,11 +19,6 @@ const PAPEIS = {
   vendedor: { rotulo: "Vendedor", Icone: BadgeDollarSign },
   motorista: { rotulo: "Motorista", Icone: Truck },
 };
-
-function iniciais(u) {
-  const base = (u.nome || u.email || "?").trim();
-  return base.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
-}
 
 export default function UsuariosPage() {
   const { uid, papel: meuPapel } = useAuth();
@@ -123,7 +119,7 @@ export default function UsuariosPage() {
                 <li key={u.id} className={`usuario-linha ${inativo ? "usuario-linha--inativo" : ""}`}>
                   <div className="usuario-linha__info">
                     <div className="usuario-linha__avatar" aria-hidden="true">
-                      {iniciais(u)}
+                      <Avatar nome={u.nome || u.email} fotoUrl={u.fotoUrl} />
                     </div>
                     <div className="usuario-linha__textos">
                       <div className="usuario-linha__nome-linha">

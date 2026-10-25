@@ -3,7 +3,10 @@
 const LARGURA_MAXIMA = 1600;
 const QUALIDADE_JPEG = 0.72;
 
-export async function comprimirImagem(arquivo) {
+export async function comprimirImagem(
+  arquivo,
+  { larguraMaxima = LARGURA_MAXIMA, qualidade = QUALIDADE_JPEG } = {},
+) {
   const ehImagem = arquivo.type.startsWith("image/");
   const ehSvg = arquivo.type === "image/svg+xml";
   if (!ehImagem || ehSvg) return arquivo;

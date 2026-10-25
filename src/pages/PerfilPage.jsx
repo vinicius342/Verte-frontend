@@ -1,19 +1,140 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Camera, Hash, Trash2, Upload, User } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
-import Button from "../components/common/Button";
 import SignaturePad from "../components/common/SignaturePad";
+import Avatar from "../components/common/Avatar";
 import { useAuth } from "../hooks/useAuth";
 import { usePerfil } from "../hooks/usePerfil";
-import { salvarPerfil } from "../services/perfilService";
+import { useFotoPerfil, atualizarFotoPerfil } from "../hooks/useFotoPerfil";
+import { salvarPerfil, salvarFotoPerfil, removerFotoPerfil } from "../services/perfilService";
+import "../styles/perfil.css";
 
-function CampoLeitura({ rotulo, valor, mono = false }) {
+const TAMANHO_MAXIMO_FOTO = 10 * 1024 * 1024;
+
+function Quadro({ icone: Icone, rotulo, valor, mono = false }) {
   return (
-    <div className="campo">
-      <span className="campo-rotulo">{rotulo}</span>
-      <span className={`campo-valor ${mono ? "mono" : ""}`}>{valor || "—"}</span>
+    <div className="perfil-quadro">
+      <div className="perfil-quadro-icone">
+        <Icone aria-hidden="true" />
+      </div>
+      <div>
+        <p className="perfil-quadro-rotulo">{rotulo}</p>
+        <p className={`perfil-quadro-valor ${mono ? "mono" : ""}`}>{valor || "—"}</p>
+      </div>
     </div>
+  );
+}
+
+function IdentidadeCard({ perfil, exigeSupervisor, supervisorEncontrado, supervisorErro, uid }) {
+  const fotoUrl = useFotoPerfil();
+  const inputRef = useRef(null);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  const nome = perfil?.vendedor;
+  const codigo = perfil?.vendedorCodigo;
+
+  async function aoEscolher(e) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = ""; // permite escolher o mesmo arquivo de novo
+    if (!arquivo) return;
+    if (!arquivo.type.startsWith("image/")) return setErro("Escolha um arquivo de imagem.");
+    if (arquivo.size > TAMANHO_MAXIMO_FOTO) return setErro("A imagem deve ter no máximo 10 MB.");
+
+    setErro(null);
+    setEnviando(true);
+    try {
+      const { fotoUrl: nova } = await salvarFotoPerfil(arquivo);
+      atualizarFotoPerfil(uid, nova);
+    } catch (err) {
+      console.error("Erro ao enviar foto:", err);
+      setErro(err?.message ?? "Não foi possível enviar a foto.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function remover() {
+    setErro(null);
+    setEnviando(true);
+    try {
+      await removerFotoPerfil();
+      atualizarFotoPerfil(uid, null);
+    } catch (err) {
+      console.error("Erro ao remover foto:", err);
+      setErro(err?.message ?? "Não foi possível remover a foto.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const abrirSeletor = () => inputRef.current?.click();
+
+  return (
+    <section className="perfil-cartao">
+      <div className="perfil-identidade">
+        <div className="perfil-avatar-wrap">
+          <div className="perfil-avatar">
+            <Avatar nome={nome} fotoUrl={fotoUrl} />
+          </div>
+          <button
+            type="button"
+            className="perfil-camera"
+            aria-label="Alterar foto"
+            disabled={enviando}
+            onClick={abrirSeletor}
+          >
+            <Camera aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="perfil-identidade-info">
+          <h2 className="perfil-nome">{nome || "—"}</h2>
+          {codigo ? <p className="perfil-codigo">Código #{codigo}</p> : null}
+
+          <input ref={inputRef} type="file" accept="image/*" hidden onChange={aoEscolher} />
+          <div className="perfil-acoes-foto">
+            <button
+              type="button"
+              className="perfil-btn perfil-btn-primario"
+              disabled={enviando}
+              onClick={abrirSeletor}
+            >
+              <Upload aria-hidden="true" />
+              {enviando ? "Enviando…" : fotoUrl ? "Alterar foto" : "Adicionar foto"}
+            </button>
+            {fotoUrl && !enviando ? (
+              <button type="button" className="perfil-btn perfil-btn-perigo" onClick={remover}>
+                <Trash2 aria-hidden="true" />
+                Remover
+              </button>
+            ) : null}
+          </div>
+          {erro ? <p className="perfil-erro-foto">{erro}</p> : null}
+        </div>
+      </div>
+
+      <div className="perfil-grade">
+        <Quadro icone={User} rotulo="Nome" valor={nome} />
+        <Quadro icone={Hash} rotulo="Código" valor={codigo} mono />
+        {exigeSupervisor && supervisorEncontrado ? (
+          <>
+            <Quadro icone={User} rotulo="Supervisor" valor={perfil?.supervisor} />
+            <Quadro icone={Hash} rotulo="Código do supervisor" valor={perfil?.supervisorCodigo} mono />
+          </>
+        ) : null}
+      </div>
+
+      {exigeSupervisor && !supervisorEncontrado ? (
+        <p className="perfil-aviso-supervisor">
+          {supervisorErro
+            ? "Não foi possível carregar os dados do seu supervisor. Tente novamente ou entre em contato com seu gerente ou administrador."
+            : "Você ainda não tem um supervisor vinculado. Entre em contato com seu gerente ou administrador para resolver."}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -40,29 +161,21 @@ function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorE
   }
 
   return (
-    <form className="formulario formulario-cartao" onSubmit={enviar} noValidate>
-      <div className="campo-linha">
-        <CampoLeitura rotulo="Nome" valor={perfil?.vendedor} />
-        <CampoLeitura rotulo="Código" valor={perfil?.vendedorCodigo} mono />
-      </div>
+    <>
+      <IdentidadeCard
+        perfil={perfil}
+        exigeSupervisor={exigeSupervisor}
+        supervisorEncontrado={supervisorEncontrado}
+        supervisorErro={supervisorErro}
+        uid={uid}
+      />
 
-      {exigeSupervisor ? (
-        supervisorEncontrado ? (
-          <div className="campo-linha">
-            <CampoLeitura rotulo="Supervisor" valor={perfil?.supervisor} />
-            <CampoLeitura rotulo="Código do supervisor" valor={perfil?.supervisorCodigo} mono />
-          </div>
-        ) : (
-          <p className="estado-erro">
-            {supervisorErro
-              ? "Não foi possível carregar os dados do seu supervisor. Tente novamente ou entre em contato com seu gerente ou administrador."
-              : "Você ainda não tem um supervisor vinculado. Entre em contato com seu gerente ou administrador para resolver."}
-          </p>
-        )
-      ) : null}
+      <form className="perfil-cartao" onSubmit={enviar} noValidate>
+        <div className="perfil-assinatura-topo">
+          <h3 className="perfil-titulo-cartao">Assinatura</h3>
+          <p className="perfil-subtitulo">Usada nos seus documentos.</p>
+        </div>
 
-      <div className="campo">
-        <span className="campo-rotulo">Assinatura</span>
         <SignaturePad
           valor={assinatura}
           onAlterar={(dataUrl) => {
@@ -70,17 +183,21 @@ function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorE
             setAssinatura(dataUrl);
           }}
         />
-      </div>
 
-      {erro ? <p className="estado-erro">{erro}</p> : null}
-      {sucesso ? <p className="estado-sucesso">Assinatura salva.</p> : null}
+        {erro || sucesso ? (
+          <div className="perfil-mensagens">
+            {erro ? <p className="estado-erro">{erro}</p> : null}
+            {sucesso ? <p className="estado-sucesso">Assinatura salva.</p> : null}
+          </div>
+        ) : null}
 
-      <div className="formulario-acoes">
-        <Button type="submit" disabled={salvando}>
-          {salvando ? "Salvando…" : "Salvar assinatura"}
-        </Button>
-      </div>
-    </form>
+        <div className="perfil-rodape">
+          <button type="submit" className="perfil-btn perfil-btn-primario perfil-btn-salvar" disabled={salvando}>
+            {salvando ? "Salvando…" : "Salvar assinatura"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }
 
@@ -116,10 +233,10 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="pagina">
+    <div className="pagina perfil-pagina">
       <Header onAbrirMenu={() => setMenuAberto(true)} />
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
-      <main className="conteudo">
+      <main className="conteudo perfil-main">
         <div className="conteudo-topo">
           <h1 className="titulo-secao">Meu perfil</h1>
         </div>

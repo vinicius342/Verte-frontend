@@ -1,19 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useDadosUsuario } from "../../hooks/useFotoPerfil";
 import { logout } from "../../services/authService";
+import Avatar from "../common/Avatar";
 import ClientSearchBar from "../clients/ClientSearchBar";
 
-function iniciais(nome) {
-  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  const primeira = partes[0][0];
-  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
-  return (primeira + ultima).toUpperCase();
-}
-
 export default function Header({ busca, onBuscar, onAbrirMenu }) {
-  const { usuario, nome } = useAuth();
+  const { usuario, nome: nomeAuth } = useAuth();
+  const { nome: nomeCadastro, fotoUrl } = useDadosUsuario();
+  const nome = nomeCadastro ?? nomeAuth;
   const navigate = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
   const usuarioRef = useRef(null);
@@ -83,7 +79,7 @@ export default function Header({ busca, onBuscar, onAbrirMenu }) {
                 aria-controls="cabecalho-menu-usuario"
                 onClick={() => setMenuAberto((aberto) => !aberto)}
               >
-                {iniciais(nome)}
+                <Avatar nome={nome} fotoUrl={fotoUrl} />
               </button>
 
               {menuAberto && (

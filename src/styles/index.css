@@ -753,7 +753,35 @@ input.mono {
 .sidebar-rodape-seta-aberta {
   transform: rotate(0deg);
 }
-
+.avatar-foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+.cabecalho-avatar,
+.sidebar-avatar {
+  overflow: hidden;
+}
+.foto-perfil {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.foto-perfil-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 1.5rem;
+  background: var(--cor-primaria, #2f7d5b);
+  color: #fff;
+}
 /* ---------- Modais ---------- */
 .modal-overlay {
   position: fixed;

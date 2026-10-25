@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useDadosUsuario } from "../../hooks/useFotoPerfil";
 import { logout } from "../../services/authService";
+import Avatar from "../common/Avatar";
 
 /* Ícones em SVG inline (traço estilo Lucide), sem depender de nenhuma biblioteca. */
 function Icone({ children }) {
@@ -108,16 +110,10 @@ const itensMenu = [
   { caminho: "/configuracoes", rotulo: "Configurações", icone: icones.configuracoes, restrito: true },
 ];
 
-function iniciais(nome) {
-  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  const primeira = partes[0][0];
-  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
-  return (primeira + ultima).toUpperCase();
-}
-
 export default function Sidebar({ aberta, onFechar, onAdicionar }) {
-  const { usuario, nome, podeConfigurar, ehMotorista } = useAuth();
+  const { usuario, nome: nomeAuth, podeConfigurar, ehMotorista } = useAuth();
+  const { nome: nomeCadastro, fotoUrl } = useDadosUsuario();
+  const nome = nomeCadastro ?? nomeAuth;
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
@@ -154,9 +150,6 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
             </span>
             <span className="marca-nome sidebar-marca-nome">Verte</span>
           </div>
-          {/* <button type="button" className="modal-fechar" onClick={onFechar} aria-label="Fechar menu">
-            ✕
-          </button> */}
         </div>
 
         {usuario ? (
@@ -203,7 +196,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
                 onClick={() => setMenuUsuarioAberto((aberto) => !aberto)}
               >
                 <span className="sidebar-avatar" aria-hidden>
-                  {iniciais(nome)}
+                  <Avatar nome={nome} fotoUrl={fotoUrl} />
                 </span>
                 <span className="sidebar-rodape-texto">
                   <span className="sidebar-rodape-rotulo">Conectado como</span>

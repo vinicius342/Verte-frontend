@@ -138,6 +138,7 @@
   background: var(--usr-secundaria);
   color: var(--usr-secundaria-texto);
   font-weight: 600;
+  overflow: hidden;
 }
 .usuario-linha__textos {
   min-width: 0;

@@ -1,0 +1,325 @@
+.perfil-pagina {
+  --radius: 0.875rem;
+  --background: oklch(0.965 0.008 120);
+  --foreground: oklch(0.22 0.03 190);
+  --card: oklch(1 0 0);
+  --primary: oklch(0.47 0.08 190);
+  --primary-foreground: oklch(0.99 0.005 120);
+  --primary-deep: oklch(0.33 0.055 195);
+  --secondary: oklch(0.94 0.02 180);
+  --muted: oklch(0.95 0.008 120);
+  --muted-foreground: oklch(0.52 0.025 190);
+  --accent: oklch(0.78 0.12 65);
+  --destructive: oklch(0.58 0.2 27);
+  --border: oklch(0.9 0.012 150);
+  --shadow-card: 0 1px 2px oklch(0.3 0.05 190 / 6%), 0 12px 32px -12px oklch(0.3 0.05 190 / 18%);
+
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+}
+
+.perfil-main {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: "Manrope", sans-serif;
+}
+.perfil-main .conteudo-topo {
+  margin: 0;
+}
+.perfil-main .titulo-secao {
+  font-family: "Sora", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.perfil-main .estado-vazio,
+.perfil-main .estado-erro,
+.perfil-main .estado-sucesso {
+  padding: 0;
+  margin: 0;
+}
+.perfil-main .estado-sucesso {
+  color: var(--primary);
+}
+
+/* ---------- Cartões ---------- */
+.perfil-cartao {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ---------- Identidade ---------- */
+.perfil-identidade {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.perfil-avatar-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+.perfil-avatar {
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--secondary);
+  color: var(--primary);
+  font-family: "Sora", sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 4px var(--card), 0 0 0 6px var(--accent);
+}
+.perfil-camera {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 0 4px var(--card);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.perfil-camera:hover:not(:disabled) {
+  background: var(--primary-deep);
+}
+.perfil-camera:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.perfil-camera svg {
+  width: 16px;
+  height: 16px;
+}
+.perfil-identidade-info {
+  flex: 1;
+  min-width: 0;
+}
+.perfil-nome {
+  margin: 0;
+  font-family: "Sora", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.perfil-codigo {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.perfil-acoes-foto {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.perfil-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.perfil-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.perfil-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.perfil-btn-primario {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.perfil-btn-primario:hover:not(:disabled) {
+  background: var(--primary-deep);
+}
+.perfil-btn-perigo {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--destructive);
+}
+.perfil-btn-perigo:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--destructive) 6%, transparent);
+}
+.perfil-erro-foto {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  color: var(--destructive);
+}
+
+.perfil-grade {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+.perfil-quadro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--muted);
+  min-width: 0;
+}
+.perfil-quadro-icone {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--secondary);
+  color: var(--primary);
+}
+.perfil-quadro-icone svg {
+  width: 20px;
+  height: 20px;
+}
+.perfil-quadro-rotulo {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+}
+.perfil-quadro-valor {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.perfil-quadro-valor.mono {
+  font-family: var(--fonte-mono);
+}
+.perfil-aviso-supervisor {
+  margin: 16px 0 0;
+  font-size: 0.875rem;
+  color: var(--destructive);
+}
+
+/* ---------- Assinatura ---------- */
+.perfil-assinatura-topo {
+  margin-bottom: 16px;
+}
+.perfil-titulo-cartao {
+  margin: 0;
+  font-family: "Sora", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.perfil-subtitulo {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* Visual do SignaturePad atual (a estrutura interna dele não muda) */
+.perfil-pagina .assinatura-campo {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background-color: transparent;
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.perfil-pagina .assinatura-canvas {
+  height: 192px;
+  background: transparent;
+  color: var(--foreground);
+}
+.perfil-pagina .assinatura-alternador {
+  margin: 4px;
+  padding: 4px;
+  border: none;
+  border-radius: 8px;
+  background: var(--muted);
+}
+.perfil-pagina .assinatura-aba {
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: inherit;
+  font-weight: 600;
+}
+.perfil-pagina .assinatura-aba-ativa {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: var(--shadow-card);
+}
+.perfil-pagina .assinatura-upload {
+  background: var(--muted);
+  min-height: 192px;
+}
+.perfil-pagina .assinatura-acoes {
+  border-top: none;
+  background: transparent;
+}
+.perfil-pagina .assinatura-acoes .btn-ghost {
+  background: var(--card);
+  color: var(--muted-foreground);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+.perfil-pagina .assinatura-acoes .btn-ghost:hover:not(:disabled) {
+  color: var(--foreground);
+}
+
+.perfil-mensagens {
+  margin-top: 12px;
+}
+.perfil-rodape {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.perfil-btn-salvar {
+  padding: 10px 24px;
+}
+
+/* ---------- Responsivo ---------- */
+@media (min-width: 640px) {
+  .perfil-grade {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 639px) {
+  .perfil-identidade {
+    flex-direction: column;
+    text-align: center;
+  }
+  .perfil-acoes-foto {
+    justify-content: center;
+  }
+  .perfil-rodape .perfil-btn {
+    width: 100%;
+  }
+}
