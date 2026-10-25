@@ -62,6 +62,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   const [anexosRemovidos, setAnexosRemovidos] = useState([]);
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
+  const [obtendoCoordenada, setObtendoCoordenada] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
 
   const alterar = (campo) => (e) => {
@@ -105,6 +106,38 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
 
   function removerAnexoNovo(indice) {
     setAnexosNovos((atual) => atual.filter((_, i) => i !== indice));
+  }
+
+  function adquirirCoordenada() {
+    if (!("geolocation" in navigator)) {
+      setErros((atual) => ({ ...atual, coordenada: "Seu navegador não suporta localização." }));
+      return;
+    }
+
+    setObtendoCoordenada(true);
+    setErros((atual) => ({ ...atual, coordenada: undefined }));
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        const lat = posicao.coords.latitude.toFixed(6);
+        const lng = posicao.coords.longitude.toFixed(6);
+        const texto = formatarCoordenada({ lat, lng });
+        setDados((atual) => ({ ...atual, coordenadaTexto: texto }));
+        setObtendoCoordenada(false);
+      },
+      (erro) => {
+        const mensagens = {
+          1: "Permissão de localização negada. Ative o GPS e permita o acesso à localização nas configurações do navegador.",
+          2: "Não foi possível obter a localização. Verifique se o GPS está ligado.",
+          3: "Tempo esgotado ao obter a localização. Tente novamente em um local aberto.",
+        };
+        setErros((atual) => ({
+          ...atual,
+          coordenada: mensagens[erro.code] ?? "Não foi possível obter a localização.",
+        }));
+        setObtendoCoordenada(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   }
 
   async function enviar(e) {
@@ -243,16 +276,26 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
       </label>
 
       <p className="campo-dica">Preencha a coordenada apenas quando o endereço não for conhecido.</p>
-      <label className="campo">
+      <div className="campo">
         <span className="campo-rotulo">Coordenada</span>
-        <input
-          className="campo-input mono"
-          value={dados.coordenadaTexto}
-          onChange={alterar("coordenadaTexto")}
-          placeholder="-3.7327, -38.5267"
-        />
+        <div className="campo-com-botao">
+          <input
+            className="campo-input mono"
+            value={dados.coordenadaTexto}
+            onChange={alterar("coordenadaTexto")}
+            placeholder="-3.7327, -38.5267"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={adquirirCoordenada}
+            disabled={obtendoCoordenada}
+          >
+            {obtendoCoordenada ? "Obtendo…" : "Adquirir coordenada"}
+          </Button>
+        </div>
         {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
-      </label>
+      </div>
 
       <div className="campo">
         <span className="campo-rotulo">

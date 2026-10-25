@@ -877,6 +877,22 @@ input.mono {
   background: var(--primaria);
   color: #fff;
 }
+.campo-com-botao {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.campo-com-botao .campo-input {
+  flex: 1;
+  min-width: 0;
+}
+.campo-com-botao button {
+  white-space: nowrap;
+}
+.campo .campo-com-botao button {
+  background: transparent;
+  color: var(--texto-2);
+}
 .campo-linha {
   display: grid;
   grid-template-columns: 1fr;
