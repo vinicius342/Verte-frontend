@@ -1,23 +1,12 @@
-// Acesso à coleção "configuracoes". O documento de cada usuário tem o
+// Acesso à coleção "configuracoes" (via backend). O documento de cada usuário tem o
 // próprio uid como ID. Nenhum componente fala com o Firestore direto.
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getDb } from "../firebase/config";
-
-const COLECAO = "configuracoes";
+import { apiFetch } from "./apiFetch";
 
 export async function buscarConfiguracao(uid) {
   if (!uid) return null;
-  const snap = await getDoc(doc(getDb(), COLECAO, uid));
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  return apiFetch("configuracoes/buscar", { params: { uid } });
 }
 
 export async function salvarConfiguracao(uid, dados) {
-  await setDoc(
-    doc(getDb(), COLECAO, uid),
-    {
-      ...dados,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+  await apiFetch("configuracoes/salvar", { method: "PUT", body: { uid, dados } });
 }

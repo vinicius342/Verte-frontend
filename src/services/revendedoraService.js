@@ -1,22 +1,13 @@
-import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { docDaRevendedora } from "./caminhos";
-
-const COLECAO = "configuracoes";
-const ID = "geral";
+import { apiFetch } from "./apiFetch";
 
 export async function buscarConfiguracaoRevendedora(revendedoraId) {
-  const snap = await getDoc(docDaRevendedora(revendedoraId, COLECAO, ID));
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  return apiFetch("revendedora/buscar-configuracao", { params: { revendedoraId } });
 }
 
-export async function salvarConfiguracaoRevendedora(revendedoraId, dados, uid) {
-  await setDoc(
-    docDaRevendedora(revendedoraId, COLECAO, ID),
-    {
-      codigoRevenda: dados.codigoRevenda?.toString().trim() ?? "",
-      updatedAt: serverTimestamp(),
-      updatedBy: uid,
-    },
-    { merge: true },
-  );
+// O backend registra o updatedBy a partir do token; o uid recebido é ignorado.
+export async function salvarConfiguracaoRevendedora(revendedoraId, dados) {
+  await apiFetch("revendedora/salvar-configuracao", {
+    method: "PUT",
+    body: { revendedoraId, dados: { codigoRevenda: dados.codigoRevenda } },
+  });
 }

@@ -1,55 +1,18 @@
-import {
-  addDoc,
-  deleteDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
-import { colecaoDaRevendedora, docDaRevendedora } from "./caminhos";
+import { apiFetch } from "./apiFetch";
 
-const COLECAO = "comodatos";
-
-function montarDadosComodato(dados) {
-  return {
-    clienteId: dados.clienteId?.trim() ?? "",
-    revenda: dados.revenda?.trim() ?? "",
-    vendedor: dados.vendedor?.trim() ?? "",
-    vendedorCodigo: dados.vendedorCodigo?.trim() ?? "",
-    supervisor: dados.supervisor?.trim() ?? "",
-    supervisorCodigo: dados.supervisorCodigo?.trim() ?? "",
-    codPdv: dados.codPdv?.trim() ?? "",
-    razaoSocial: dados.razaoSocial?.trim() ?? "",
-    cpf: dados.cpf?.trim() ?? "",
-    materiais: (dados.materiais ?? []).filter((m) => m.descricao?.trim() || m.codMaterial?.trim()),
-  };
-}
-
-export async function criarComodato(revendedoraId, dados, uid) {
-  const montados = montarDadosComodato(dados);
-  const ref = await addDoc(colecaoDaRevendedora(revendedoraId, COLECAO), {
-    ...montados,
-    createdAt: serverTimestamp(),
-    createdBy: uid,
-  });
-  return { id: ref.id, ...montados };
+// A normalização dos campos agora acontece no backend. O uid recebido é ignorado (vem do token).
+export async function criarComodato(revendedoraId, dados) {
+  return apiFetch("comodatos/criar", { method: "POST", body: { revendedoraId, dados } });
 }
 
 export async function atualizarComodato(revendedoraId, id, dados) {
-  await updateDoc(docDaRevendedora(revendedoraId, COLECAO, id), {
-    ...montarDadosComodato(dados),
-  });
+  await apiFetch("comodatos/atualizar", { method: "PUT", body: { revendedoraId, id, dados } });
 }
 
 export async function excluirComodato(revendedoraId, id) {
-  await deleteDoc(docDaRevendedora(revendedoraId, COLECAO, id));
+  await apiFetch("comodatos/excluir", { method: "DELETE", params: { revendedoraId, id } });
 }
 
-export function observarComodatos(revendedoraId, callback, onError) {
-  return onSnapshot(
-    query(colecaoDaRevendedora(revendedoraId, COLECAO), orderBy("createdAt", "desc")),
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    (erro) => onError?.(erro),
-  );
+export async function listarComodatos(revendedoraId) {
+  return apiFetch("comodatos/listar", { params: { revendedoraId } });
 }
