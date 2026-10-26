@@ -479,6 +479,13 @@ input.mono {
   flex: 1;
   min-width: 0;
 }
+.linha-nome-linha {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
 .linha-nome {
   font-family: var(--fonte-titulo);
   font-weight: 700;
@@ -1398,6 +1405,57 @@ input.mono {
   position: absolute;
   text-align: center;
   font-size: 12px;
+}
+
+/* ---------- Comodato: status e confirmações ---------- */
+.selo-confirmacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.selo-confirmacao--pendente {
+  background: var(--mapa-fundo);
+  color: var(--mapa);
+  border-color: color-mix(in oklab, var(--mapa) 30%, transparent);
+}
+.selo-confirmacao--confirmado {
+  background: color-mix(in oklab, var(--primaria) 12%, var(--superficie));
+  color: var(--primaria);
+  border-color: color-mix(in oklab, var(--primaria) 30%, transparent);
+}
+.selo-confirmacao--rejeitado {
+  background: color-mix(in oklab, var(--perigo) 10%, var(--superficie));
+  color: var(--perigo);
+  border-color: color-mix(in oklab, var(--perigo) 30%, transparent);
+}
+
+.comodato-detalhe-status {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.comodato-confirmacoes {
+  margin: 1rem 0 1.25rem;
+}
+.comodato-confirmacoes .campo-rotulo {
+  margin-top: 0;
+}
+.comodato-confirmacoes-lista {
+  margin: 0.5rem 0 0;
+}
+.comodato-confirmacao-valor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .comodato-acoes-modal {

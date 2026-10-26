@@ -1,4 +1,5 @@
 import { formatDate } from "../../utils/formatDate";
+import StatusConfirmacao from "./StatusConfirmacao";
 
 function formatarDataHora(valor) {
   if (!valor) return null;
@@ -16,7 +17,10 @@ export default function ComodatoRow({ comodato, onSelecionar }) {
           📋
         </span>
         <span className="linha-texto">
-          <span className="linha-nome">{comodato.razaoSocial || "Sem razão social"}</span>
+          <span className="linha-nome-linha">
+            <span className="linha-nome">{comodato.razaoSocial || "Sem razão social"}</span>
+            <StatusConfirmacao status={comodato.statusComodato} />
+          </span>
           {dataHora ? <span className="linha-comercio">{dataHora}</span> : null}
         </span>
         <span className="linha-seta" aria-hidden>

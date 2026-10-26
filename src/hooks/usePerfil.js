@@ -9,6 +9,7 @@ const ESTADO_INICIAL = {
   perfil: null,
   usuario: null,
   supervisor: null,
+  temGerente: false,
   exigeSupervisor: false,
   supervisorErro: false,
 };
@@ -62,7 +63,16 @@ export function usePerfil() {
           supervisorCodigo: supervisor?.codigo ?? "",
         };
 
-        if (!cancelado) setEstado({ perfil, usuario, supervisor, exigeSupervisor, supervisorErro });
+        if (!cancelado) {
+          setEstado({
+            perfil,
+            usuario,
+            supervisor,
+            temGerente: Boolean(usuario?.gerenteId),
+            exigeSupervisor,
+            supervisorErro,
+          });
+        }
       } catch (e) {
         console.error("Erro ao carregar perfil:", e);
         if (!cancelado) setErro(e?.message ?? "Não foi possível carregar o perfil.");

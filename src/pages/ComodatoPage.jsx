@@ -10,7 +10,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useComodatos } from "../hooks/useComodatos";
 
 export default function ComodatoPage() {
-  const { usuario } = useAuth();
+  const { papel } = useAuth();
   const { comodatos, loading, erro } = useComodatos();
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
@@ -37,7 +37,7 @@ export default function ComodatoPage() {
         />
       </main>
 
-      {usuario && (
+      {papel === "vendedor" && (
         <Button
           className="botao-adicionar-fixo"
           aria-label="Novo comodato"

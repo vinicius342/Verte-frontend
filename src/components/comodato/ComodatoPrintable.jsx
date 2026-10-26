@@ -38,7 +38,7 @@ function Rotulo({ left, top, width, children }) {
   );
 }
 
-export default function ComodatoPrintable({ comodato, assinatura, papelAssinante, printRef }) {
+export default function ComodatoPrintable({ comodato, assinaturas = {}, printRef }) {
   const materiais = comodato.materiais ?? [];
   const totalLinhas = Math.max(LINHAS_PADRAO, materiais.length);
 
@@ -130,25 +130,19 @@ export default function ComodatoPrintable({ comodato, assinatura, papelAssinante
       </div>
 
       {/* Assinaturas — sempre logo abaixo da tabela, não importa a altura dela */}
-      {papelAssinante === "gerente" && (
-        <ImagemAssinatura src={assinatura} left={462} top={topLinhaGerente} width={351} />
-      )}
+      <ImagemAssinatura src={assinaturas.gerente} left={462} top={topLinhaGerente} width={351} />
       <div className="pdf-linha-assinatura" style={{ left: 462, top: topLinhaGerente, width: 351 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 462, top: topLabelGerente, width: 351 }}>
         GERENTE DA REVENDA
       </div>
 
-      {papelAssinante === "vendedor" && (
-        <ImagemAssinatura src={assinatura} left={157} top={topLinhaInferior} width={282} />
-      )}
+      <ImagemAssinatura src={assinaturas.vendedor} left={157} top={topLinhaInferior} width={282} />
       <div className="pdf-linha-assinatura" style={{ left: 157, top: topLinhaInferior, width: 282 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 157, top: topLabelInferior, width: 282 }}>
         VENDEDOR
       </div>
 
-      {papelAssinante === "supervisor" && (
-        <ImagemAssinatura src={assinatura} left={813} top={topLinhaInferior} width={293} />
-      )}
+      <ImagemAssinatura src={assinaturas.supervisor} left={813} top={topLinhaInferior} width={293} />
       <div className="pdf-linha-assinatura" style={{ left: 813, top: topLinhaInferior, width: 293 }} />
       <div className="pdf-rotulo-assinatura" style={{ left: 813, top: topLabelInferior, width: 293 }}>
         SUPERVISOR DE VENDAS

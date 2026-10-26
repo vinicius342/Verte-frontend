@@ -16,3 +16,7 @@ export async function excluirComodato(revendedoraId, id) {
 export async function listarComodatos(revendedoraId) {
   return apiFetch("comodatos/listar", { params: { revendedoraId } });
 }
+
+export async function buscarComodato(revendedoraId, id) {
+  return apiFetch("comodatos/buscar", { params: { revendedoraId, id } });
+}

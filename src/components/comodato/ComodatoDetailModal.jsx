@@ -4,12 +4,30 @@ import jsPDF from "jspdf";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
 import ComodatoPrintable from "./ComodatoPrintable";
-import { buscarConfiguracao } from "../../services/configService";
+import StatusConfirmacao from "./StatusConfirmacao";
 import { useAuth } from "../../hooks/useAuth";
 import ComodatoForm from "./ComodatoForm";
-import { atualizarComodato, excluirComodato } from "../../services/comodatoService";
+import { atualizarComodato, buscarComodato, excluirComodato } from "../../services/comodatoService";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
-import { buscarPerfil } from "../../services/perfilService";
+
+function formatarCriadoEm(valor) {
+  if (!valor) return null;
+  const data =
+    typeof valor?.toDate === "function"
+      ? valor.toDate()
+      : valor instanceof Date
+        ? valor
+        : new Date(valor);
+  if (Number.isNaN(data.getTime())) return null;
+
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 function textoParaCopiar(comodato) {
   const blocosMateriais = (comodato.materiais ?? [])
@@ -31,8 +49,9 @@ function textoParaCopiar(comodato) {
 }
 
 export default function ComodatoDetailModal({ comodato, onFechar }) {
-  const { uid, revendedoraId, papel } = useAuth();
-  const [assinatura, setAssinatura] = useState("");
+  const { revendedoraId } = useAuth();
+  const [assinaturas, setAssinaturas] = useState({ vendedor: "", supervisor: "", gerente: "" });
+  const [carregandoAssinaturas, setCarregandoAssinaturas] = useState(false);
   const printRef = useRef(null);
   const [processando, setProcessando] = useState(false);
   const [copiado, setCopiado] = useState(false);
@@ -40,21 +59,47 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
   const [erroGeral, setErroGeral] = useState(null);
 
   useEffect(() => {
-    if (!comodato || !uid || !revendedoraId) return;
+    if (!comodato?.id || !revendedoraId) {
+      setAssinaturas({ vendedor: "", supervisor: "", gerente: "" });
+      setCarregandoAssinaturas(false);
+      return;
+    }
+
     let ativo = true;
-    buscarPerfil(revendedoraId, uid)
-      .then((p) => {
-        if (ativo) setAssinatura(p?.assinatura ?? "");
+    setAssinaturas({ vendedor: "", supervisor: "", gerente: "" });
+    setCarregandoAssinaturas(true);
+
+    buscarComodato(revendedoraId, comodato.id)
+      .then((comodatoAtualizado) => {
+        if (!ativo) return;
+        setAssinaturas({
+          vendedor: comodatoAtualizado?.assinaturaVendedor || "",
+          supervisor: comodatoAtualizado?.assinaturaSupervisor || "",
+          gerente: comodatoAtualizado?.assinaturaGerente || "",
+        });
       })
-      .catch((erro) => console.error("Falha ao carregar assinatura:", erro));
+      .catch((erro) => {
+        console.error("Falha ao carregar assinaturas:", erro);
+      })
+      .finally(() => {
+        if (ativo) setCarregandoAssinaturas(false);
+      });
+
     return () => {
       ativo = false;
     };
-  }, [comodato, uid, revendedoraId]);
+  }, [comodato?.id, revendedoraId]);
 
   if (!comodato) return null;
 
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
+  const criadoEm = formatarCriadoEm(comodato.createdAt);
+  const confirmacoes = [
+    { rotulo: "Vendedor", nome: comodato.vendedor, status: comodato.confirmacaoVendedor },
+    { rotulo: "Supervisor", nome: comodato.supervisor, status: comodato.confirmacaoSupervisor },
+    { rotulo: "Gerente", nome: comodato.gerente, status: comodato.confirmacaoGerente },
+  ];
+  const temAlgumaConfirmacao = confirmacoes.some(({ status }) => status != null);
 
   function cancelarEdicao() {
     setEditando(false);
@@ -148,6 +193,12 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
         <ComodatoForm comodatoExistente={comodato} onSalvar={salvar} onCancelar={cancelarEdicao} />
       ) : (
         <div className="detalhe">
+          {comodato.statusComodato ? (
+            <div className="comodato-detalhe-status">
+              <StatusConfirmacao status={comodato.statusComodato} />
+            </div>
+          ) : null}
+
           <dl className="detalhe-lista">
             <div className="detalhe-item">
               <dt>Revenda</dt>
@@ -166,6 +217,10 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
               <dd>{comodato.supervisor || "—"}</dd>
             </div>
             <div className="detalhe-item">
+              <dt>Gerente</dt>
+              <dd>{comodato.gerente || "—"}</dd>
+            </div>
+            <div className="detalhe-item">
               <dt>Cliente</dt>
               <dd>{comodato.razaoSocial || "—"}</dd>
             </div>
@@ -173,6 +228,16 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
               <dt>CPF/CNPJ</dt>
               <dd className="mono">{comodato.cpf || "—"}</dd>
             </div>
+            <div className="detalhe-item">
+              <dt>Criado por</dt>
+              <dd>{comodato.criadoPor || "—"}</dd>
+            </div>
+            {criadoEm ? (
+              <div className="detalhe-item">
+                <dt>Criado em</dt>
+                <dd>{criadoEm}</dd>
+              </div>
+            ) : null}
           </dl>
 
           <div className="comodato-lista-materiais-detalhe">
@@ -188,16 +253,35 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
             </ul>
           </div>
 
+          <div className="comodato-confirmacoes">
+            <span className="campo-rotulo">Confirmações</span>
+            {temAlgumaConfirmacao ? (
+              <dl className="detalhe-lista comodato-confirmacoes-lista">
+                {confirmacoes.map(({ rotulo, nome, status }) => (
+                  <div className="detalhe-item" key={rotulo}>
+                    <dt>{rotulo}</dt>
+                    <dd className="comodato-confirmacao-valor">
+                      {nome ? <span>{nome}</span> : null}
+                      <StatusConfirmacao status={status} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="detalhe-aviso">Sem confirmação (comodato anterior ao fluxo de confirmações)</p>
+            )}
+          </div>
+
           {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
           <div className="formulario-acoes comodato-acoes-modal">
             <Button variant="ghost" onClick={copiar}>
               {copiado ? "Copiado!" : "Copiar"}
             </Button>
-            <Button variant="secondary" onClick={baixarImagem} disabled={processando}>
+            <Button variant="secondary" onClick={baixarImagem} disabled={processando || carregandoAssinaturas}>
               {podeCompartilharArquivo ? "Compartilhar" : "Baixar imagem"}
             </Button>
-            <Button onClick={baixarPdf} disabled={processando}>
+            <Button onClick={baixarPdf} disabled={processando || carregandoAssinaturas}>
               Baixar PDF
             </Button>
             <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
@@ -212,7 +296,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
 
       {/* Fora da área visível — usado só para gerar a imagem/PDF, não aparece na tela */}
       <div className="comodato-papel-oculto">
-        <ComodatoPrintable comodato={comodato} assinatura={assinatura} papelAssinante={papel} printRef={printRef} />
+        <ComodatoPrintable comodato={comodato} assinaturas={assinaturas} printRef={printRef} />
       </div>
     </Modal>
   );

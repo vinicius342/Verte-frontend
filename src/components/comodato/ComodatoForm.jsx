@@ -86,7 +86,13 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const [erroGeral, setErroGeral] = useState(null);
   const { revendedoraId, papel, uid, nome } = useAuth();
   const { revendedora, loading: carregandoRevendedora } = useConfiguracoes();
-  const { perfil, supervisor: supervisorVinculado, supervisorErro, loading: carregandoPerfil } = usePerfil();
+  const {
+    perfil,
+    supervisor: supervisorVinculado,
+    supervisorErro,
+    temGerente,
+    loading: carregandoPerfil,
+  } = usePerfil();
   const [carregandoClientes, setCarregandoClientes] = useState(true);
   const [usuarioSupervisor, setUsuarioSupervisor] = useState(null);
   const [usuarioSupervisorCarregado, setUsuarioSupervisorCarregado] = useState(false);
@@ -106,6 +112,9 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   const mensagemSemSupervisor = supervisorErro
     ? "Não foi possível carregar o seu supervisor. Tente novamente."
     : "Você não tem supervisor vinculado. Peça a um gerente ou administrador para vincular um supervisor ao seu usuário.";
+  const semGerente = papel === "vendedor" && !temGerente;
+  const mensagemSemGerente =
+    "Você não tem gerente vinculado. Peça a um administrador para vincular um gerente ao seu usuário.";
 
   useEffect(() => {
     let ativo = true;
@@ -363,6 +372,10 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
       setErroGeral(mensagemSemSupervisor);
       return;
     }
+    if (semGerente) {
+      setErroGeral(mensagemSemGerente);
+      return;
+    }
     const novosErros = {};
     const temErroCliente = !dados.clienteId || !clienteSelecionado || clienteSelecionadoIncompleto;
 
@@ -548,6 +561,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
       </div>
 
       {semSupervisor ? <p className="estado-erro">{mensagemSemSupervisor}</p> : null}
+      {semGerente ? <p className="estado-erro">{mensagemSemGerente}</p> : null}
       {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
       <div className="formulario-acoes">
@@ -560,6 +574,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
             enviando ||
             carregandoClientes ||
             semSupervisor ||
+            semGerente ||
             clienteSelecionadoIncompleto ||
             (Boolean(dados.clienteId) && !clienteSelecionado)
           }
