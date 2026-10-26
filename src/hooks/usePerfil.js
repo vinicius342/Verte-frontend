@@ -3,7 +3,7 @@ import { useAuth } from "./useAuth";
 import { buscarPerfil } from "../services/perfilService";
 import { buscarUsuario } from "../services/userService";
 
-const PAPEIS_COM_SUPERVISOR = ["vendedor", "motorista"];
+const PAPEIS_COM_SUPERVISOR = ["vendedor", "motorista", "auxiliar_motorista"];
 
 const ESTADO_INICIAL = {
   perfil: null,

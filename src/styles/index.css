@@ -938,6 +938,10 @@ input.mono {
   color: var(--perigo);
   font-size: 0.8rem;
 }
+.campo-aviso {
+  color: var(--mapa);
+  font-size: 0.8rem;
+}
 .comodato-autocomplete {
   position: relative;
 }

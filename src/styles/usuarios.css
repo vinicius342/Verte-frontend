@@ -226,6 +226,10 @@
   background: rgba(14, 116, 144, 0.1);
   color: var(--usr-motorista);
 }
+.usuario-selo--motorista {
+  background: rgba(14, 144, 88, 0.1);
+  color: var(--usr-motorista);
+}
 .usuario-selo--inativo {
   background: var(--usr-suave);
   color: var(--usr-texto-suave);

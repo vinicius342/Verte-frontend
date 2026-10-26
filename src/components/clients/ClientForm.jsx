@@ -63,6 +63,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [obtendoCoordenada, setObtendoCoordenada] = useState(false);
+  const [avisoCoordenada, setAvisoCoordenada] = useState(null);
   const [erroGeral, setErroGeral] = useState(null);
 
   const alterar = (campo) => (e) => {
@@ -109,24 +110,28 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   }
 
   function adquirirCoordenada() {
+    setAvisoCoordenada(null);
+    setErros((atual) => ({ ...atual, coordenada: undefined }));
     if (!("geolocation" in navigator)) {
       setErros((atual) => ({ ...atual, coordenada: "Seu navegador não suporta localização." }));
       return;
     }
 
     setObtendoCoordenada(true);
-    setErros((atual) => ({ ...atual, coordenada: undefined }));
     navigator.geolocation.getCurrentPosition(
       (posicao) => {
-        const lat = posicao.coords.latitude.toFixed(6);
-        const lng = posicao.coords.longitude.toFixed(6);
+        const { latitude, longitude, accuracy } = posicao.coords;
+        const lat = Number(latitude.toFixed(6));
+        const lng = Number(longitude.toFixed(6));
         const texto = formatarCoordenada({ lat, lng });
         setDados((atual) => ({ ...atual, coordenadaTexto: texto }));
+        setAvisoCoordenada(accuracy > 100 ? `Localização aproximada (precisão de ${Math.round(accuracy)} m). Confira antes de salvar; no celular com GPS fica mais precisa.` : null);
         setObtendoCoordenada(false);
       },
       (erro) => {
+        setAvisoCoordenada(null);
         const mensagens = {
-          1: "Permissão de localização negada. Ative o GPS e permita o acesso à localização nas configurações do navegador.",
+          1: "Permissão de localização negada. Ative a localização no aparelho e permita o acesso nas configurações do navegador.",
           2: "Não foi possível obter a localização. Verifique se o GPS está ligado.",
           3: "Tempo esgotado ao obter a localização. Tente novamente em um local aberto.",
         };
@@ -282,7 +287,10 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
           <input
             className="campo-input mono"
             value={dados.coordenadaTexto}
-            onChange={alterar("coordenadaTexto")}
+            onChange={(e) => {
+              setAvisoCoordenada(null);
+              alterar("coordenadaTexto")(e);
+            }}
             placeholder="-3.7327, -38.5267"
           />
           <Button
@@ -295,6 +303,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
           </Button>
         </div>
         {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
+        {avisoCoordenada ? <span className="campo-aviso">{avisoCoordenada}</span> : null}
       </div>
 
       <div className="campo">

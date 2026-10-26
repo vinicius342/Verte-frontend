@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Plus, Pencil, UserX, UserCheck, Shield, BadgeDollarSign, Eye, Briefcase,
-  Users, AlertTriangle, CheckCircle2, Truck
+  Users, AlertTriangle, CheckCircle2, Truck, HardHat
 } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
@@ -18,7 +18,10 @@ const PAPEIS = {
   supervisor: { rotulo: "Supervisor", Icone: Eye },
   vendedor: { rotulo: "Vendedor", Icone: BadgeDollarSign },
   motorista: { rotulo: "Motorista", Icone: Truck },
+  auxiliar_motorista: { rotulo: "Auxiliar de motorista", Icone: HardHat },
 };
+
+const PAPEIS_DO_GERENTE = ["vendedor", "motorista", "auxiliar_motorista", "supervisor"];
 
 export default function UsuariosPage() {
   const { uid, papel: meuPapel } = useAuth();
@@ -29,11 +32,11 @@ export default function UsuariosPage() {
   const [erroAcao, setErroAcao] = useState(null);
   const [acaoId, setAcaoId] = useState(null);
 
-  // Admin gerencia todos (menos a si mesmo); gerente só vendedor/supervisor
+  // Admin gerencia todos (menos a si mesmo); gerente só vendedor/motorista/auxiliar/supervisor
   function podeGerenciar(u) {
     if (u.id === uid) return false;
     if (meuPapel === "admin") return true;
-    return meuPapel === "gerente" && ["vendedor", "motorista", "supervisor"].includes(u.papel);
+    return meuPapel === "gerente" && PAPEIS_DO_GERENTE.includes(u.papel);
   }
 
   async function alternarAtivo(u) {

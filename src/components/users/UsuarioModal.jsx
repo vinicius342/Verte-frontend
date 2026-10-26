@@ -13,12 +13,13 @@ const PERMITIR_EXCLUSAO_DEV = true;
 const PAPEIS = [
   { valor: "vendedor", rotulo: "Vendedor" },
   { valor: "motorista", rotulo: "Motorista" },
+  { valor: "auxiliar_motorista", rotulo: "Auxiliar de motorista" },
   { valor: "supervisor", rotulo: "Supervisor" },
   { valor: "gerente", rotulo: "Gerente" },
   { valor: "admin", rotulo: "Admin" },
 ];
-const PAPEIS_DO_GERENTE = ["vendedor", "motorista", "supervisor"];
-const PAPEIS_COM_SUPERVISOR = ["vendedor", "motorista"];
+const PAPEIS_DO_GERENTE = ["vendedor", "motorista", "auxiliar_motorista", "supervisor"];
+const PAPEIS_COM_SUPERVISOR = ["vendedor", "motorista", "auxiliar_motorista"];
 
 function SelectResponsavel({ rotulo, valor, onChange, opcoes, vazio, desabilitado }) {
   return (
@@ -220,7 +221,9 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
             ))}
           </select>
           {!souAdmin ? (
-            <span className="usuarios-campo__dica">Gerentes definem apenas vendedor ou supervisor.</span>
+            <span className="usuarios-campo__dica">
+              Gerentes definem apenas vendedor, motorista, auxiliar de motorista ou supervisor.
+            </span>
           ) : null}
           {ehEuMesmo ? <span className="usuarios-campo__dica">Você não pode alterar o próprio tipo.</span> : null}
         </label>
