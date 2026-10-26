@@ -72,21 +72,6 @@ function aplicarClienteSelecionado(atual, cliente) {
   };
 }
 
-function preencherComConfiguracao(atual, perfil, revendedora) {
-  const p = perfil ?? {};
-  const vendedores = [p.vendedor, p.vendedorCodigo].filter(Boolean).join(" ");
-  const supervisores = [p.supervisor, p.supervisorCodigo].filter(Boolean).join(" ");
-
-  return {
-    ...atual,
-    revenda: atual.revenda?.trim() ? atual.revenda : revendedora?.codigoRevenda ?? "",
-    vendedor: atual.vendedor?.trim() ? atual.vendedor : vendedores,
-    vendedorCodigo: atual.vendedorCodigo?.trim() ? atual.vendedorCodigo : p.vendedorCodigo ?? "",
-    supervisor: atual.supervisor?.trim() ? atual.supervisor : supervisores,
-    supervisorCodigo: atual.supervisorCodigo?.trim() ? atual.supervisorCodigo : p.supervisorCodigo ?? "",
-  };
-}
-
 export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }) {
   const navigate = useNavigate();
   const clienteRef = useRef(null);
@@ -257,6 +242,13 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
   }
 
   function preencherComConfiguracao(atual, perfil, revendedora, papel, usuarioSupervisor) {
+    if (comodatoExistente) {
+      return {
+        ...atual,
+        revenda: atual.revenda?.trim() ? atual.revenda : revendedora?.codigoRevenda ?? "",
+      };
+    }
+
     const p = perfil ?? {};
     const ehVendedor = papel === "vendedor";
     const ehSupervisor = papel === "supervisor";
@@ -412,7 +404,11 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     setErroGeral(null);
     try {
       await onSalvar({
-        ...dados,
+        clienteId: dados.clienteId,
+        revenda: dados.revenda,
+        codPdv: dados.codPdv,
+        razaoSocial: dados.razaoSocial,
+        cpf: dados.cpf,
         materiais: materiaisPreenchidos.map(({ codMaterial, descricao, quantidade }) => ({ codMaterial, descricao, quantidade })),
       });
     } catch (erro) {

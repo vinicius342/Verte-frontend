@@ -4,10 +4,10 @@ import { useAuth } from "../../hooks/useAuth";
 import { criarComodato } from "../../services/comodatoService";
 
 export default function AddComodatoModal({ aberto, onFechar, onSalvo }) {
-  const { uid, revendedoraId } = useAuth();
+  const { revendedoraId } = useAuth();
 
   async function salvar(dados) {
-    const salvo = await criarComodato(revendedoraId, dados, uid);
+    const salvo = await criarComodato(revendedoraId, dados);
     onSalvo(salvo);
   }
 

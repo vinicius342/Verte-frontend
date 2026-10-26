@@ -1,6 +1,6 @@
 import { apiFetch } from "./apiFetch";
 
-// A normalização dos campos agora acontece no backend. O uid recebido é ignorado (vem do token).
+// Vendedor e supervisor são definidos pelo backend a partir do token; o frontend não envia nome nem código.
 export async function criarComodato(revendedoraId, dados) {
   return apiFetch("comodatos/criar", { method: "POST", body: { revendedoraId, dados } });
 }
