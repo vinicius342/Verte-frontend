@@ -13,6 +13,10 @@ import PrivateRoute from "./PrivateRoute";
 import RotaPublica from "./RotaPublica";
 import RotaGerente from "./RotaGerente";
 import RotaSemMotorista from "./RotaSemMotorista";
+import RotaMotorista from "./RotaMotorista";
+import RotaDoDiaPage from "../pages/RotaDoDiaPage";
+import RotaFormPage from "../pages/RotaFormPage";
+import RotaDetalhePage from "../pages/RotaDetalhePage";
 
 export default function AppRoutes(): JSX.Element {
   return (
@@ -27,6 +31,13 @@ export default function AppRoutes(): JSX.Element {
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<Home />} />
         <Route path="/perfil" element={<PerfilPage />} />
+
+        <Route element={<RotaMotorista />}>
+          <Route path="/rota-do-dia" element={<RotaDoDiaPage />} />
+          <Route path="/rota-do-dia/nova" element={<RotaFormPage />} />
+          <Route path="/rota-do-dia/:id" element={<RotaDetalhePage />} />
+          <Route path="/rota-do-dia/:id/editar" element={<RotaFormPage />} />
+        </Route>
 
         <Route element={<RotaSemMotorista />}>
           <Route path="/comodato" element={<ComodatoPage />} />

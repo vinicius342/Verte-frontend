@@ -1783,6 +1783,107 @@ input.mono {
   transform: none;
 }
 
+/* ---------- Rotas ---------- */
+.rota-cartao {
+  width: 100%;
+  text-align: left;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+}
+
+.rota-progresso {
+  width: 100%;
+  height: 0.4rem;
+  background: var(--linha);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rota-progresso-barra {
+  height: 100%;
+  background: var(--primaria);
+}
+
+.rota-parada {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.rota-parada-numero {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primaria);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.rota-parada-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rota-parada-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rota-botao-baixa {
+  border: 1px solid var(--linha);
+  background: var(--superficie);
+  color: var(--texto);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.rota-botao-baixa--ativo {
+  background: color-mix(in oklab, var(--primaria) 12%, var(--superficie));
+  border-color: color-mix(in oklab, var(--primaria) 40%, transparent);
+  color: var(--primaria);
+}
+
+.rota-reordenar-setas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.rota-reordenar-botao {
+  border: 1px solid var(--linha);
+  background: var(--superficie);
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rota-reordenar-botao:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Limite */
 
 .limite-texto-copia {

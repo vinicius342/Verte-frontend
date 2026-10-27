@@ -86,6 +86,15 @@ const icones = {
       <line x1="21" y1="12" x2="9" y2="12" />
     </Icone>
   ),
+  rota: (
+    <Icone>
+      <path d="M3 7h5l2 3h6l2-2" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="17" cy="17" r="2" />
+      <path d="M5 17H3v-6h8" />
+      <path d="M19 17h2v-4l-3-3" />
+    </Icone>
+  ),
   entrar: (
     <Icone>
       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
@@ -103,6 +112,7 @@ const icones = {
 /* Itens do menu principal. `restrito` = só aparece se podeConfigurar. */
 const itensMenu = [
   { caminho: "/", rotulo: "Início", icone: icones.inicio },
+  { caminho: "/rota-do-dia", rotulo: "Rota do dia", icone: icones.rota, soMotorista: true },
   { caminho: "/comodato", rotulo: "Comodato", icone: icones.comodato, ocultoMotorista: true },
   { caminho: "/limite", rotulo: "Solicitação de limites", icone: icones.limite, ocultoMotorista: true },
   { caminho: "/ativos", rotulo: "Ativos", icone: icones.ativos, ocultoMotorista: true },
@@ -156,7 +166,12 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
           <>
             <nav className="sidebar-nav" aria-label="Menu principal">
               {itensMenu
-                .filter((item) => (!item.restrito || podeConfigurar) && (!item.ocultoMotorista || !ehMotorista))
+                .filter((item) => {
+                  if (item.restrito && !podeConfigurar) return false;
+                  if (item.ocultoMotorista && ehMotorista) return false;
+                  if (item.soMotorista && !ehMotorista) return false;
+                  return true;
+                })
                 .map((item) => {
                   const ativo = estaAtivo(item.caminho);
                   return (
