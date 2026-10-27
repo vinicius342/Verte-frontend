@@ -30,7 +30,7 @@ export default function Header({ busca, onBuscar, onAbrirMenu }) {
             <span className="marca-nome">Verte</span>
           </div>
 
-          {(papel === "supervisor" || papel === "gerente") && (
+          {(papel === "supervisor" || papel === "gerente" || papel === "vendedor") && (
             <div className="cabecalho-usuario">
               <NotificacaoSino />
             </div>

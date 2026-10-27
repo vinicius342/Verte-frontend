@@ -1983,8 +1983,16 @@ input.mono {
 }
 .notificacao-item-linha {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  color: var(--cabecalho-texto);
+}
+.notificacao-item-linha-suave {
+  display: block;
+  font-size: 0.75rem;
   color: var(--cabecalho-texto-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .notificacoes-restantes {
   margin: 0;

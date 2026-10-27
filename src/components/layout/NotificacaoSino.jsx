@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Carregando from "../common/Carregando";
 import { usePendentes } from "../../hooks/usePendentes";
+import { useAuth } from "../../hooks/useAuth";
 
 const formatadorRelativo = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
 
@@ -27,8 +28,16 @@ function tempoRelativo(valor) {
   return formatadorRelativo.format(Math.round(segundos / 31536000), "year");
 }
 
+function obterTextoRejeitado(rejeitadoPor) {
+  if (rejeitadoPor === "ambos") return "Rejeitado pelo supervisor e pelo gerente";
+  if (rejeitadoPor === "gerente") return "Rejeitado pelo gerente";
+  if (rejeitadoPor === "supervisor") return "Rejeitado pelo supervisor";
+  return "Rejeitado pelo supervisor e pelo gerente";
+}
+
 export default function NotificacaoSino() {
   const { itens, total, loading, recarregar, marcarVisto } = usePendentes();
+  const { papel } = useAuth();
   const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   const sinoRef = useRef(null);
@@ -72,6 +81,10 @@ export default function NotificacaoSino() {
 
   function verMinhasPendencias() {
     setAberto(false);
+    if (papel === "vendedor") {
+      navigate("/comodato");
+      return;
+    }
     navigate("/comodato", { state: { filtro: "minha-vez" } });
   }
 
@@ -103,29 +116,96 @@ export default function NotificacaoSino() {
 
       {aberto && (
         <div id="notificacoes-menu" ref={menuRef} className="notificacoes-menu">
-          <div className="notificacoes-topo">Pendências</div>
+          <div className="notificacoes-topo">Notificações</div>
 
           {loading && itens.length === 0 ? (
             <Carregando escala={0.5} />
           ) : (
             <div>
               {itens.length === 0 && total === 0 && (
-                <p className="notificacoes-vazio">Nenhuma pendência nova.</p>
+                <p className="notificacoes-vazio">Nenhuma notificação nova.</p>
               )}
-              {itens.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="notificacao-item"
-                  onClick={() => abrirComodato(item)}
-                >
-                  <span className="notificacao-item-titulo">
-                    {item.razaoSocial || "Sem razão social"}
-                  </span>
-                  <span className="notificacao-item-linha">Vendedor: {item.vendedor || "—"}</span>
-                  <span className="notificacao-item-linha">{tempoRelativo(item.createdAt)}</span>
-                </button>
-              ))}
+              {itens.map((item) => {
+                const tipo = item.tipo || "responder";
+                if (tipo === "confirmado") {
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="notificacao-item"
+                      onClick={() => abrirComodato(item)}
+                    >
+                      <span className="notificacao-item-titulo" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                        <span
+                          style={{
+                            width: "0.5rem",
+                            height: "0.5rem",
+                            borderRadius: "50%",
+                            background: "var(--cabecalho-pino)",
+                            flex: "0 0 auto",
+                          }}
+                          aria-hidden="true"
+                        />
+                        Comodato confirmado
+                      </span>
+                      <span className="notificacao-item-linha">Aprovado pelo supervisor e pelo gerente</span>
+                      <span className="notificacao-item-linha-suave">
+                        {item.notificadoEm
+                          ? `${item.razaoSocial || "Sem razão social"} · ${tempoRelativo(item.notificadoEm)}`
+                          : item.razaoSocial || "Sem razão social"}
+                      </span>
+                    </button>
+                  );
+                }
+                if (tipo === "rejeitado") {
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="notificacao-item"
+                      onClick={() => abrirComodato(item)}
+                    >
+                      <span className="notificacao-item-titulo" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                        <span
+                          style={{
+                            width: "0.5rem",
+                            height: "0.5rem",
+                            borderRadius: "50%",
+                            background: "var(--perigo)",
+                            flex: "0 0 auto",
+                          }}
+                          aria-hidden="true"
+                        />
+                        Comodato rejeitado
+                      </span>
+                      <span className="notificacao-item-linha">{obterTextoRejeitado(item.rejeitadoPor)}</span>
+                      <span className="notificacao-item-linha-suave">
+                        {item.notificadoEm
+                          ? `${item.razaoSocial || "Sem razão social"} · ${tempoRelativo(item.notificadoEm)}`
+                          : item.razaoSocial || "Sem razão social"}
+                      </span>
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="notificacao-item"
+                    onClick={() => abrirComodato(item)}
+                  >
+                    <span className="notificacao-item-titulo">Nova solicitação de comodato</span>
+                    <span className="notificacao-item-linha">
+                      Feita por: {item.vendedor && item.vendedor.trim() ? item.vendedor : "vendedor não identificado"}
+                    </span>
+                    <span className="notificacao-item-linha-suave">
+                      {item.createdAt
+                        ? `${item.razaoSocial || "Sem razão social"} · ${tempoRelativo(item.createdAt)}`
+                        : item.razaoSocial || "Sem razão social"}
+                    </span>
+                  </button>
+                );
+              })}
               {total > itens.length && (
                 <p className="notificacoes-restantes">+{total - itens.length} pendências</p>
               )}
@@ -133,7 +213,7 @@ export default function NotificacaoSino() {
           )}
 
           <button type="button" className="notificacoes-rodape" onClick={verMinhasPendencias}>
-            Ver todas as minhas pendências
+            {papel === "vendedor" ? "Ver meus comodatos" : "Ver todas as minhas pendências"}
           </button>
         </div>
       )}
