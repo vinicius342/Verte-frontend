@@ -1906,3 +1906,106 @@ input.mono {
     animation: none;
   }
 }
+
+/* ---------- Sino de notificações (cabeçalho) ---------- */
+.cabecalho-sino {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 2px solid var(--cabecalho-borda);
+  color: var(--cabecalho-texto);
+  cursor: pointer;
+  position: relative;
+}
+.cabecalho-sino svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+.cabecalho-sino:focus-visible {
+  outline: 2px solid var(--cabecalho-pino);
+}
+.cabecalho-sino-selo {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--mapa);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--cabecalho);
+}
+.notificacoes-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  z-index: 30;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: 70vh;
+  overflow-y: auto;
+  border: 1px solid var(--cabecalho-linha);
+  border-radius: 14px;
+  background: color-mix(in oklab, black 22%, var(--cabecalho));
+  color: var(--cabecalho-texto);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+.notificacoes-topo {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--cabecalho-linha);
+  font-weight: 700;
+}
+.notificacao-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--cabecalho-linha);
+  padding: 0.75rem 0.9rem;
+  color: inherit;
+  cursor: pointer;
+}
+.notificacao-item:hover {
+  background: color-mix(in oklab, var(--cabecalho-texto) 7%, transparent);
+}
+.notificacao-item-titulo {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.notificacao-item-linha {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--cabecalho-texto-suave);
+}
+.notificacoes-restantes {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--cabecalho-texto-suave);
+}
+.notificacoes-rodape {
+  width: 100%;
+  padding: 0.7rem;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--cabecalho-linha);
+  color: var(--cabecalho-pino);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notificacoes-vazio {
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--cabecalho-texto-suave);
+  font-size: 0.9rem;
+}

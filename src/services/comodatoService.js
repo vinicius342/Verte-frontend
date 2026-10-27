@@ -27,3 +27,14 @@ export async function confirmarComodato(revendedoraId, id, decisao, motivo) {
     body: { revendedoraId, id, decisao, motivo },
   });
 }
+
+export async function listarPendentes(revendedoraId) {
+  return apiFetch("comodatos/pendentes", { params: { revendedoraId } });
+}
+
+export async function marcarComodatoVisto(revendedoraId, id) {
+  return apiFetch("comodatos/marcar-visto", {
+    method: "PUT",
+    body: { revendedoraId, id },
+  });
+}
