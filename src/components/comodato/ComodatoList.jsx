@@ -1,8 +1,9 @@
+import Carregando from "../common/Carregando";
 import ComodatoRow from "./ComodatoRow";
 
 export default function ComodatoList({ comodatos, loading, erro, onSelecionar }) {
   if (loading) {
-    return <p className="estado-vazio">Carregando comodatos…</p>;
+    return <Carregando />;
   }
   if (erro) {
     return <p className="estado-erro">{erro}</p>;

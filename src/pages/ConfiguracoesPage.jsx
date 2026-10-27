@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Button from "../components/common/Button";
+import Carregando from "../components/common/Carregando";
 import { useAuth } from "../hooks/useAuth";
 import { useConfiguracoes } from "../hooks/useConfiguracoes";
 import { salvarConfiguracaoRevendedora } from "../services/revendedoraService";
@@ -65,7 +66,7 @@ export default function ConfiguracoesPage() {
   // O acesso por papel (admin/gerente) é garantido pela RotaGerente em AppRoutes.
   let conteudo;
   if (loadingAuth || loading) {
-    conteudo = <p className="estado-vazio">Carregando…</p>;
+    conteudo = <Carregando tela />;
   } else if (!usuario) {
     conteudo = (
       <p className="estado-vazio">

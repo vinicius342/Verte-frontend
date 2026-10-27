@@ -1,8 +1,9 @@
+import Carregando from "../common/Carregando";
 import LimiteRow from "./LimiteRow";
 
 export default function LimiteList({ limites, loading, erro, onSelecionar }) {
   if (loading) {
-    return <p className="estado-vazio">Carregando solicitações…</p>;
+    return <Carregando />;
   }
   if (erro) {
     return <p className="estado-erro">{erro}</p>;

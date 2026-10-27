@@ -4,6 +4,7 @@ import { Camera, Hash, Trash2, Upload, User } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import SignaturePad from "../components/common/SignaturePad";
+import Carregando from "../components/common/Carregando";
 import Avatar from "../components/common/Avatar";
 import { useAuth } from "../hooks/useAuth";
 import { usePerfil } from "../hooks/usePerfil";
@@ -208,7 +209,7 @@ export default function PerfilPage() {
 
   let conteudo;
   if (loadingAuth || loading) {
-    conteudo = <p className="estado-vazio">Carregando…</p>;
+    conteudo = <Carregando tela />;
   } else if (!usuarioAuth) {
     conteudo = (
       <p className="estado-vazio">

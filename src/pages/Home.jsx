@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import ClientList from "../components/clients/ClientList";
+import Carregando from "../components/common/Carregando";
 import ClientDetailModal from "../components/clients/ClientDetailModal";
 import AddClientModal from "../components/clients/AddClientModal";
 import Button from "../components/common/Button";
@@ -21,6 +22,7 @@ function normalizar(texto) {
 export default function HomePage() {
   const { clientes, loading, erro } = useClients();
   const { usuario, ehMotorista, loading: authLoading } = useAuth();
+  const carregando = authLoading || loading;
   const [busca, setBusca] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
@@ -86,15 +88,19 @@ export default function HomePage() {
           <h1 className="titulo-secao">Clientes</h1>
           <span className="contador mono">{filtrados.length}</span>
         </div>
-        <ClientList
-          clientes={filtrados}
-          loading={loading}
-          erro={erro}
-          onSelecionar={(cliente) => {
-            setSelecionadoId(cliente.id);
-            setIniciarEdicaoSelecionado(false);
-          }}
-        />
+        {carregando ? (
+          <Carregando tela />
+        ) : (
+          <ClientList
+            clientes={filtrados}
+            loading={loading}
+            erro={erro}
+            onSelecionar={(cliente) => {
+              setSelecionadoId(cliente.id);
+              setIniciarEdicaoSelecionado(false);
+            }}
+          />
+        )}
       </main>
 
       {usuario && !ehMotorista && (

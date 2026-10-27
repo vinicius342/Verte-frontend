@@ -6,6 +6,7 @@ import {
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Avatar from "../components/common/Avatar";
+import Carregando from "../components/common/Carregando";
 import UsuarioModal from "../components/users/UsuarioModal";
 import { useAuth } from "../hooks/useAuth";
 import { useUsuarios } from "../hooks/useUsuarios";
@@ -24,8 +25,9 @@ const PAPEIS = {
 const PAPEIS_DO_GERENTE = ["vendedor", "motorista", "auxiliar_motorista", "supervisor"];
 
 export default function UsuariosPage() {
-  const { uid, papel: meuPapel } = useAuth();
+  const { uid, papel: meuPapel, loading: authLoading } = useAuth();
   const { usuarios, loading, erro, recarregar } = useUsuarios();
+  const carregando = authLoading || loading;
   const [menuAberto, setMenuAberto] = useState(false);
   const [modal, setModal] = useState(null); // null | { usuario?: obj }
   const [aviso, setAviso] = useState(null);
@@ -85,15 +87,9 @@ export default function UsuariosPage() {
           </div>
         ) : null}
 
-        {loading ? (
-          <div className="usuarios-lista" aria-busy="true">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="usuarios-esqueleto" />
-            ))}
-          </div>
-        ) : null}
+        {carregando ? <Carregando tela /> : null}
 
-        {!loading && erro ? (
+        {!carregando && erro ? (
           <div className="usuarios-estado usuarios-estado--erro">
             <AlertTriangle aria-hidden="true" />
             <p className="usuarios-estado__titulo">Não foi possível carregar</p>
@@ -101,7 +97,7 @@ export default function UsuariosPage() {
           </div>
         ) : null}
 
-        {!loading && !erro && usuarios.length === 0 ? (
+        {!carregando && !erro && usuarios.length === 0 ? (
           <div className="usuarios-estado">
             <Users aria-hidden="true" />
             <p className="usuarios-estado__titulo">Nenhum usuário ainda</p>
@@ -109,7 +105,7 @@ export default function UsuariosPage() {
           </div>
         ) : null}
 
-        {!loading && !erro && usuarios.length > 0 ? (
+        {!carregando && !erro && usuarios.length > 0 ? (
           <ul className="usuarios-lista">
             {usuarios.map((u) => {
               const inativo = u.ativo === false;

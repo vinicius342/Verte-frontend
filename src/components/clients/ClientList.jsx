@@ -1,8 +1,9 @@
+import Carregando from "../common/Carregando";
 import ClientRow from "./ClientRow";
 
 export default function ClientList({ clientes, loading, erro, onSelecionar }) {
   if (loading) {
-    return <p className="estado-vazio">Carregando clientes…</p>;
+    return <Carregando />;
   }
   if (erro) {
     return <p className="estado-erro">{erro}</p>;

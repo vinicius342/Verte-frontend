@@ -7,6 +7,7 @@ import {
 } from "../services/authService";
 import { buscarVinculo } from "../services/userService";
 import { isFirebaseConfigured } from "../firebase/config";
+import Carregando from "../components/common/Carregando";
 
 export const AuthContext = createContext(null);
 
@@ -78,6 +79,8 @@ export function AuthProvider({ children }) {
     }),
     [usuario, revendedoraId, papel, loading, carregarPerfil],
   );
+
+  if (loading) return <Carregando cheia />;
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

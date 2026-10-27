@@ -20,3 +20,10 @@ export async function listarComodatos(revendedoraId) {
 export async function buscarComodato(revendedoraId, id) {
   return apiFetch("comodatos/buscar", { params: { revendedoraId, id } });
 }
+
+export async function confirmarComodato(revendedoraId, id, decisao, motivo) {
+  return apiFetch("comodatos/confirmar", {
+    method: "PUT",
+    body: { revendedoraId, id, decisao, motivo },
+  });
+}

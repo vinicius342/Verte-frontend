@@ -1,12 +1,13 @@
 import { Navigate, Outlet } from "react-router-dom";
 import type { JSX } from "react";
 import { useAuth } from "../hooks/useAuth";
+import Carregando from "../components/common/Carregando";
 import { logout } from "../services/authService";
 
 export default function PrivateRoute(): JSX.Element {
   const { uid, revendedoraId, loading } = useAuth();
 
-  if (loading) return <></>;
+  if (loading) return <Carregando cheia />;
   if (!uid) return <Navigate to="/login" replace />;
 
   if (!revendedoraId) {

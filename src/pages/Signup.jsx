@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/common/Button";
+import Carregando from "../components/common/Carregando";
+import { useAuth } from "../hooks/useAuth";
 import { cadastrarUsuario, traduzirErroAuth } from "../services/authService";
 import { validarLogin } from "../utils/validators";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const { loading } = useAuth();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -31,6 +34,8 @@ export default function SignupPage() {
       setEnviando(false);
     }
   }
+
+  if (loading) return <Carregando cheia />;
 
   return (
     <div className="pagina-auth">

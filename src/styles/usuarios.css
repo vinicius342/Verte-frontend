@@ -377,14 +377,6 @@
 .usuarios-estado--erro svg {
   color: var(--usr-perigo);
 }
-.usuarios-esqueleto {
-  height: 90px;
-  border-radius: var(--usr-raio-lg);
-  background: linear-gradient(90deg, var(--usr-suave) 0%, #f5f7f5 50%, var(--usr-suave) 100%);
-  background-size: 200% 100%;
-  animation: usuarios-brilho 1.2s ease-in-out infinite;
-}
-
 /* ---------- Formulário (dentro do Modal existente) ---------- */
 .usuarios-form {
   display: flex;
@@ -458,14 +450,6 @@ select.usuarios-campo__input {
     transform: rotate(360deg);
   }
 }
-@keyframes usuarios-brilho {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
-}
 
 @media (min-width: 640px) {
   .usuario-linha {
@@ -493,7 +477,6 @@ select.usuarios-campo__input {
   .usuario-linha,
   .usuarios-fab,
   .usuarios-botao,
-  .usuarios-esqueleto,
   .usuarios-botao--carregando::after {
     animation: none !important;
     transition: none !important;

@@ -1,5 +1,6 @@
 import { forwardRef, useMemo, useState } from "react";
 import Button from "./Button";
+import Carregando from "./Carregando";
 
 function normalizarTexto(texto) {
   return (texto ?? "")
@@ -81,7 +82,7 @@ const ClienteAutocomplete = forwardRef(function ClienteAutocomplete(
         }}
         autoComplete="off"
       />
-      {loading ? <span className="campo-dica">Carregando clientes…</span> : null}
+      {loading ? <Carregando escala={0.6} /> : null}
       {!loading && dropdownAberto && sugestoesCliente.length > 0 ? (
         <div className="comodato-autocomplete-dropdown" role="listbox">
           {sugestoesCliente.map((cliente) => (

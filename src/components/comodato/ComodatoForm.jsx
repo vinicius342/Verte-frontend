@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../common/Button";
+import Carregando from "../common/Carregando";
 import ClienteAutocomplete from "../common/ClienteAutocomplete";
 import { useConfiguracoes } from "../../hooks/useConfiguracoes";
 import { listarClientes } from "../../services/clientService";
@@ -431,13 +432,8 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
     }
   }
 
-  if (carregandoConfig) {
-    return (
-      <div className="comodato-carregando-config comodato-carregando-config--formulario">
-        <span className="spinner" aria-hidden="true" />
-        <span>Carregando dados da revenda…</span>
-      </div>
-    );
+  if (carregandoConfig || carregandoClientes || carregandoAtivos) {
+    return <Carregando escala={0.6} />;
   }
 
   return (

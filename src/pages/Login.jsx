@@ -11,6 +11,8 @@ import {
   Route as RouteIcon,
   Users,
 } from "lucide-react";
+import Carregando from "../components/common/Carregando";
+import { useAuth } from "../hooks/useAuth";
 import { login, traduzirErroAuth } from "../services/authService";
 import { validarLogin } from "../utils/validators";
 
@@ -19,6 +21,7 @@ const FEATURES = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { loading } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -43,6 +46,8 @@ export default function LoginPage() {
       setEnviando(false);
     }
   }
+
+  if (loading) return <Carregando cheia />;
 
   return (
     <main className="login-theme relative min-h-screen bg-background lg:grid lg:grid-cols-[1.1fr_1fr]">

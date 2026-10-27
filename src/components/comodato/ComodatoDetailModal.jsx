@@ -3,11 +3,17 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
+import Carregando from "../common/Carregando";
 import ComodatoPrintable from "./ComodatoPrintable";
 import StatusConfirmacao from "./StatusConfirmacao";
 import { useAuth } from "../../hooks/useAuth";
 import ComodatoForm from "./ComodatoForm";
-import { atualizarComodato, buscarComodato, excluirComodato } from "../../services/comodatoService";
+import {
+  atualizarComodato,
+  buscarComodato,
+  confirmarComodato,
+  excluirComodato,
+} from "../../services/comodatoService";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
 
 function formatarCriadoEm(valor) {
@@ -49,7 +55,7 @@ function textoParaCopiar(comodato) {
 }
 
 export default function ComodatoDetailModal({ comodato, onFechar }) {
-  const { revendedoraId } = useAuth();
+  const { uid, papel, revendedoraId } = useAuth();
   const [assinaturas, setAssinaturas] = useState({ vendedor: "", supervisor: "", gerente: "" });
   const [carregandoAssinaturas, setCarregandoAssinaturas] = useState(false);
   const printRef = useRef(null);
@@ -57,8 +63,13 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
   const [copiado, setCopiado] = useState(false);
   const [editando, setEditando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
+  const [rejeitando, setRejeitando] = useState(false);
+  const [motivoRejeicao, setMotivoRejeicao] = useState("");
 
   useEffect(() => {
+    setRejeitando(false);
+    setMotivoRejeicao("");
+
     if (!comodato?.id || !revendedoraId) {
       setAssinaturas({ vendedor: "", supervisor: "", gerente: "" });
       setCarregandoAssinaturas(false);
@@ -96,10 +107,37 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
   const criadoEm = formatarCriadoEm(comodato.createdAt);
   const confirmacoes = [
     { rotulo: "Vendedor", nome: comodato.vendedor, status: comodato.confirmacaoVendedor },
-    { rotulo: "Supervisor", nome: comodato.supervisor, status: comodato.confirmacaoSupervisor },
-    { rotulo: "Gerente", nome: comodato.gerente, status: comodato.confirmacaoGerente },
+    {
+      rotulo: "Supervisor",
+      nome: comodato.supervisor,
+      status: comodato.confirmacaoSupervisor,
+      motivo: comodato.motivoRejeicaoSupervisor,
+    },
+    {
+      rotulo: "Gerente",
+      nome: comodato.gerente,
+      status: comodato.confirmacaoGerente,
+      motivo: comodato.motivoRejeicaoGerente,
+    },
   ];
   const temAlgumaConfirmacao = confirmacoes.some(({ status }) => status != null);
+
+  const ehSupervisorDoComodato = papel === "supervisor" && comodato.supervisorId === uid;
+  const ehGerenteDoComodato = papel === "gerente" && comodato.gerenteId === uid;
+  const minhaConfirmacao = ehSupervisorDoComodato
+    ? comodato.confirmacaoSupervisor
+    : ehGerenteDoComodato
+      ? comodato.confirmacaoGerente
+      : null;
+  const podeResponder =
+    (ehSupervisorDoComodato || ehGerenteDoComodato) && minhaConfirmacao === "pendente";
+  const ehDonoVendedor = papel === "vendedor" && comodato.createdBy === uid;
+  const confirmado = comodato.statusComodato === "confirmado";
+  const podeEditar = ehDonoVendedor && !confirmado;
+  const podeExcluir = ehDonoVendedor && !confirmado;
+  const jaRespondeu =
+    (ehSupervisorDoComodato || ehGerenteDoComodato) &&
+    (minhaConfirmacao === "confirmado" || minhaConfirmacao === "rejeitado");
 
   function cancelarEdicao() {
     setEditando(false);
@@ -187,6 +225,37 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
     }
   }
 
+  async function responder(decisao, motivo) {
+    setProcessando(true);
+    setErroGeral(null);
+    try {
+      await confirmarComodato(revendedoraId, comodato.id, decisao, motivo);
+      onFechar();
+    } catch (erro) {
+      console.error("Falha ao responder ao comodato:", erro);
+      setErroGeral(erro?.message ?? "Não foi possível responder ao comodato.");
+    } finally {
+      setProcessando(false);
+    }
+  }
+
+  function confirmar() {
+    const confirmou = window.confirm(
+      "Confirmar este comodato? A sua assinatura será incluída no termo.",
+    );
+    if (!confirmou) return;
+    responder("confirmado");
+  }
+
+  function enviarRejeicao() {
+    const motivo = motivoRejeicao.trim();
+    if (!motivo) {
+      setErroGeral("Informe o motivo da rejeição.");
+      return;
+    }
+    responder("rejeitado", motivo);
+  }
+
   return (
     <Modal aberto={Boolean(comodato)} titulo="Comodato salvo" onFechar={onFechar}>
       {editando ? (
@@ -257,12 +326,17 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
             <span className="campo-rotulo">Confirmações</span>
             {temAlgumaConfirmacao ? (
               <dl className="detalhe-lista comodato-confirmacoes-lista">
-                {confirmacoes.map(({ rotulo, nome, status }) => (
+                {confirmacoes.map(({ rotulo, nome, status, motivo }) => (
                   <div className="detalhe-item" key={rotulo}>
                     <dt>{rotulo}</dt>
                     <dd className="comodato-confirmacao-valor">
-                      {nome ? <span>{nome}</span> : null}
-                      <StatusConfirmacao status={status} />
+                      <span className="comodato-confirmacao-linha">
+                        {nome ? <span>{nome}</span> : null}
+                        <StatusConfirmacao status={status} />
+                      </span>
+                      {motivo ? (
+                        <span className="comodato-confirmacao-motivo">Motivo: {motivo}</span>
+                      ) : null}
                     </dd>
                   </div>
                 ))}
@@ -274,6 +348,8 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
 
           {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
+          {carregandoAssinaturas ? <Carregando escala={0.6} /> : null}
+
           <div className="formulario-acoes comodato-acoes-modal">
             <Button variant="ghost" onClick={copiar}>
               {copiado ? "Copiado!" : "Copiar"}
@@ -284,13 +360,77 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
             <Button onClick={baixarPdf} disabled={processando || carregandoAssinaturas}>
               Baixar PDF
             </Button>
-            <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
-              Editar
-            </Button>
-            <Button variant="danger" onClick={excluir} disabled={processando}>
-              Excluir
-            </Button>
+            {podeEditar ? (
+              <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
+                Editar
+              </Button>
+            ) : null}
+            {podeExcluir ? (
+              <Button variant="danger" onClick={excluir} disabled={processando}>
+                Excluir
+              </Button>
+            ) : null}
           </div>
+
+          {jaRespondeu ? (
+            <p className="comodato-resposta-status">
+              {minhaConfirmacao === "confirmado"
+                ? "Você confirmou este comodato."
+                : "Você rejeitou este comodato."}
+            </p>
+          ) : null}
+
+          {podeResponder ? (
+            <div className="comodato-barra-decisao">
+              {rejeitando ? (
+                <>
+                  <label className="comodato-barra-decisao-motivo">
+                    <span className="campo-rotulo">Motivo da rejeição</span>
+                    <textarea
+                      className="campo-input campo-textarea"
+                      value={motivoRejeicao}
+                      onChange={(e) => setMotivoRejeicao(e.target.value)}
+                      maxLength={300}
+                      placeholder="Descreva o motivo da rejeição"
+                      disabled={processando}
+                    />
+                  </label>
+                  <div className="comodato-barra-decisao-acoes">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setRejeitando(false);
+                        setMotivoRejeicao("");
+                        setErroGeral(null);
+                      }}
+                      disabled={processando}
+                    >
+                      Voltar
+                    </Button>
+                    <Button variant="danger" onClick={enviarRejeicao} disabled={processando}>
+                      Enviar rejeição
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      setRejeitando(true);
+                      setErroGeral(null);
+                    }}
+                    disabled={processando}
+                  >
+                    Rejeitar
+                  </Button>
+                  <Button onClick={confirmar} disabled={processando}>
+                    Confirmar
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : null}
         </div>
       )}
 
