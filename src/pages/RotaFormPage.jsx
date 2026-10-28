@@ -4,6 +4,7 @@ import { Check, Route, Search, Store } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
+import BotaoVoltar from "../components/rota/BotaoVoltar";
 import { listarClientes } from "../services/clientService";
 import { criarRota, atualizarRota, listarClientesEmUso } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
@@ -143,6 +144,7 @@ export default function RotaFormPage() {
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
       <main className="conteudo rota-conteudo">
+        <BotaoVoltar para={editar ? `/rota-do-dia/${id}` : "/rota-do-dia"} />
         <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1rem" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             <span className="rota-rotulo">Rota do dia</span>

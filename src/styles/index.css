@@ -2656,3 +2656,26 @@ input.mono {
     padding: 0 1.25rem;
   }
 }
+
+.rota-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  padding: 0.4rem 0.5rem 0.4rem 0;
+  margin-bottom: 1rem;
+  color: var(--r-muted-texto);
+  font-family: var(--fonte-texto);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0.5rem;
+}
+.rota-voltar:hover {
+  color: var(--r-texto);
+}
+.rota-voltar:focus-visible {
+  outline: 2px solid var(--r-primaria);
+  outline-offset: 2px;
+}

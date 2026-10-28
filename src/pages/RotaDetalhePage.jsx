@@ -16,6 +16,7 @@ import {
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
+import BotaoVoltar from "../components/rota/BotaoVoltar";
 import { useRota } from "../hooks/useRota";
 import { atualizarStatusParada, atualizarRota, finalizarRota, excluirRota } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
@@ -174,10 +175,8 @@ export default function RotaDetalhePage() {
         <Header onAbrirMenu={() => setMenuAberto(true)} />
         <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
         <main className="conteudo rota-conteudo">
+          <BotaoVoltar para="/rota-do-dia" />
           <p className="estado-erro">{status === 403 || status === 404 ? "Não foi possível acessar esta rota." : "Erro ao carregar rota."}</p>
-          <button type="button" className="rota-botao" onClick={() => navigate("/rota-do-dia")}>
-            Voltar
-          </button>
         </main>
       </div>
     );
@@ -189,6 +188,7 @@ export default function RotaDetalhePage() {
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
       <main className="conteudo rota-conteudo">
+        <BotaoVoltar para="/rota-do-dia" />
         <div className="rota-card" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             <span className="rota-rotulo">
