@@ -209,7 +209,11 @@ export default function RotaDetalhePage() {
           </div>
         </div>
 
-        {finalizada && <p style={{ marginTop: "0.9rem", color: "var(--r-muted-texto)" }}>Rota finalizada</p>}
+        {finalizada && (
+          <p style={{ marginTop: "0.9rem", color: "var(--r-muted-texto)" }}>
+            {rota?.finalizadaAutomaticamente ? "Rota finalizada automaticamente (mais de 7 dias em andamento)" : "Rota finalizada"}
+          </p>
+        )}
         {erroAcao && <p className="estado-erro" style={{ marginTop: "0.9rem" }}>{erroAcao}</p>}
 
         {!finalizada && !reordenando && (

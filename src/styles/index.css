@@ -2573,6 +2573,10 @@ input.mono {
   }
 }
 
+.rota-filtros {
+  margin: 0 0 1rem;
+}
+
 .rota-lista {
   display: flex;
   flex-direction: column;

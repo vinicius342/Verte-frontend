@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Plus, Route } from "lucide-react";
 import Header from "../components/layout/Header";
@@ -39,13 +39,30 @@ export default function RotaDoDiaPage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const navigate = useNavigate();
   const { itens, loading } = useRotas();
+  const [filtro, setFiltro] = useState("em_andamento");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
-  const rotas = itens || [];
+  const rotas = useMemo(() => {
+    const lista = itens || [];
+    if (filtro === "em_andamento") {
+      return lista.filter((rota) => obterStatus(rota) === "em_andamento");
+    }
+    if (filtro === "finalizadas") {
+      return lista.filter((rota) => obterStatus(rota) === "finalizada");
+    }
+    return lista;
+  }, [itens, filtro]);
+
   const totalRotas = rotas.length;
+
+  function obterTextoVazio() {
+    if (filtro === "em_andamento") return "Nenhuma rota em andamento. Toque em Nova rota para começar.";
+    if (filtro === "finalizadas") return "Nenhuma rota finalizada.";
+    return "Nenhuma rota ainda. Toque em Nova rota para começar.";
+  }
 
   return (
     <div className="pagina rota-pagina">
@@ -53,20 +70,30 @@ export default function RotaDoDiaPage() {
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
       <main className="conteudo rota-conteudo">
-        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem" }}>
+        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1rem" }}>
           <h1 className="rota-titulo">Rota do dia</h1>
           <span className="rota-pilula">
             {totalRotas} {totalRotas === 1 ? "rota" : "rotas"}
           </span>
         </header>
 
+        <div className="comodato-filtros rota-filtros">
+          <button type="button" className={`comodato-filtro ${filtro === "todas" ? "comodato-filtro--ativo" : ""}`} onClick={() => setFiltro("todas")}>
+            Todas
+          </button>
+          <button type="button" className={`comodato-filtro ${filtro === "em_andamento" ? "comodato-filtro--ativo" : ""}`} onClick={() => setFiltro("em_andamento")}>
+            Em andamento
+          </button>
+          <button type="button" className={`comodato-filtro ${filtro === "finalizadas" ? "comodato-filtro--ativo" : ""}`} onClick={() => setFiltro("finalizadas")}>
+            Finalizadas
+          </button>
+        </div>
+
         {loading && rotas.length === 0 ? (
           <Carregando tela />
         ) : (
           <div>
-            {rotas.length === 0 && (
-              <div className="rota-card rota-card-vazio">Nenhuma rota ainda. Toque em Nova rota para começar.</div>
-            )}
+            {rotas.length === 0 && <div className="rota-card rota-card-vazio">{obterTextoVazio()}</div>}
             <div className="rota-grid-rotas">
               {rotas.map((rota) => {
                 const { total, entregues, naoEntregues } = obterProgresso(rota);
@@ -76,12 +103,7 @@ export default function RotaDoDiaPage() {
                 const progresso = total > 0 ? (concluidas / total) * 100 : 0;
                 const dataCurta = formatarDataCurta(rota?.data);
                 return (
-                  <button
-                    key={rota.id}
-                    type="button"
-                    className="rota-card rota-card-clicavel"
-                    onClick={() => navigate(`/rota-do-dia/${rota.id}`)}
-                  >
+                  <button key={rota.id} type="button" className="rota-card rota-card-clicavel" onClick={() => navigate(`/rota-do-dia/${rota.id}`)}>
                     <div className="rota-icone-quadrado">
                       <Route size={18} />
                     </div>
@@ -102,6 +124,9 @@ export default function RotaDoDiaPage() {
                           {finalizada ? "Finalizada" : "Em andamento"}
                         </span>
                       </div>
+                      {finalizada && rota?.finalizadaAutomaticamente && (
+                        <div style={{ fontSize: "0.7rem", color: "var(--r-muted-texto)" }}>Finalizada automaticamente</div>
+                      )}
                     </div>
                     <ChevronRight size={18} style={{ color: "var(--r-muted-texto)" }} />
                   </button>
