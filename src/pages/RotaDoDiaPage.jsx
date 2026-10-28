@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronRight, Plus, Route } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
 import { useRotas } from "../hooks/useRotas";
-import { Button } from "../components/ui/button";
 
 function formatarDataHoje() {
-  return new Date().toLocaleDateString("pt-BR");
+  return new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
 }
 
 function obterProgresso(rota) {
   const total = rota?.totalParadas ?? rota?.paradas?.length ?? 0;
   const entregues = rota?.entregues ?? rota?.contadores?.entregues ?? 0;
-  return { total, entregues };
+  const naoEntregues = rota?.naoEntregues ?? rota?.contadores?.naoEntregues ?? 0;
+  return { total, entregues, naoEntregues };
 }
 
 function obterStatus(rota) {
@@ -29,58 +34,77 @@ export default function RotaDoDiaPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
+  const rotas = itens || [];
+  const totalRotas = rotas.length;
+
   return (
-    <div className="pagina">
+    <div className="pagina rota-pagina">
       <Header onAbrirMenu={() => setMenuAberto(true)} />
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
-      <main className="conteudo">
-        <header className="conteudo-topo">
-          <h1 className="titulo-secao">Rota do dia</h1>
-          <span className="contador">{formatarDataHoje()}</span>
+      <main className="conteudo rota-conteudo">
+        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span className="rota-rotulo">{formatarDataHoje()}</span>
+            <h1 className="rota-titulo">Rotas do dia</h1>
+          </div>
+          <span className="rota-pilula">
+            {totalRotas} {totalRotas === 1 ? "rota" : "rotas"}
+          </span>
         </header>
 
-        {loading && (!itens || itens.length === 0) ? (
+        {loading && rotas.length === 0 ? (
           <Carregando tela />
         ) : (
           <div>
-            {(!itens || itens.length === 0) && <p className="estado-vazio">Nenhuma rota hoje. Toque em Nova rota para começar.</p>}
-            {(itens || []).map((rota) => {
-              const { total, entregues } = obterProgresso(rota);
-              const status = obterStatus(rota);
-              const finalizada = status === "finalizada";
-              return (
-                <button
-                  key={rota.id}
-                  type="button"
-                  className="rota-cartao"
-                  onClick={() => navigate(`/rota-do-dia/${rota.id}`)}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-                    <div style={{ fontWeight: 700 }}>{rota?.numero}ª rota do dia</div>
-                    <span className={`selo-confirmacao ${finalizada ? "selo-confirmacao--confirmado" : "selo-confirmacao--pendente"}`}>
-                      {finalizada ? "Finalizada" : "Em andamento"}
-                    </span>
-                  </div>
-                  <div className="rota-progresso">
-                    <div
-                      className="rota-progresso-barra"
-                      style={{ width: total > 0 ? `${Math.min(100, (entregues / total) * 100)}%` : "0%" }}
-                    />
-                  </div>
-                  <div style={{ fontSize: "0.85rem", color: "var(--texto-2)" }}>
-                    {entregues} de {total} entregues
-                  </div>
-                </button>
-              );
-            })}
+            {rotas.length === 0 && (
+              <div className="rota-card rota-card-vazio">Nenhuma rota hoje. Toque em Nova rota para começar.</div>
+            )}
+            <div className="rota-grid-rotas">
+              {rotas.map((rota) => {
+                const { total, entregues, naoEntregues } = obterProgresso(rota);
+                const status = obterStatus(rota);
+                const finalizada = status === "finalizada";
+                const concluidas = Math.min(total, entregues + naoEntregues);
+                const progresso = total > 0 ? (concluidas / total) * 100 : 0;
+                return (
+                  <button
+                    key={rota.id}
+                    type="button"
+                    className="rota-card rota-card-clicavel"
+                    onClick={() => navigate(`/rota-do-dia/${rota.id}`)}
+                  >
+                    <div className="rota-icone-quadrado">
+                      <Route size={18} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div className="rota-cartao-titulo">{rota?.numero}ª rota do dia</div>
+                      <div className="rota-barra">
+                        <div className="rota-barra-preenchida" style={{ width: `${progresso}%` }} />
+                      </div>
+                      <div className="rota-cartao-rodape">
+                        <div className="rota-cartao-rodape-texto">
+                          {entregues} de {total} entregues
+                        </div>
+                        <span className={`rota-selo ${finalizada ? "rota-selo--finalizada" : "rota-selo--andamento"}`}>
+                          <span className="rota-selo-ponto" />
+                          {finalizada ? "Finalizada" : "Em andamento"}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} style={{ color: "var(--r-muted-texto)" }} />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
 
-      <Button className="botao-adicionar-fixo" onClick={() => navigate("/rota-do-dia/nova")}>
-        Nova rota
-      </Button>
+      <button type="button" className="rota-fab" onClick={() => navigate("/rota-do-dia/nova")} aria-label="Nova rota">
+        <Plus size={20} />
+        <span className="rota-fab-texto">Nova rota</span>
+      </button>
     </div>
   );
 }

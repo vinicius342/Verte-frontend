@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Check, Route, Search, Store } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
-import { Button } from "../components/ui/button";
 import { listarClientes } from "../services/clientService";
 import { criarRota, atualizarRota, listarClientesEmUso } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
@@ -83,7 +83,8 @@ export default function RotaFormPage() {
     return (clientes || []).filter((c) => {
       const nome = normalizarTexto(c.nomeCliente || c.nome || "");
       const comercio = normalizarTexto(c.nomeComercio || "");
-      return nome.includes(termo) || comercio.includes(termo);
+      const codigo = normalizarTexto(c.codigo || c.idCliente || "");
+      return nome.includes(termo) || comercio.includes(termo) || codigo.includes(termo);
     });
   }, [clientes, busca]);
 
@@ -126,7 +127,7 @@ export default function RotaFormPage() {
 
   if (carregando || (editar && loadingRota && !rota)) {
     return (
-      <div className="pagina">
+      <div className="pagina rota-pagina">
         <Header onAbrirMenu={() => setMenuAberto(true)} />
         <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
         <Carregando tela />
@@ -134,47 +135,67 @@ export default function RotaFormPage() {
     );
   }
 
+  const totalClientes = clientes.length;
+
   return (
-    <div className="pagina">
+    <div className="pagina rota-pagina">
       <Header onAbrirMenu={() => setMenuAberto(true)} />
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
-      <main className="conteudo">
-        <header className="conteudo-topo">
-          <h1 className="titulo-secao">{editar ? "Editar rota" : "Nova rota"}</h1>
-          <span className="contador">{selecionados.size} selecionados</span>
+      <main className="conteudo rota-conteudo">
+        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span className="rota-rotulo">Rota do dia</span>
+            <h1 className="rota-titulo">{editar ? "Editar rota" : "Nova rota"}</h1>
+          </div>
+          <span className="rota-pilula">
+            {selecionados.size} de {totalClientes}
+          </span>
         </header>
 
-        <div className="busca" style={{ marginBottom: "1rem" }}>
-          <span className="busca-icone" aria-hidden>🔍</span>
-          <input
-            className="busca-campo"
-            placeholder="Buscar cliente"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+        <div className="rota-busca-wrap">
+          <div className="rota-busca">
+            <span className="rota-busca-icone">
+              <Search size={16} />
+            </span>
+            <input
+              className="rota-busca-input"
+              placeholder="Buscar por nome, código ou loja"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
         </div>
 
         {erro && <p className="estado-erro">{erro}</p>}
 
-        <div>
+        <div className="rota-lista" style={{ marginTop: "1rem" }}>
+          {filtrados.length === 0 && <div className="rota-card rota-card-vazio">Nenhum cliente encontrado.</div>}
           {filtrados.map((cliente) => {
             const cid = cliente.id || cliente.clienteId;
             const marcado = selecionados.has(cid);
             const uso = mapaUso.get(cid);
+            const codigo = cliente.codigo || cliente.idCliente;
+            const nome = cliente.nomeCliente || cliente.nome;
+            const comercio = cliente.nomeComercio;
             return (
-              <label key={cid} className="rota-cartao" style={{ cursor: "pointer", alignItems: "flex-start" }}>
-                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                  <input type="checkbox" checked={marcado} onChange={() => alternar(cid)} style={{ marginTop: "0.2rem" }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                    <div style={{ fontWeight: 600 }}>{cliente.nomeCliente || cliente.nome}</div>
-                    {cliente.nomeComercio && <div style={{ fontSize: "0.85rem", color: "var(--texto-2)" }}>{cliente.nomeComercio}</div>}
-                    {uso && (
-                      <div style={{ fontSize: "0.8rem", color: "var(--texto-3)" }}>
-                        Na {uso.numero}ª rota de {uso.motoristaNome} hoje
-                      </div>
-                    )}
-                  </div>
+              <label key={cid} className={`rota-cliente ${marcado ? "rota-cliente--selecionado" : ""}`}>
+                <input className="rota-checkbox" type="checkbox" checked={marcado} onChange={() => alternar(cid)} />
+                <div className="rota-check">{marcado && <Check size={14} />}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", minWidth: 0 }}>
+                  {codigo && <span style={{ fontFamily: "var(--fonte-mono)", fontSize: "0.7rem", color: "var(--r-muted-texto)" }}>{codigo}</span>}
+                  <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{nome}</div>
+                  {comercio && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "var(--r-muted-texto)" }}>
+                      <Store size={12} />
+                      <span>{comercio}</span>
+                    </div>
+                  )}
+                  {uso && (
+                    <div style={{ fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>
+                      Na {uso.numero}ª rota de {uso.motoristaNome} hoje
+                    </div>
+                  )}
                 </div>
               </label>
             );
@@ -182,9 +203,17 @@ export default function RotaFormPage() {
         </div>
       </main>
 
-      <Button className="botao-adicionar-fixo" onClick={salvar} disabled={selecionados.size === 0 || salvando}>
-        {salvando ? "Salvando..." : "Salvar rota"}
-      </Button>
+      <div className="rota-barra-fixa">
+        <div className="rota-barra-fixa-inner">
+          <div style={{ fontWeight: 600 }}>
+            {selecionados.size} cliente(s) selecionado(s)
+          </div>
+          <button type="button" className="rota-botao rota-botao--primario" onClick={salvar} disabled={selecionados.size === 0 || salvando}>
+            <Route size={16} />
+            {salvando ? "Salvando..." : "Salvar rota"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

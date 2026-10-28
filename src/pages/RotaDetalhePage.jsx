@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  MapPin,
+  Navigation,
+  Pencil,
+  Route,
+  Store,
+  Trash2,
+  X,
+} from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
-import { Button } from "../components/ui/button";
 import { useRota } from "../hooks/useRota";
 import { atualizarStatusParada, atualizarRota, finalizarRota, excluirRota } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
@@ -21,19 +33,8 @@ function formatarData(data) {
 function obterProgresso(rota) {
   const total = rota?.totalParadas ?? rota?.paradas?.length ?? 0;
   const entregues = rota?.entregues ?? rota?.contadores?.entregues ?? 0;
-  return { total, entregues };
-}
-
-function obterCorStatus(status) {
-  if (status === "entregue") return "selo-confirmacao--confirmado";
-  if (status === "nao_entregue") return "selo-confirmacao--rejeitado";
-  return "selo-confirmacao--pendente";
-}
-
-function obterTextoStatus(status) {
-  if (status === "entregue") return "Entregue";
-  if (status === "nao_entregue") return "Não entregue";
-  return "Pendente";
+  const naoEntregues = rota?.naoEntregues ?? rota?.contadores?.naoEntregues ?? 0;
+  return { total, entregues, naoEntregues };
 }
 
 export default function RotaDetalhePage() {
@@ -59,7 +60,9 @@ export default function RotaDetalhePage() {
   }, [rota]);
 
   const finalizada = rota?.status === "finalizada";
-  const { total, entregues } = obterProgresso(rota);
+  const { total, entregues, naoEntregues } = obterProgresso(rota);
+  const concluidas = Math.min(total, entregues + naoEntregues);
+  const progresso = total > 0 ? (concluidas / total) * 100 : 0;
 
   const paradasOrdenadas = useMemo(() => {
     if (!rota?.paradas) return [];
@@ -68,7 +71,6 @@ export default function RotaDetalhePage() {
     ordem.forEach((cid) => {
       if (mapa.has(cid)) lista.push(mapa.get(cid));
     });
-    // Adiciona paradas que por algum motivo não estejam na ordem
     rota.paradas.forEach((p) => {
       if (p.clienteId && !ordem.includes(p.clienteId)) lista.push(p);
     });
@@ -157,7 +159,7 @@ export default function RotaDetalhePage() {
 
   if (loading && !rota) {
     return (
-      <div className="pagina">
+      <div className="pagina rota-pagina">
         <Header onAbrirMenu={() => setMenuAberto(true)} />
         <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
         <Carregando tela />
@@ -168,12 +170,12 @@ export default function RotaDetalhePage() {
   if (erro) {
     const status = erro?.status || erro?.response?.status;
     return (
-      <div className="pagina">
+      <div className="pagina rota-pagina">
         <Header onAbrirMenu={() => setMenuAberto(true)} />
         <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
-        <main className="conteudo">
+        <main className="conteudo rota-conteudo">
           <p className="estado-erro">{status === 403 || status === 404 ? "Não foi possível acessar esta rota." : "Erro ao carregar rota."}</p>
-          <button type="button" className="btn btn-ghost" onClick={() => navigate("/rota-do-dia")}>
+          <button type="button" className="rota-botao" onClick={() => navigate("/rota-do-dia")}>
             Voltar
           </button>
         </main>
@@ -182,118 +184,152 @@ export default function RotaDetalhePage() {
   }
 
   return (
-    <div className="pagina">
+    <div className="pagina rota-pagina">
       <Header onAbrirMenu={() => setMenuAberto(true)} />
       <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
 
-      <main className="conteudo">
-        <header className="conteudo-topo" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.5rem" }}>
-          <h1 className="titulo-secao">
-            {rota?.numero}ª rota do dia · {formatarData(rota?.data)}
-          </h1>
+      <main className="conteudo rota-conteudo">
+        <div className="rota-card" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span className="rota-rotulo">
+              {rota?.numero}ª rota do dia · {formatarData(rota?.data)}
+            </span>
+            <h1 className="rota-titulo">
+              {entregues} de {total} entregues
+            </h1>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-            <span className={`selo-confirmacao ${finalizada ? "selo-confirmacao--confirmado" : "selo-confirmacao--pendente"}`}>
+            <span className={`rota-selo ${finalizada ? "rota-selo--finalizada" : "rota-selo--andamento"}`}>
+              <span className="rota-selo-ponto" />
               {finalizada ? "Finalizada" : "Em andamento"}
             </span>
-            <span style={{ fontSize: "0.85rem", color: "var(--texto-2)" }}>
-              {entregues} de {total} entregues
-            </span>
           </div>
-          <div className="rota-progresso" style={{ width: "100%" }}>
-            <div
-              className="rota-progresso-barra"
-              style={{ width: total > 0 ? `${Math.min(100, (entregues / total) * 100)}%` : "0%" }}
-            />
+          <div className="rota-barra">
+            <div className="rota-barra-preenchida" style={{ width: `${progresso}%` }} />
           </div>
-        </header>
+        </div>
 
-        {finalizada && <p className="estado-vazio">Rota finalizada</p>}
-        {erroAcao && <p className="estado-erro">{erroAcao}</p>}
+        {finalizada && <p style={{ marginTop: "0.9rem", color: "var(--r-muted-texto)" }}>Rota finalizada</p>}
+        {erroAcao && <p className="estado-erro" style={{ marginTop: "0.9rem" }}>{erroAcao}</p>}
 
         {!finalizada && !reordenando && (
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <Button variant="ghost" onClick={() => setReordenando(true)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginTop: "0.9rem" }}>
+            <button type="button" className="rota-botao" onClick={() => setReordenando(true)}>
+              <ArrowUpDown size={16} />
               Reordenar
-            </Button>
-            <Button variant="ghost" onClick={() => navigate(`/rota-do-dia/${id}/editar`)}>
+            </button>
+            <button type="button" className="rota-botao" onClick={() => navigate(`/rota-do-dia/${id}/editar`)}>
+              <Pencil size={16} />
               Editar clientes
-            </Button>
-            <Button variant="ghost" onClick={acaoFinalizar}>
-              Finalizar rota
-            </Button>
+            </button>
+            <button type="button" className="rota-botao rota-botao--primario" onClick={acaoFinalizar}>
+              <Check size={16} />
+              Finalizar
+            </button>
           </div>
         )}
 
         {reordenando && (
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <Button variant="ghost" onClick={() => setReordenando(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginTop: "0.9rem" }}>
+            <button type="button" className="rota-botao" onClick={() => setReordenando(false)}>
               Cancelar
-            </Button>
-            <Button onClick={salvarOrdem} disabled={salvandoOrdem}>
+            </button>
+            <button type="button" className="rota-botao rota-botao--primario" onClick={salvarOrdem} disabled={salvandoOrdem}>
+              <Route size={16} />
               {salvandoOrdem ? "Salvando..." : "Salvar ordem"}
-            </Button>
+            </button>
           </div>
         )}
 
-        <div>
+        <ol className="rota-lista" style={{ marginTop: "1.25rem", padding: 0, listStyle: "none", gap: "0.9rem" }}>
           {paradasOrdenadas.map((parada, indice) => {
             const cliente = parada.cliente;
             const temCliente = Boolean(cliente);
+            const status = parada.status || "pendente";
+            const numeroClasse =
+              status === "entregue"
+                ? "rota-parada-numero rota-parada-numero--entregue"
+                : status === "nao_entregue"
+                  ? "rota-parada-numero rota-parada-numero--nao_entregue"
+                  : "rota-parada-numero rota-parada-numero--pendente";
             return (
-              <div key={parada.clienteId || indice} className="rota-parada">
-                {reordenando ? (
-                  <div className="rota-reordenar-setas">
-                    <button
-                      type="button"
-                      className="rota-reordenar-botao"
-                      onClick={() => mover(indice, -1)}
-                      disabled={indice === 0}
-                      aria-label="Subir"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="rota-reordenar-botao"
-                      onClick={() => mover(indice, 1)}
-                      disabled={indice === paradasOrdenadas.length - 1}
-                      aria-label="Descer"
-                    >
-                      ↓
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rota-parada-numero">{indice + 1}</div>
-                )}
-                <div className="rota-parada-conteudo">
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{temCliente ? cliente.nomeCliente || cliente.nome : "Cliente removido"}</div>
-                    {temCliente && cliente.nomeComercio && (
-                      <div style={{ fontSize: "0.9rem", color: "var(--texto-2)" }}>{cliente.nomeComercio}</div>
-                    )}
-                    {temCliente && (
-                      <div style={{ fontSize: "0.85rem", color: "var(--texto-3)" }}>
-                        {(cliente.rua || "")}
-                        {cliente.numero ? `, ${cliente.numero}` : ""}
-                        {cliente.complemento ? ` — ${cliente.complemento}` : ""}
-                      </div>
-                    )}
-                  </div>
-                  {!reordenando && (
-                    <>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                        <span className={`selo-confirmacao ${obterCorStatus(parada.status)}`}>{obterTextoStatus(parada.status)}</span>
-                        {temCliente && (
-                          <Button variant="ghost" onClick={() => abrirMapa(cliente)}>
-                            Abrir no mapa
-                          </Button>
+              <li key={parada.clienteId || indice}>
+                <div className="rota-card rota-parada-card">
+                  <div className="rota-parada-topo">
+                    <div className={numeroClasse}>
+                      {status === "entregue" ? <Check size={16} /> : status === "nao_entregue" ? <X size={16} /> : indice + 1}
+                    </div>
+                    <div className="rota-parada-topo-info">
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          {temCliente && cliente?.codigo && <span className="rota-parada-codigo">{cliente.codigo}</span>}
+                          <div className="rota-parada-nome">{temCliente ? cliente.nomeCliente || cliente.nome : "Cliente removido"}</div>
+                          {temCliente && cliente.nomeComercio && (
+                            <div className="rota-parada-linha">
+                              <span className="rota-parada-icone">
+                                <Store size={14} />
+                              </span>
+                              <span>{cliente.nomeComercio}</span>
+                            </div>
+                          )}
+                          {temCliente && (
+                            <div className="rota-parada-linha rota-parada-linha--endereco">
+                              <span className="rota-parada-icone">
+                                <MapPin size={14} />
+                              </span>
+                              <span>
+                                {(cliente.rua || "")}
+                                {cliente.numero ? `, ${cliente.numero}` : ""}
+                                {cliente.complemento ? ` — ${cliente.complemento}` : ""}
+                              </span>
+                            </div>
+                          )}
+                          {!temCliente && <div style={{ fontStyle: "italic", color: "var(--r-muted-texto)", fontSize: "0.9rem", marginTop: "0.25rem" }}>Cliente removido</div>}
+                        </div>
+                        {reordenando ? (
+                          <div style={{ display: "flex", gap: "0.35rem" }}>
+                            <button type="button" className="rota-botao" style={{ height: "2.25rem", padding: "0 0.5rem" }} onClick={() => mover(indice, -1)} disabled={indice === 0} aria-label="Subir">
+                              <ArrowUp size={16} />
+                            </button>
+                            <button type="button" className="rota-botao" style={{ height: "2.25rem", padding: "0 0.5rem" }} onClick={() => mover(indice, 1)} disabled={indice === paradasOrdenadas.length - 1} aria-label="Descer">
+                              <ArrowDown size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className={`rota-selo ${
+                              status === "entregue"
+                                ? "rota-selo--entregue"
+                                : status === "nao_entregue"
+                                  ? "rota-selo--nao_entregue"
+                                  : "rota-selo--pendente"
+                            }`}
+                            style={{ display: "none" }}
+                          >
+                            <span className="rota-selo-ponto" />
+                            {status === "entregue" ? "Entregue" : status === "nao_entregue" ? "Não entregue" : "Pendente"}
+                          </span>
                         )}
                       </div>
+                    </div>
+                  </div>
+
+                  {!reordenando && (
+                    <>
+                      <div className="rota-parada-divisor" />
                       {!finalizada && temCliente && (
-                        <div className="rota-parada-botoes">
+                        <div className="rota-segmentos">
                           <button
                             type="button"
-                            className={`rota-botao-baixa ${parada.status === "entregue" ? "rota-botao-baixa--ativo" : ""}`}
+                            className={`rota-segmento ${status === "pendente" ? "rota-segmento--ativo" : ""}`}
+                            onClick={() => mudarStatus(parada, "pendente")}
+                            disabled={alterando === parada.clienteId}
+                          >
+                            Pendente
+                          </button>
+                          <button
+                            type="button"
+                            className={`rota-segmento ${status === "entregue" ? "rota-segmento--ativo" : ""}`}
                             onClick={() => mudarStatus(parada, "entregue")}
                             disabled={alterando === parada.clienteId}
                           >
@@ -301,34 +337,33 @@ export default function RotaDetalhePage() {
                           </button>
                           <button
                             type="button"
-                            className={`rota-botao-baixa ${parada.status === "nao_entregue" ? "rota-botao-baixa--ativo" : ""}`}
+                            className={`rota-segmento ${status === "nao_entregue" ? "rota-segmento--ativo" : ""}`}
                             onClick={() => mudarStatus(parada, "nao_entregue")}
                             disabled={alterando === parada.clienteId}
                           >
                             Não entregue
                           </button>
-                          <button
-                            type="button"
-                            className={`rota-botao-baixa ${parada.status === "pendente" ? "rota-botao-baixa--ativo" : ""}`}
-                            onClick={() => mudarStatus(parada, "pendente")}
-                            disabled={alterando === parada.clienteId}
-                          >
-                            Pendente
-                          </button>
                         </div>
+                      )}
+                      {temCliente && (
+                        <button type="button" className="rota-botao-mapa" style={{ marginTop: "0.75rem" }} onClick={() => abrirMapa(cliente)}>
+                          <Navigation size={16} />
+                          Abrir no mapa
+                        </button>
                       )}
                     </>
                   )}
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ol>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
-          <Button variant="danger" onClick={acaoExcluir}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem" }}>
+          <button type="button" className="rota-botao rota-botao--perigo" onClick={acaoExcluir}>
+            <Trash2 size={16} />
             Excluir rota
-          </Button>
+          </button>
         </div>
       </main>
     </div>
