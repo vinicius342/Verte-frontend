@@ -6,12 +6,22 @@ import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
 import { useRotas } from "../hooks/useRotas";
 
-function formatarDataHoje() {
-  return new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  });
+function formatarDataCurta(data) {
+  if (!data) return "";
+  const partes = String(data).split("-");
+  if (partes.length === 3) {
+    const [a, m, d] = partes;
+    return `${d}/${m}/${a.slice(2)}`;
+  }
+  try {
+    const dt = new Date(data);
+    const dia = String(dt.getDate()).padStart(2, "0");
+    const mes = String(dt.getMonth() + 1).padStart(2, "0");
+    const ano = String(dt.getFullYear()).slice(2);
+    return `${dia}/${mes}/${ano}`;
+  } catch {
+    return data;
+  }
 }
 
 function obterProgresso(rota) {
@@ -44,10 +54,7 @@ export default function RotaDoDiaPage() {
 
       <main className="conteudo rota-conteudo">
         <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            <span className="rota-rotulo">{formatarDataHoje()}</span>
-            <h1 className="rota-titulo">Rotas do dia</h1>
-          </div>
+          <h1 className="rota-titulo">Rota do dia</h1>
           <span className="rota-pilula">
             {totalRotas} {totalRotas === 1 ? "rota" : "rotas"}
           </span>
@@ -58,7 +65,7 @@ export default function RotaDoDiaPage() {
         ) : (
           <div>
             {rotas.length === 0 && (
-              <div className="rota-card rota-card-vazio">Nenhuma rota hoje. Toque em Nova rota para começar.</div>
+              <div className="rota-card rota-card-vazio">Nenhuma rota ainda. Toque em Nova rota para começar.</div>
             )}
             <div className="rota-grid-rotas">
               {rotas.map((rota) => {
@@ -67,6 +74,7 @@ export default function RotaDoDiaPage() {
                 const finalizada = status === "finalizada";
                 const concluidas = Math.min(total, entregues + naoEntregues);
                 const progresso = total > 0 ? (concluidas / total) * 100 : 0;
+                const dataCurta = formatarDataCurta(rota?.data);
                 return (
                   <button
                     key={rota.id}
@@ -78,7 +86,10 @@ export default function RotaDoDiaPage() {
                       <Route size={18} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                      <div className="rota-cartao-titulo">{rota?.numero}ª rota do dia</div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <div className="rota-cartao-titulo">{rota?.numero}ª rota do dia</div>
+                        {dataCurta && <span style={{ fontFamily: "var(--fonte-mono)", fontSize: "0.8rem", color: "var(--r-muted-texto)", whiteSpace: "nowrap" }}>{dataCurta}</span>}
+                      </div>
                       <div className="rota-barra">
                         <div className="rota-barra-preenchida" style={{ width: `${progresso}%` }} />
                       </div>
