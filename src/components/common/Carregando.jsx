@@ -1,4 +1,9 @@
-export default function Carregando({ tela = false, escala = 1, variante, cheia = false }) {
+export default function Carregando({
+  tela = false,
+  escala = 1,
+  variante = undefined,
+  cheia = false,
+}) {
   return (
     <div
       className={`carregando ${tela ? "carregando--tela" : ""} ${cheia ? "carregando--cheia" : ""}`}

@@ -1,11 +1,13 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import type { JSX } from "react";
 import { useAuth } from "../hooks/useAuth";
 import Carregando from "../components/common/Carregando";
+import AssinaturaPendenteModal from "../components/common/AssinaturaPendenteModal";
 import { logout } from "../services/authService";
 
 export default function PrivateRoute(): JSX.Element {
-  const { uid, revendedoraId, loading } = useAuth();
+  const { uid, revendedoraId, loading, precisaConfigurarAssinatura } = useAuth();
+  const location = useLocation();
 
   if (loading) return <Carregando cheia />;
   if (!uid) return <Navigate to="/login" replace />;
@@ -19,6 +21,10 @@ export default function PrivateRoute(): JSX.Element {
         </button>
       </div>
     );
+  }
+
+  if (precisaConfigurarAssinatura && location.pathname !== "/perfil") {
+    return <AssinaturaPendenteModal />;
   }
 
   return <Outlet />;

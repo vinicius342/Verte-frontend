@@ -139,7 +139,15 @@ function IdentidadeCard({ perfil, exigeSupervisor, supervisorEncontrado, supervi
   );
 }
 
-function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorErro, uid, revendedoraId }) {
+function PerfilForm({
+  perfil,
+  exigeSupervisor,
+  supervisorEncontrado,
+  supervisorErro,
+  uid,
+  revendedoraId,
+}) {
+  const { definirAssinaturaConfigurada } = useAuth();
   const [assinatura, setAssinatura] = useState(perfil?.assinatura ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -149,9 +157,18 @@ function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorE
     e.preventDefault();
     setErro(null);
     setSucesso(false);
+
+    const assinaturaVazia =
+      !assinatura || (typeof assinatura === "string" && assinatura.trim() === "");
+    if (assinaturaVazia) {
+      setErro("A assinatura é obrigatória.");
+      return;
+    }
+
     setSalvando(true);
     try {
       await salvarPerfil(revendedoraId, uid, { assinatura });
+      definirAssinaturaConfigurada(true);
       setSucesso(true);
     } catch (err) {
       console.error("Erro ao salvar perfil:", err);
@@ -203,7 +220,13 @@ function PerfilForm({ perfil, exigeSupervisor, supervisorEncontrado, supervisorE
 }
 
 export default function PerfilPage() {
-  const { usuario: usuarioAuth, uid, revendedoraId, loading: loadingAuth } = useAuth();
+  const {
+    usuario: usuarioAuth,
+    uid,
+    revendedoraId,
+    loading: loadingAuth,
+    precisaConfigurarAssinatura,
+  } = useAuth();
   const { perfil, supervisor, exigeSupervisor, supervisorErro, loading, erro } = usePerfil();
   const [menuAberto, setMenuAberto] = useState(false);
 
@@ -241,6 +264,9 @@ export default function PerfilPage() {
         <div className="conteudo-topo">
           <h1 className="titulo-secao">Meu perfil</h1>
         </div>
+        {precisaConfigurarAssinatura ? (
+          <p className="perfil-aviso-supervisor">Cadastre sua assinatura para liberar o sistema.</p>
+        ) : null}
         {conteudo}
       </main>
     </div>

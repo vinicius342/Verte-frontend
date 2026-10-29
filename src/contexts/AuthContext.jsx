@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   login as loginService,
   logout as logoutService,
@@ -15,13 +23,14 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [revendedoraId, setRevendedoraId] = useState(null);
   const [papel, setPapel] = useState(null);
+  const [assinaturaConfigurada, setAssinaturaConfigurada] = useState(null);
   const [loading, setLoading] = useState(true);
   const requisicao = useRef(0);
 
   // Só a busca mais recente vale: evita que uma resposta antiga sobrescreva a nova.
   const carregarPerfil = useCallback(async (uid) => {
     const minha = ++requisicao.current;
-    let vinculo = { revendedoraId: null, papel: null, ativo: true };
+    let vinculo = { revendedoraId: null, papel: null, ativo: true, assinaturaConfigurada: true };
     try {
       vinculo = await buscarVinculo(uid);
     } catch (e) {
@@ -37,6 +46,7 @@ export function AuthProvider({ children }) {
 
     setRevendedoraId(vinculo.revendedoraId);
     setPapel(vinculo.papel);
+    setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
     return vinculo.revendedoraId;
   }, []);
 
@@ -47,6 +57,7 @@ export function AuthProvider({ children }) {
         requisicao.current++;
         setRevendedoraId(null);
         setPapel(null);
+        setAssinaturaConfigurada(null);
         setLoading(false);
         return;
       }
@@ -57,13 +68,17 @@ export function AuthProvider({ children }) {
     return cancelar;
   }, [carregarPerfil]);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const ehMotorista = papel === "motorista" || papel === "auxiliar_motorista";
+    return {
       usuario,
       uid: usuario?.uid ?? null,
       revendedoraId,
       papel,
-      ehMotorista: papel === "motorista" || papel === "auxiliar_motorista",
+      ehMotorista,
+      assinaturaConfigurada,
+      precisaConfigurarAssinatura: !ehMotorista && papel != null && assinaturaConfigurada === false,
+      definirAssinaturaConfigurada: setAssinaturaConfigurada,
       podeConfigurar: papel === "admin" || papel === "gerente",
       nome: usuario?.displayName ?? usuario?.email ?? null,
       loading,
@@ -76,9 +91,8 @@ export function AuthProvider({ children }) {
         await carregarPerfil(u.uid);
         return u;
       },
-    }),
-    [usuario, revendedoraId, papel, loading, carregarPerfil],
-  );
+    };
+  }, [usuario, revendedoraId, papel, assinaturaConfigurada, loading, carregarPerfil]);
 
   if (loading) return <Carregando cheia />;
 

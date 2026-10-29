@@ -914,6 +914,15 @@ input.mono {
   padding: 1.1rem;
   padding-bottom: max(1.1rem, env(safe-area-inset-bottom));
 }
+.assinatura-pendente-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.assinatura-pendente-acoes .btn {
+  flex: 1 1 180px;
+}
 @media (min-width: 640px) {
   .modal-overlay {
     align-items: center;
