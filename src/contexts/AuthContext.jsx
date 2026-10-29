@@ -77,7 +77,8 @@ export function AuthProvider({ children }) {
       papel,
       ehMotorista,
       assinaturaConfigurada,
-      precisaConfigurarAssinatura: !ehMotorista && papel != null && assinaturaConfigurada === false,
+      precisaConfigurarAssinatura:
+        papel !== "admin" && !ehMotorista && papel != null && assinaturaConfigurada === false,
       definirAssinaturaConfigurada: setAssinaturaConfigurada,
       podeConfigurar: papel === "admin" || papel === "gerente",
       nome: usuario?.displayName ?? usuario?.email ?? null,
