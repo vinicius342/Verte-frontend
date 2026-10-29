@@ -8,6 +8,8 @@ import { atualizarCliente, excluirCliente, buscarPrivadoCliente } from "../../se
 import { buscarConfiguracao } from "../../services/configService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
+import { formatarCep } from "../../utils/validators";
+import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
 function CampoWhatsapp({ rotulo, numero }) {
   if (!numero) return null;
@@ -96,6 +98,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
 
   if (!cliente) return null;
   const clientePrivado = ehMotorista ? cliente : { ...cliente, ...(privado ?? {}) };
+  const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   async function salvar(dados) {
     await atualizarCliente(revendedoraId, cliente.id, dados, uid);
@@ -175,6 +178,27 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
               </dd>
             </div>
 
+            {cliente.bairro ? (
+              <div className="detalhe-item">
+                <dt>Bairro</dt>
+                <dd>{cliente.bairro}</dd>
+              </div>
+            ) : null}
+
+            {cliente.cidade ? (
+              <div className="detalhe-item">
+                <dt>Cidade</dt>
+                <dd>{cliente.cidade}</dd>
+              </div>
+            ) : null}
+
+            {cliente.cep ? (
+              <div className="detalhe-item">
+                <dt>CEP</dt>
+                <dd className="mono">{formatarCep(cliente.cep)}</dd>
+              </div>
+            ) : null}
+
             {(cliente.seguimento ?? cliente.segmento) ? (
               <div className="detalhe-item">
                 <dt>Seguimento</dt>
@@ -195,6 +219,8 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
               <CampoWhatsapp rotulo="WhatsApp 3" numero={clientePrivado.whatsapp3} />
             </>}
           </dl>
+
+          {localizacaoAproximada ? <p className="detalhe-aviso">{localizacaoAproximada}</p> : null}
 
           {cliente.observacao ? (
             <div className="detalhe-observacao">

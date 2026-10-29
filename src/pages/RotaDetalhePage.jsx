@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUp,
@@ -16,11 +16,19 @@ import {
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
+import Button from "../components/common/Button";
+import Modal from "../components/common/Modal";
 import BotaoVoltar from "../components/rota/BotaoVoltar";
 import { useRota } from "../hooks/useRota";
 import { atualizarStatusParada, atualizarRota, finalizarRota, excluirRota } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
 import { abrirMapa } from "../utils/mapLinks";
+import {
+  formatarDistancia,
+  haversineMetros,
+  obterPonto,
+  obterPosicao,
+} from "../utils/distancia";
 
 function formatarData(data) {
   if (!data) return "";
@@ -38,10 +46,23 @@ function obterProgresso(rota) {
   return { total, entregues, naoEntregues };
 }
 
+function textoOrganizacao(aviso) {
+  if (!aviso) return "";
+  if (aviso.organizacao === "proximidade") {
+    const base = "Clientes organizados por proximidade, do mais perto de você ao mais distante.";
+    if (aviso.semLocalizacao > 0) {
+      return `${base} ${aviso.semLocalizacao} cliente(s) sem localização ficaram no fim da lista.`;
+    }
+    return base;
+  }
+  return "Não foi possível obter sua localização. A rota foi salva na ordem em que você selecionou os clientes.";
+}
+
 export default function RotaDetalhePage() {
   const { id } = useParams();
   const [menuAberto, setMenuAberto] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { revendedoraId } = useAuth();
   const { rota, loading, erro, setRota } = useRota(id);
   const [reordenando, setReordenando] = useState(false);
@@ -49,10 +70,38 @@ export default function RotaDetalhePage() {
   const [salvandoOrdem, setSalvandoOrdem] = useState(false);
   const [alterando, setAlterando] = useState(null);
   const [erroAcao, setErroAcao] = useState(null);
+  const [avisoOrganizacao, setAvisoOrganizacao] = useState(null);
+  const [posicao, setPosicao] = useState(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
+
+  useEffect(() => {
+    const estado = location.state;
+    if (!estado?.organizacao) return;
+    setAvisoOrganizacao({
+      organizacao: estado.organizacao,
+      semLocalizacao: estado.semLocalizacao ?? 0,
+      estimados: estado.estimados ?? 0,
+    });
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
+
+  useEffect(() => {
+    let ativo = true;
+    obterPosicao().then((resultado) => {
+      if (ativo) setPosicao(resultado);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
+
+  async function atualizarDistancias() {
+    const resultado = await obterPosicao();
+    setPosicao(resultado);
+  }
 
   useEffect(() => {
     if (rota?.paradas) {
@@ -203,6 +252,15 @@ export default function RotaDetalhePage() {
               <span className="rota-selo-ponto" />
               {finalizada ? "Finalizada" : "Em andamento"}
             </span>
+            <button
+              type="button"
+              className="rota-botao"
+              style={{ height: "2.25rem", padding: "0 0.75rem", fontSize: "0.8rem" }}
+              onClick={atualizarDistancias}
+            >
+              <Navigation size={14} />
+              Atualizar distâncias
+            </button>
           </div>
           <div className="rota-barra">
             <div className="rota-barra-preenchida" style={{ width: `${progresso}%` }} />
@@ -250,6 +308,12 @@ export default function RotaDetalhePage() {
             const cliente = parada.cliente;
             const temCliente = Boolean(cliente);
             const status = parada.status || "pendente";
+            const ponto = obterPonto(cliente);
+            const distancia =
+              posicao && status === "pendente" && ponto
+                ? haversineMetros(posicao, ponto)
+                : null;
+            const distanciaAproximada = ponto?.estimada === true;
             const numeroClasse =
               status === "entregue"
                 ? "rota-parada-numero rota-parada-numero--entregue"
@@ -285,6 +349,17 @@ export default function RotaDetalhePage() {
                                 {(cliente.rua || "")}
                                 {cliente.numero ? `, ${cliente.numero}` : ""}
                                 {cliente.complemento ? ` — ${cliente.complemento}` : ""}
+                              </span>
+                            </div>
+                          )}
+                          {distancia != null && (
+                            <div className="rota-parada-linha" style={{ color: "var(--r-muted-texto)", fontSize: "0.8rem" }}>
+                              <span className="rota-parada-icone">
+                                <Navigation style={{ width: "0.8rem", height: "0.8rem" }} />
+                              </span>
+                              <span>
+                                {formatarDistancia(distancia)}
+                                {distanciaAproximada ? " (aprox.)" : ""}
                               </span>
                             </div>
                           )}
@@ -370,6 +445,25 @@ export default function RotaDetalhePage() {
           </button>
         </div>
       </main>
+
+      <Modal
+        aberto={Boolean(avisoOrganizacao)}
+        titulo="Rota organizada"
+        onFechar={() => setAvisoOrganizacao(null)}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <p style={{ margin: 0 }}>{textoOrganizacao(avisoOrganizacao)}</p>
+          {avisoOrganizacao?.organizacao === "proximidade" && avisoOrganizacao?.estimados > 0 && (
+            <p style={{ margin: 0 }}>
+              Alguns clientes usam localização aproximada (endereço, bairro ou CEP) e a ordem entre eles pode variar.
+              Capturar o GPS do cliente melhora a precisão.
+            </p>
+          )}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Button onClick={() => setAvisoOrganizacao(null)}>Entendi</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

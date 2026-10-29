@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Check, Route, Search, Store } from "lucide-react";
+import { Check, MapPin, Route, Search, Store } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import Carregando from "../components/common/Carregando";
@@ -9,6 +9,7 @@ import { listarClientes } from "../services/clientService";
 import { criarRota, atualizarRota, listarClientesEmUso } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
 import { useRota } from "../hooks/useRota";
+import { obterPonto, obterPosicao, ordenarPorProximidade } from "../utils/distancia";
 
 function normalizarTexto(texto) {
   return (texto || "")
@@ -33,6 +34,7 @@ export default function RotaFormPage() {
   const [ordem, setOrdem] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [organizando, setOrganizando] = useState(false);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
@@ -89,6 +91,20 @@ export default function RotaFormPage() {
     });
   }, [clientes, busca]);
 
+  const mapaClientes = useMemo(
+    () => new Map((clientes || []).map((cliente) => [cliente.id || cliente.clienteId, cliente])),
+    [clientes],
+  );
+
+  const semLocalizacaoSelecionados = useMemo(() => {
+    let total = 0;
+    selecionados.forEach((cid) => {
+      const cliente = mapaClientes.get(cid);
+      if (cliente && !obterPonto(cliente)) total += 1;
+    });
+    return total;
+  }, [selecionados, mapaClientes]);
+
   function alternar(clienteId) {
     setSelecionados((atual) => {
       const novo = new Set(atual);
@@ -114,15 +130,32 @@ export default function RotaFormPage() {
         await atualizarRota(revendedoraId, id, clienteIds);
         navigate(`/rota-do-dia/${id}`, { replace: true });
       } else {
-        const resp = await criarRota(revendedoraId, clienteIds);
+        setOrganizando(true);
+        const posicao = await obterPosicao();
+        setOrganizando(false);
+
+        const selecionadosClientes = clienteIds.map((cid) => mapaClientes.get(cid)).filter(Boolean);
+        const estimados = selecionadosClientes.filter((cliente) => obterPonto(cliente)?.estimada).length;
+
+        let idsFinais = clienteIds;
+        let state = { organizacao: "sem-gps", estimados };
+
+        if (posicao) {
+          const { ordenados, semLocalizacao } = ordenarPorProximidade(posicao, selecionadosClientes);
+          idsFinais = ordenados.map((cliente) => cliente.id || cliente.clienteId);
+          state = { organizacao: "proximidade", semLocalizacao, estimados };
+        }
+
+        const resp = await criarRota(revendedoraId, idsFinais);
         const novoId = resp?.id || resp?.rotaId;
-        navigate(`/rota-do-dia/${novoId}`, { replace: true });
+        navigate(`/rota-do-dia/${novoId}`, { replace: true, state });
       }
     } catch (e) {
       console.error(e);
       setErro("Não foi possível salvar a rota.");
     } finally {
       setSalvando(false);
+      setOrganizando(false);
     }
   }
 
@@ -180,6 +213,7 @@ export default function RotaFormPage() {
             const codigo = cliente.codigo || cliente.idCliente;
             const nome = cliente.nomeCliente || cliente.nome;
             const comercio = cliente.nomeComercio;
+            const ponto = obterPonto(cliente);
             return (
               <label key={cid} className={`rota-cliente ${marcado ? "rota-cliente--selecionado" : ""}`}>
                 <input className="rota-checkbox" type="checkbox" checked={marcado} onChange={() => alternar(cid)} />
@@ -192,6 +226,15 @@ export default function RotaFormPage() {
                       <Store size={12} />
                       <span>{comercio}</span>
                     </div>
+                  )}
+                  {ponto?.estimada && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>
+                      <MapPin size={12} />
+                      <span>Localização aproximada</span>
+                    </div>
+                  )}
+                  {!ponto && (
+                    <div style={{ fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>Sem localização</div>
                   )}
                   {uso && (
                     <div style={{ fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>
@@ -206,13 +249,18 @@ export default function RotaFormPage() {
       </main>
 
       <div className="rota-barra-fixa">
+        {semLocalizacaoSelecionados > 0 && (
+          <div style={{ maxWidth: "56rem", margin: "0 auto 0.5rem", fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>
+            Sem localização: {semLocalizacaoSelecionados} cliente(s) selecionado(s) ficarão no fim da rota.
+          </div>
+        )}
         <div className="rota-barra-fixa-inner">
           <div style={{ fontWeight: 600 }}>
             {selecionados.size} cliente(s) selecionado(s)
           </div>
           <button type="button" className="rota-botao rota-botao--primario" onClick={salvar} disabled={selecionados.size === 0 || salvando}>
             <Route size={16} />
-            {salvando ? "Salvando..." : "Salvar rota"}
+            {organizando ? "Organizando…" : salvando ? "Salvando..." : "Salvar rota"}
           </button>
         </div>
       </div>

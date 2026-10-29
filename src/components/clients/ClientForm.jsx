@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "../common/Button";
-import { validarCliente, formatarWhatsapp, formatarCpfCnpj, validarCpfCnpj } from "../../utils/validators";
+import { validarCliente, formatarWhatsapp, formatarCpfCnpj, formatarCep, validarCpfCnpj } from "../../utils/validators";
 import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
+import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
 const TAMANHO_MAX_ANEXO = 10 * 1024 * 1024; // 10MB
 const TIPOS_ACEITOS = ["image/", "application/pdf"];
@@ -18,6 +19,9 @@ function estadoInicial(cliente) {
     rua: cliente?.rua ?? "",
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
+    bairro: cliente?.bairro ?? "",
+    cidade: cliente?.cidade ?? "",
+    cep: formatarCep(cliente?.cep),
     whatsapp: cliente?.whatsapp ?? "",
     whatsapp2: cliente?.whatsapp2 ?? "",
     whatsapp3: cliente?.whatsapp3 ?? "",
@@ -65,10 +69,31 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   const [obtendoCoordenada, setObtendoCoordenada] = useState(false);
   const [avisoCoordenada, setAvisoCoordenada] = useState(null);
   const [erroGeral, setErroGeral] = useState(null);
+  const consultaCepRef = useRef(0);
+
+  function consultarCep(digitos, consulta) {
+    fetch(`https://viacep.com.br/ws/${digitos}/json/`)
+      .then((resposta) => (resposta.ok ? resposta.json() : null))
+      .then((endereco) => {
+        if (consulta !== consultaCepRef.current || !endereco || endereco.erro) return;
+        setDados((atual) => ({
+          ...atual,
+          bairro: atual.bairro?.trim() ? atual.bairro : endereco.bairro ?? "",
+          cidade: atual.cidade?.trim() ? atual.cidade : endereco.localidade ?? "",
+        }));
+      })
+      .catch(() => {});
+  }
 
   const alterar = (campo) => (e) => {
     const ehWhatsapp = campo === "whatsapp" || campo === "whatsapp2" || campo === "whatsapp3";
-    const valor = campo === "cpf" ? formatarCpfCnpj(e.target.value) : ehWhatsapp ? formatarWhatsapp(e.target.value) : e.target.value;
+    let valor = campo === "cpf" ? formatarCpfCnpj(e.target.value) : ehWhatsapp ? formatarWhatsapp(e.target.value) : e.target.value;
+    if (campo === "cep") {
+      valor = formatarCep(e.target.value);
+      const digitos = valor.replace(/\D/g, "");
+      consultaCepRef.current += 1;
+      if (digitos.length === 8) consultarCep(digitos, consultaCepRef.current);
+    }
     setDados((atual) => ({ ...atual, [campo]: valor }));
   };
 
@@ -159,6 +184,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
     try {
       await onSalvar({
         ...dados,
+        cep: (dados.cep ?? "").replace(/\D/g, ""),
         coordenada: parsed.coordenada,
         anexosExistentes,
         anexosNovos,
@@ -172,6 +198,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   }
 
   const totalAnexos = anexosExistentes.length + anexosNovos.length;
+  const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
@@ -221,6 +248,29 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         <span className="campo-rotulo">Rua *</span>
         <input className="campo-input" value={dados.rua} onChange={alterar("rua")} required />
         {erros.rua ? <span className="campo-erro">{erros.rua}</span> : null}
+      </label>
+
+      <div className="campo-linha">
+        <label className="campo">
+          <span className="campo-rotulo">Bairro</span>
+          <input className="campo-input" value={dados.bairro} onChange={alterar("bairro")} />
+        </label>
+        <label className="campo">
+          <span className="campo-rotulo">Cidade</span>
+          <input className="campo-input" value={dados.cidade} onChange={alterar("cidade")} />
+        </label>
+      </div>
+
+      <label className="campo">
+        <span className="campo-rotulo">CEP</span>
+        <input
+          className="campo-input mono"
+          value={dados.cep}
+          onChange={alterar("cep")}
+          inputMode="numeric"
+          placeholder="00000-000"
+        />
+        <span className="campo-dica">Usado para localizar o cliente quando não houver GPS capturado.</span>
       </label>
 
       <div className="campo-linha">
@@ -304,6 +354,9 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         </div>
         {erros.coordenada ? <span className="campo-erro">{erros.coordenada}</span> : null}
         {avisoCoordenada ? <span className="campo-aviso">{avisoCoordenada}</span> : null}
+        {localizacaoAproximada && !dados.coordenadaTexto?.trim() ? (
+          <span className="campo-dica">{localizacaoAproximada}</span>
+        ) : null}
       </div>
 
       <div className="campo">

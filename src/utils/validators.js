@@ -13,6 +13,12 @@ export function formatarWhatsapp(valor) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
+export function formatarCep(valor) {
+  const d = (valor ?? "").replace(/\D/g, "").slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
+
 export function validarCliente(dados) {
   const erros = {};
   if (!dados.nomeCliente?.trim()) erros.nomeCliente = "Informe o nome do cliente.";
