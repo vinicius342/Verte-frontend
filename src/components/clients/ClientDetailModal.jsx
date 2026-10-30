@@ -75,13 +75,13 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   }, [cliente, iniciarEdicao, ehMotorista]);
 
   useEffect(() => {
-    if (!cliente || ehMotorista || !revendedoraId) return;
+    if (!cliente || !revendedoraId) return;
     let ativo = true;
     buscarPrivadoCliente(revendedoraId, cliente.id)
       .then((dados) => { if (ativo) setPrivado(dados); })
       .catch((erro) => console.error("Falha ao buscar dados privados do cliente:", erro));
     return () => { ativo = false; };
-  }, [cliente?.id, revendedoraId, ehMotorista]);
+  }, [cliente?.id, revendedoraId]);
 
   useEffect(() => {
     if (!cliente || !logado || ehMotorista) return;
@@ -97,7 +97,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   }, [cliente, uid, logado, ehMotorista]);
 
   if (!cliente) return null;
-  const clientePrivado = ehMotorista ? cliente : { ...cliente, ...(privado ?? {}) };
+  const clientePrivado = { ...cliente, ...(privado ?? {}) };
   const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   async function salvar(dados) {
@@ -213,11 +213,9 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
               </div>
             ) : null}
 
-            {!ehMotorista && <>
-              <CampoWhatsapp rotulo="WhatsApp" numero={clientePrivado.whatsapp} />
-              <CampoWhatsapp rotulo="WhatsApp 2" numero={clientePrivado.whatsapp2} />
-              <CampoWhatsapp rotulo="WhatsApp 3" numero={clientePrivado.whatsapp3} />
-            </>}
+            <CampoWhatsapp rotulo="WhatsApp" numero={clientePrivado.whatsapp} />
+            <CampoWhatsapp rotulo="WhatsApp 2" numero={clientePrivado.whatsapp2} />
+            <CampoWhatsapp rotulo="WhatsApp 3" numero={clientePrivado.whatsapp3} />
           </dl>
 
           {localizacaoAproximada ? <p className="detalhe-aviso">{localizacaoAproximada}</p> : null}
