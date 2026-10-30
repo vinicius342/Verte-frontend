@@ -9,7 +9,19 @@ import { listarClientes } from "../services/clientService";
 import { criarRota, atualizarRota, listarClientesEmUso } from "../services/rotaService";
 import { useAuth } from "../hooks/useAuth";
 import { useRota } from "../hooks/useRota";
-import { obterPonto, obterPosicao, ordenarPorProximidade } from "../utils/distancia";
+import { nomeExibicaoCliente, obterPonto, obterPosicao, ordenarPorProximidade } from "../utils/distancia";
+
+function limitarNomes(nomes, limite) {
+  return {
+    visiveis: nomes.slice(0, limite),
+    restantes: Math.max(0, nomes.length - limite),
+  };
+}
+
+function textoNomes(nomes, limite) {
+  const { visiveis, restantes } = limitarNomes(nomes, limite);
+  return [visiveis.join(", "), restantes > 0 ? `e mais ${restantes}` : ""].filter(Boolean).join(" ");
+}
 
 function normalizarTexto(texto) {
   return (texto || "")
@@ -97,12 +109,12 @@ export default function RotaFormPage() {
   );
 
   const semLocalizacaoSelecionados = useMemo(() => {
-    let total = 0;
+    const nomes = [];
     selecionados.forEach((cid) => {
       const cliente = mapaClientes.get(cid);
-      if (cliente && !obterPonto(cliente)) total += 1;
+      if (cliente && !obterPonto(cliente)) nomes.push(nomeExibicaoCliente(cliente));
     });
-    return total;
+    return nomes;
   }, [selecionados, mapaClientes]);
 
   function alternar(clienteId) {
@@ -136,14 +148,30 @@ export default function RotaFormPage() {
 
         const selecionadosClientes = clienteIds.map((cid) => mapaClientes.get(cid)).filter(Boolean);
         const estimados = selecionadosClientes.filter((cliente) => obterPonto(cliente)?.estimada).length;
+        const semLocalizacaoNomes = selecionadosClientes
+          .filter((cliente) => !obterPonto(cliente))
+          .map(nomeExibicaoCliente);
 
         let idsFinais = clienteIds;
-        let state = { organizacao: "sem-gps", estimados };
+        let state = {
+          organizacao: "sem-gps",
+          semLocalizacao: semLocalizacaoNomes.length,
+          semLocalizacaoNomes,
+          estimados,
+        };
 
         if (posicao) {
-          const { ordenados, semLocalizacao } = ordenarPorProximidade(posicao, selecionadosClientes);
+          const { ordenados, semLocalizacao, semLocalizacaoNomes: nomesSemLocalizacao } = ordenarPorProximidade(
+            posicao,
+            selecionadosClientes,
+          );
           idsFinais = ordenados.map((cliente) => cliente.id || cliente.clienteId);
-          state = { organizacao: "proximidade", semLocalizacao, estimados };
+          state = {
+            organizacao: "proximidade",
+            semLocalizacao,
+            semLocalizacaoNomes: nomesSemLocalizacao,
+            estimados,
+          };
         }
 
         const resp = await criarRota(revendedoraId, idsFinais);
@@ -249,9 +277,10 @@ export default function RotaFormPage() {
       </main>
 
       <div className="rota-barra-fixa">
-        {semLocalizacaoSelecionados > 0 && (
+        {semLocalizacaoSelecionados.length > 0 && (
           <div style={{ maxWidth: "56rem", margin: "0 auto 0.5rem", fontSize: "0.75rem", color: "var(--r-aviso-texto)" }}>
-            Sem localização: {semLocalizacaoSelecionados} cliente(s) selecionado(s) ficarão no fim da rota.
+            Sem localização: {semLocalizacaoSelecionados.length} cliente(s) selecionado(s) ficarão no fim da rota:{" "}
+            {textoNomes(semLocalizacaoSelecionados, 3)}.
           </div>
         )}
         <div className="rota-barra-fixa-inner">

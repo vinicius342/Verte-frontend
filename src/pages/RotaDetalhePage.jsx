@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
@@ -26,10 +27,18 @@ import { abrirMapa } from "../utils/mapLinks";
 import {
   formatarDistancia,
   haversineMetros,
+  nomeExibicaoCliente,
   obterPonto,
   obterPosicao,
 } from "../utils/distancia";
 import { montarTrechos } from "../utils/googleMaps";
+
+function limitarNomes(nomes, limite) {
+  return {
+    visiveis: nomes.slice(0, limite),
+    restantes: Math.max(0, nomes.length - limite),
+  };
+}
 
 function formatarData(data) {
   if (!data) return "";
@@ -50,11 +59,7 @@ function obterProgresso(rota) {
 function textoOrganizacao(aviso) {
   if (!aviso) return "";
   if (aviso.organizacao === "proximidade") {
-    const base = "Clientes organizados por proximidade, do mais perto de você ao mais distante.";
-    if (aviso.semLocalizacao > 0) {
-      return `${base} ${aviso.semLocalizacao} cliente(s) sem localização ficaram no fim da lista.`;
-    }
-    return base;
+    return "Clientes organizados por proximidade, do mais perto de você ao mais distante.";
   }
   return "Não foi possível obter sua localização. A rota foi salva na ordem em que você selecionou os clientes.";
 }
@@ -85,6 +90,7 @@ export default function RotaDetalhePage() {
     setAvisoOrganizacao({
       organizacao: estado.organizacao,
       semLocalizacao: estado.semLocalizacao ?? 0,
+      semLocalizacaoNomes: estado.semLocalizacaoNomes ?? [],
       estimados: estado.estimados ?? 0,
     });
     navigate(location.pathname, { replace: true, state: null });
@@ -132,6 +138,24 @@ export default function RotaDetalhePage() {
   const paradasPendentes = paradasOrdenadas.filter((parada) => (parada.status || "pendente") === "pendente");
   const { trechos: trechosGoogleMaps, semLocal: paradasSemLocal } = montarTrechos(paradasPendentes);
   const totalAproximadas = trechosGoogleMaps.reduce((total, trecho) => total + trecho.aproximadas, 0);
+
+  const nomesSemLocalizacao = paradasPendentes
+    .filter((parada) => parada.cliente && !obterPonto(parada.cliente))
+    .map((parada) => nomeExibicaoCliente(parada.cliente));
+  const { visiveis: nomesSemLocalizacaoVisiveis, restantes: nomesSemLocalizacaoRestantes } =
+    limitarNomes(nomesSemLocalizacao, 5);
+  const textoNomesSemLocalizacao = [
+    nomesSemLocalizacaoVisiveis.join(", "),
+    nomesSemLocalizacaoRestantes > 0 ? `e mais ${nomesSemLocalizacaoRestantes}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const nomesAvisoOrganizacao = avisoOrganizacao?.semLocalizacaoNomes ?? [];
+  const { visiveis: nomesAvisoVisiveis, restantes: nomesAvisoRestantes } = limitarNomes(
+    nomesAvisoOrganizacao,
+    5,
+  );
 
   async function mudarStatus(parada, status) {
     if (finalizada) return;
@@ -273,6 +297,16 @@ export default function RotaDetalhePage() {
           </div>
         </div>
 
+        {nomesSemLocalizacao.length > 0 && (
+          <div className="rota-aviso" style={{ marginTop: "0.9rem" }}>
+            <AlertTriangle size={16} />
+            <span>
+              {nomesSemLocalizacao.length} cliente(s) sem localização, sem quilometragem:{" "}
+              {textoNomesSemLocalizacao}.
+            </span>
+          </div>
+        )}
+
         {finalizada && (
           <p style={{ marginTop: "0.9rem", color: "var(--r-muted-texto)" }}>
             {rota?.finalizadaAutomaticamente ? "Rota finalizada automaticamente (mais de 7 dias em andamento)" : "Rota finalizada"}
@@ -400,6 +434,19 @@ export default function RotaDetalhePage() {
                               </span>
                             </div>
                           )}
+                          {status === "pendente" && temCliente && !ponto && (
+                            <div
+                              className="rota-parada-linha"
+                              title="Cliente sem localização cadastrada"
+                              aria-label="Cliente sem localização cadastrada"
+                              style={{ color: "var(--r-aviso-texto)", fontSize: "0.8rem" }}
+                            >
+                              <span className="rota-parada-icone">
+                                <AlertTriangle style={{ width: "0.8rem", height: "0.8rem" }} />
+                              </span>
+                              <span>Sem quilometragem</span>
+                            </div>
+                          )}
                           {!temCliente && <div style={{ fontStyle: "italic", color: "var(--r-muted-texto)", fontSize: "0.9rem", marginTop: "0.25rem" }}>Cliente removido</div>}
                         </div>
                         {reordenando ? (
@@ -523,6 +570,24 @@ export default function RotaDetalhePage() {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <p style={{ margin: 0 }}>{textoOrganizacao(avisoOrganizacao)}</p>
+          {nomesAvisoOrganizacao.length > 0 && (
+            <div className="rota-aviso">
+              <AlertTriangle size={16} />
+              <div>
+                <p style={{ margin: 0 }}>
+                  {nomesAvisoOrganizacao.length} cliente(s) não foram localizados e ficaram no fim da lista, sem
+                  quilometragem:
+                </p>
+                <ul style={{ margin: "0.4rem 0", paddingLeft: "1.1rem" }}>
+                  {nomesAvisoVisiveis.map((nome, indice) => (
+                    <li key={`${nome}-${indice}`}>{nome}</li>
+                  ))}
+                  {nomesAvisoRestantes > 0 && <li>e mais {nomesAvisoRestantes}</li>}
+                </ul>
+                <p style={{ margin: 0 }}>Peça ao vendedor para capturar o GPS desses clientes.</p>
+              </div>
+            </div>
+          )}
           {avisoOrganizacao?.organizacao === "proximidade" && avisoOrganizacao?.estimados > 0 && (
             <p style={{ margin: 0 }}>
               Alguns clientes usam localização aproximada (endereço, bairro ou CEP) e a ordem entre eles pode variar.

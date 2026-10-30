@@ -72,6 +72,13 @@ export function haversineMetros(a, b) {
   return 2 * RAIO_TERRA_METROS * Math.asin(Math.sqrt(h));
 }
 
+export function nomeExibicaoCliente(cliente) {
+  const nome = String(cliente?.nomeCliente ?? cliente?.nome ?? "").trim();
+  const comercio = String(cliente?.nomeComercio ?? "").trim();
+  if (!comercio) return nome || "Cliente sem nome";
+  return nome ? `${nome} (${comercio})` : comercio;
+}
+
 export function ordenarPorProximidade(origem, clientes) {
   const lista = clientes ?? [];
   const comPonto = [];
@@ -92,6 +99,7 @@ export function ordenarPorProximidade(origem, clientes) {
     return {
       ordenados: [...comPonto.map((item) => item.cliente), ...semPonto],
       semLocalizacao: semPonto.length,
+      semLocalizacaoNomes: semPonto.map(nomeExibicaoCliente),
       estimados,
     };
   }
@@ -120,6 +128,7 @@ export function ordenarPorProximidade(origem, clientes) {
   return {
     ordenados: [...ordenados, ...semPonto],
     semLocalizacao: semPonto.length,
+    semLocalizacaoNomes: semPonto.map(nomeExibicaoCliente),
     estimados,
   };
 }
