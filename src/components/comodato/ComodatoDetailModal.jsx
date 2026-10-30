@@ -326,7 +326,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
             <span className="campo-rotulo">Confirmações</span>
             {temAlgumaConfirmacao ? (
               <dl className="detalhe-lista comodato-confirmacoes-lista">
-                {confirmacoes.map(({ rotulo, nome, status, motivo }) => (
+                {confirmacoes.map(({ rotulo, nome, status }) => (
                   <div className="detalhe-item" key={rotulo}>
                     <dt>{rotulo}</dt>
                     <dd className="comodato-confirmacao-valor">
@@ -334,9 +334,6 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
                         {nome ? <span>{nome}</span> : null}
                         <StatusConfirmacao status={status} />
                       </span>
-                      {motivo ? (
-                        <span className="comodato-confirmacao-motivo">Motivo: {motivo}</span>
-                      ) : null}
                     </dd>
                   </div>
                 ))}
@@ -345,6 +342,23 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
               <p className="detalhe-aviso">Sem confirmação (comodato anterior ao fluxo de confirmações)</p>
             )}
           </div>
+
+          {comodato.motivoRejeicaoSupervisor || comodato.motivoRejeicaoGerente ? (
+            <div className="comodato-motivos">
+              {comodato.motivoRejeicaoSupervisor ? (
+                <div className="comodato-motivo">
+                  <span className="comodato-motivo-titulo">Motivo da rejeição do supervisor</span>
+                  <p className="comodato-motivo-texto">{comodato.motivoRejeicaoSupervisor}</p>
+                </div>
+              ) : null}
+              {comodato.motivoRejeicaoGerente ? (
+                <div className="comodato-motivo">
+                  <span className="comodato-motivo-titulo">Motivo da rejeição do gerente</span>
+                  <p className="comodato-motivo-texto">{comodato.motivoRejeicaoGerente}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 

@@ -1474,12 +1474,6 @@ input.mono {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
-.comodato-confirmacao-motivo {
-  font-size: 0.78rem;
-  color: var(--texto-3);
-  text-align: right;
-}
-
 .comodato-acoes-modal {
   flex-wrap: wrap;
 }
@@ -2710,3 +2704,8 @@ input.mono {
   outline: 2px solid var(--r-primaria);
   outline-offset: 2px;
 }
+
+.comodato-motivos { display: flex; flex-direction: column; gap: 0.6rem; margin: 0 0 1.25rem; }
+.comodato-motivo { background: color-mix(in oklab, var(--perigo) 8%, var(--superficie)); border: 1px solid color-mix(in oklab, var(--perigo) 25%, transparent); border-radius: 6px; padding: 0.75rem 0.9rem; }
+.comodato-motivo-titulo { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--perigo); margin-bottom: 0.3rem; }
+.comodato-motivo-texto { margin: 0; font-size: 0.95rem; color: var(--texto); white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -172,6 +172,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   }
 
   function adquirirCoordenada() {
+    if (!window.confirm("A sua localização atual será obtida.\n\nVocê tem certeza?")) return;
     setAvisoCoordenada(null);
     setErros((atual) => ({ ...atual, coordenada: undefined }));
     if (!("geolocation" in navigator)) {
