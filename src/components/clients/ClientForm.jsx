@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Button from "../common/Button";
-import { validarCliente, formatarWhatsapp, formatarCpfCnpj, formatarCep, validarCpfCnpj } from "../../utils/validators";
+import { formatarWhatsapp, formatarCpfCnpj, formatarCep } from "../../utils/validators";
+import { validarCliente } from "../../utils/validacoesCliente";
 import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
 import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
@@ -8,13 +9,31 @@ const TAMANHO_MAX_ANEXO = 10 * 1024 * 1024; // 10MB
 const TIPOS_ACEITOS = ["image/", "application/pdf"];
 const MAX_ANEXOS = 5;
 
+const ORDEM_CAMPOS = [
+  "nomeCliente",
+  "nomeComercio",
+  "cpf",
+  "codPdv",
+  "responsavel",
+  "segmento",
+  "rua",
+  "numero",
+  "bairro",
+  "cidade",
+  "cep",
+  "whatsapp",
+  "whatsapp2",
+  "whatsapp3",
+  "coordenada",
+];
+
 function estadoInicial(cliente) {
   return {
     nomeCliente: cliente?.nomeCliente ?? "",
     nomeComercio: cliente?.nomeComercio ?? "",
     codPdv: cliente?.codPdv ?? "",
     cpf: cliente?.cpf ?? "",
-    seguimento: cliente?.seguimento ?? cliente?.segmento ?? "",
+    segmento: cliente?.segmento ?? cliente?.seguimento ?? "",
     responsavel: cliente?.responsavel ?? "",
     rua: cliente?.rua ?? "",
     numero: cliente?.numero ?? "",
@@ -64,12 +83,30 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   const [anexosExistentes, setAnexosExistentes] = useState(cliente?.anexos ?? []);
   const [anexosNovos, setAnexosNovos] = useState([]);
   const [anexosRemovidos, setAnexosRemovidos] = useState([]);
-  const [erros, setErros] = useState({});
+  const [erros, setErros] = useState(() => (cliente?.id ? validarCliente(estadoInicial(cliente)) : {}));
   const [enviando, setEnviando] = useState(false);
   const [obtendoCoordenada, setObtendoCoordenada] = useState(false);
   const [avisoCoordenada, setAvisoCoordenada] = useState(null);
   const [erroGeral, setErroGeral] = useState(null);
   const consultaCepRef = useRef(0);
+  const camposRef = useRef({});
+
+  function registrarRef(campo) {
+    return (elemento) => {
+      camposRef.current[campo] = elemento;
+    };
+  }
+
+  function rolarParaPrimeiroErro(novosErros) {
+    const campo = ORDEM_CAMPOS.find((nome) => novosErros[nome]) ?? Object.keys(novosErros)[0];
+    const elemento = campo ? camposRef.current[campo] : null;
+    if (!elemento) return;
+
+    window.requestAnimationFrame(() => {
+      elemento.scrollIntoView({ behavior: "smooth", block: "center" });
+      elemento.focus?.();
+    });
+  }
 
   function consultarCep(digitos, consulta) {
     fetch(`https://viacep.com.br/ws/${digitos}/json/`)
@@ -172,12 +209,14 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
 
   async function enviar(e) {
     e.preventDefault();
-    const { valido, erros: novos } = validarCliente(dados);
+    const novos = validarCliente(dados);
     const parsed = parseCoordenada(dados.coordenadaTexto);
     if (!parsed.valido) novos.coordenada = "Use o formato -3.7327, -38.5267.";
-    if (dados.cpf?.trim() && !validarCpfCnpj(dados.cpf)) novos.cpf = "CPF/CNPJ inválido.";
     setErros(novos);
-    if (!valido || !parsed.valido || novos.cpf) return;
+    if (Object.keys(novos).length > 0) {
+      rolarParaPrimeiroErro(novos);
+      return;
+    }
 
     setEnviando(true);
     setErroGeral(null);
@@ -204,101 +243,168 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
     <form className="formulario" onSubmit={enviar} noValidate>
       <label className="campo">
         <span className="campo-rotulo">Nome do cliente *</span>
-        <input className="campo-input" value={dados.nomeCliente} onChange={alterar("nomeCliente")} required />
+        <input
+          ref={registrarRef("nomeCliente")}
+          className="campo-input"
+          value={dados.nomeCliente}
+          onChange={alterar("nomeCliente")}
+          required
+        />
         {erros.nomeCliente ? <span className="campo-erro">{erros.nomeCliente}</span> : null}
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">Nome do comércio</span>
-        <input className="campo-input" value={dados.nomeComercio} onChange={alterar("nomeComercio")} />
-      </label>
-
-      <label className="campo">
-        <span className="campo-rotulo">Cód PDV</span>
-        <input className="campo-input mono" value={dados.codPdv} onChange={alterar("codPdv")} />
-      </label>
-
-      <label className="campo">
-        <span className="campo-rotulo">CPF/CNPJ</span>
+        <span className="campo-rotulo">Nome do comércio *</span>
         <input
+          ref={registrarRef("nomeComercio")}
+          className="campo-input"
+          value={dados.nomeComercio}
+          onChange={alterar("nomeComercio")}
+          required
+        />
+        {erros.nomeComercio ? <span className="campo-erro">{erros.nomeComercio}</span> : null}
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Cód PDV *</span>
+        <input
+          ref={registrarRef("codPdv")}
+          className="campo-input mono"
+          value={dados.codPdv}
+          onChange={alterar("codPdv")}
+          required
+        />
+        {erros.codPdv ? <span className="campo-erro">{erros.codPdv}</span> : null}
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">CPF/CNPJ *</span>
+        <input
+          ref={registrarRef("cpf")}
           className="campo-input mono"
           value={dados.cpf}
           onChange={alterar("cpf")}
           inputMode="numeric"
+          required
         />
         {erros.cpf ? <span className="campo-erro">{erros.cpf}</span> : null}
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">Seguimento</span>
-        <input className="campo-input" value={dados.seguimento} onChange={alterar("seguimento")} />
+        <span className="campo-rotulo">Segmento *</span>
+        <input
+          ref={registrarRef("segmento")}
+          className="campo-input"
+          value={dados.segmento}
+          onChange={alterar("segmento")}
+          required
+        />
+        {erros.segmento ? <span className="campo-erro">{erros.segmento}</span> : null}
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">Responsável</span>
+        <span className="campo-rotulo">Responsável *</span>
         <input
+          ref={registrarRef("responsavel")}
           className="campo-input"
           value={dados.responsavel}
           onChange={alterar("responsavel")}
           placeholder="Ex. Sr Joelio"
+          required
         />
-      </label>
-
-      <label className="campo">
-        <span className="campo-rotulo">Rua *</span>
-        <input className="campo-input" value={dados.rua} onChange={alterar("rua")} required />
-        {erros.rua ? <span className="campo-erro">{erros.rua}</span> : null}
+        {erros.responsavel ? <span className="campo-erro">{erros.responsavel}</span> : null}
       </label>
 
       <div className="campo-linha">
         <label className="campo">
-          <span className="campo-rotulo">Bairro</span>
-          <input className="campo-input" value={dados.bairro} onChange={alterar("bairro")} />
+          <span className="campo-rotulo">Rua *</span>
+          <input
+            ref={registrarRef("rua")}
+            className="campo-input"
+            value={dados.rua}
+            onChange={alterar("rua")}
+            required
+          />
+          {erros.rua ? <span className="campo-erro">{erros.rua}</span> : null}
         </label>
         <label className="campo">
-          <span className="campo-rotulo">Cidade</span>
-          <input className="campo-input" value={dados.cidade} onChange={alterar("cidade")} />
+          <span className="campo-rotulo">Número *</span>
+          <input
+            ref={registrarRef("numero")}
+            className="campo-input mono"
+            value={dados.numero}
+            onChange={alterar("numero")}
+            inputMode="text"
+            required
+          />
+          <span className="campo-dica">Use S/N se não houver número</span>
+          {erros.numero ? <span className="campo-erro">{erros.numero}</span> : null}
+        </label>
+      </div>
+
+      <div className="campo-linha">
+        <label className="campo">
+          <span className="campo-rotulo">Bairro *</span>
+          <input
+            ref={registrarRef("bairro")}
+            className="campo-input"
+            value={dados.bairro}
+            onChange={alterar("bairro")}
+            required
+          />
+          {erros.bairro ? <span className="campo-erro">{erros.bairro}</span> : null}
+        </label>
+        <label className="campo">
+          <span className="campo-rotulo">Cidade *</span>
+          <input
+            ref={registrarRef("cidade")}
+            className="campo-input"
+            value={dados.cidade}
+            onChange={alterar("cidade")}
+            required
+          />
+          {erros.cidade ? <span className="campo-erro">{erros.cidade}</span> : null}
         </label>
       </div>
 
       <label className="campo">
-        <span className="campo-rotulo">CEP</span>
+        <span className="campo-rotulo">CEP *</span>
         <input
+          ref={registrarRef("cep")}
           className="campo-input mono"
           value={dados.cep}
           onChange={alterar("cep")}
           inputMode="numeric"
           placeholder="00000-000"
+          required
         />
         <span className="campo-dica">Usado para localizar o cliente quando não houver GPS capturado.</span>
+        {erros.cep ? <span className="campo-erro">{erros.cep}</span> : null}
       </label>
 
-      <div className="campo-linha">
-        <label className="campo">
-          <span className="campo-rotulo">Número</span>
-          <input className="campo-input mono" value={dados.numero} onChange={alterar("numero")} />
-        </label>
-        <label className="campo">
-          <span className="campo-rotulo">Complemento</span>
-          <input className="campo-input" value={dados.complemento} onChange={alterar("complemento")} />
-        </label>
-      </div>
+      <label className="campo">
+        <span className="campo-rotulo">Complemento</span>
+        <input className="campo-input" value={dados.complemento} onChange={alterar("complemento")} />
+      </label>
 
       <label className="campo">
-        <span className="campo-rotulo">WhatsApp</span>
+        <span className="campo-rotulo">Celular/WhatsApp *</span>
         <input
+          ref={registrarRef("whatsapp")}
           className="campo-input mono"
           value={dados.whatsapp}
           onChange={alterar("whatsapp")}
           inputMode="tel"
           placeholder="(85) 99999-9999"
         />
+        <span className="campo-dica">Preencha pelo menos um celular/WhatsApp (DDD + 9 dígitos).</span>
         {erros.whatsapp ? <span className="campo-erro">{erros.whatsapp}</span> : null}
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">WhatsApp 2</span>
+        <span className="campo-rotulo">Celular/WhatsApp 2</span>
         <input
+          ref={registrarRef("whatsapp2")}
           className="campo-input mono"
           value={dados.whatsapp2}
           onChange={alterar("whatsapp2")}
@@ -309,8 +415,9 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
       </label>
 
       <label className="campo">
-        <span className="campo-rotulo">WhatsApp 3</span>
+        <span className="campo-rotulo">Celular/WhatsApp 3</span>
         <input
+          ref={registrarRef("whatsapp3")}
           className="campo-input mono"
           value={dados.whatsapp3}
           onChange={alterar("whatsapp3")}
@@ -335,6 +442,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         <span className="campo-rotulo">Coordenada</span>
         <div className="campo-com-botao">
           <input
+            ref={registrarRef("coordenada")}
             className="campo-input mono"
             value={dados.coordenadaTexto}
             onChange={(e) => {

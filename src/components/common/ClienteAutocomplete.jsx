@@ -24,7 +24,18 @@ function formatarCamposObrigatorios(campos) {
 }
 
 const ClienteAutocomplete = forwardRef(function ClienteAutocomplete(
-  { valor, clienteId, clientes = [], loading, onDigitar, onSelecionar, camposObrigatorios = [], onIrParaCliente, erro },
+  {
+    valor,
+    clienteId,
+    clientes = [],
+    loading,
+    onDigitar,
+    onSelecionar,
+    camposObrigatorios = [],
+    onIrParaCliente,
+    erro,
+    avisarCadastroIncompleto = false,
+  },
   ref,
 ) {
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -43,9 +54,17 @@ const ClienteAutocomplete = forwardRef(function ClienteAutocomplete(
   }, [camposObrigatorios, clienteSelecionado]);
 
   const clienteSelecionadoIncompleto = camposClienteAusentes.length > 0;
-  const mensagemClienteIncompleto = clienteSelecionadoIncompleto
+  const cadastroIncompleto = avisarCadastroIncompleto && Boolean(clienteSelecionado?.cadastroIncompleto);
+  const mensagemCamposAusentes = clienteSelecionadoIncompleto
     ? `Este cliente está sem ${formatarCamposObrigatorios(camposClienteAusentes)}. Atualize o cadastro para continuar.`
     : "";
+  const mensagemClienteIncompleto = [
+    mensagemCamposAusentes,
+    cadastroIncompleto ? "Complete o cadastro do cliente para continuar." : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const exibirAlertaCliente = clienteSelecionadoIncompleto || cadastroIncompleto;
 
   const sugestoesCliente = useMemo(() => {
     const termo = normalizarTexto(valor).trim();
@@ -113,7 +132,7 @@ const ClienteAutocomplete = forwardRef(function ClienteAutocomplete(
         </div>
       ) : null}
 
-      {clienteSelecionadoIncompleto ? (
+      {exibirAlertaCliente ? (
         <div className="estado-erro comodato-alerta-cliente">
           <span>{mensagemClienteIncompleto}</span>
           <Button type="button" variant="secondary" onClick={() => irParaCliente({ editarClienteId: clienteSelecionado.id })}>

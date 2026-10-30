@@ -6,7 +6,12 @@ export default function ClientRow({ cliente, onSelecionar }) {
           ⚲
         </span>
         <span className="linha-texto">
-          <span className="linha-nome">{cliente.nomeCliente}</span>
+          <span className="linha-nome-linha">
+            <span className="linha-nome">{cliente.nomeCliente}</span>
+            {cliente.cadastroIncompleto ? (
+              <span className="selo-confirmacao selo-confirmacao--pendente">Cadastro incompleto</span>
+            ) : null}
+          </span>
           {cliente.nomeComercio ? <span className="linha-comercio">{cliente.nomeComercio}</span> : null}
           {cliente.rua ? (
             <span className="linha-endereco">

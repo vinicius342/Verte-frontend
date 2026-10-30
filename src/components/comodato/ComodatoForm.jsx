@@ -449,6 +449,7 @@ export default function ComodatoForm({ onSalvar, onCancelar, comodatoExistente }
         camposObrigatorios={["codPdv", "cpf"]}
         onIrParaCliente={irParaCliente}
         erro={erroClienteNaoCadastrado}
+        avisarCadastroIncompleto
       />
 
       <label className="campo">
