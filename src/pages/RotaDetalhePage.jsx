@@ -29,6 +29,7 @@ import {
   obterPonto,
   obterPosicao,
 } from "../utils/distancia";
+import { montarTrechos } from "../utils/googleMaps";
 
 function formatarData(data) {
   if (!data) return "";
@@ -72,6 +73,7 @@ export default function RotaDetalhePage() {
   const [erroAcao, setErroAcao] = useState(null);
   const [avisoOrganizacao, setAvisoOrganizacao] = useState(null);
   const [posicao, setPosicao] = useState(null);
+  const [modalTrechosAberto, setModalTrechosAberto] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -126,6 +128,10 @@ export default function RotaDetalhePage() {
     });
     return lista;
   }, [rota, ordem]);
+
+  const paradasPendentes = paradasOrdenadas.filter((parada) => (parada.status || "pendente") === "pendente");
+  const { trechos: trechosGoogleMaps, semLocal: paradasSemLocal } = montarTrechos(paradasPendentes);
+  const totalAproximadas = trechosGoogleMaps.reduce((total, trecho) => total + trecho.aproximadas, 0);
 
   async function mudarStatus(parada, status) {
     if (finalizada) return;
@@ -284,6 +290,37 @@ export default function RotaDetalhePage() {
               <Pencil size={16} />
               Editar clientes
             </button>
+            {trechosGoogleMaps.length === 1 ? (
+              <a
+                className="rota-botao rota-botao--primario"
+                href={trechosGoogleMaps[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                <Navigation size={16} />
+                Abrir rota no Google Maps
+              </a>
+            ) : trechosGoogleMaps.length > 1 ? (
+              <button
+                type="button"
+                className="rota-botao rota-botao--primario"
+                onClick={() => setModalTrechosAberto(true)}
+              >
+                <Navigation size={16} />
+                Abrir rota no Google Maps
+              </button>
+            ) : null}
+            {trechosGoogleMaps.length > 0 && totalAproximadas > 0 ? (
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--r-aviso-texto)" }}>
+                {totalAproximadas} parada(s) usam localização aproximada e podem aparecer no lugar errado no mapa.
+              </p>
+            ) : null}
+            {trechosGoogleMaps.length > 0 && paradasSemLocal > 0 ? (
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--r-aviso-texto)" }}>
+                {paradasSemLocal} parada(s) sem localização ficaram de fora.
+              </p>
+            ) : null}
             <button type="button" className="rota-botao rota-botao--primario" onClick={acaoFinalizar}>
               <Check size={16} />
               Finalizar
@@ -445,6 +482,39 @@ export default function RotaDetalhePage() {
           </button>
         </div>
       </main>
+
+      <Modal
+        aberto={modalTrechosAberto}
+        titulo="Abrir rota no Google Maps"
+        onFechar={() => setModalTrechosAberto(false)}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <p style={{ margin: 0 }}>
+            O Google Maps aceita no máximo 10 paradas por vez. Abra os trechos em ordem.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {trechosGoogleMaps.map((trecho, indice) => (
+              <div
+                key={`${trecho.inicio}-${trecho.fim}-${indice}`}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}
+              >
+                <span>
+                  Paradas {trecho.inicio} a {trecho.fim}
+                </span>
+                <a
+                  className="rota-botao"
+                  href={trecho.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: "none", height: "2.25rem", padding: "0 0.75rem", fontSize: "0.8rem" }}
+                >
+                  Abrir
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         aberto={Boolean(avisoOrganizacao)}
