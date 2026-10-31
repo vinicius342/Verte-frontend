@@ -3,6 +3,7 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -14,6 +15,10 @@ import { criarPerfilUsuario } from "./userService";
 export async function login(email, senha) {
   const cred = await signInWithEmailAndPassword(getFirebaseAuth(), email, senha);
   return cred.user;
+}
+
+export async function enviarEmailRedefinicaoSenha(email) {
+  await sendPasswordResetEmail(getFirebaseAuth(), email);
 }
 
 // Revoga a sessão no backend (todos os dispositivos) e depois sai localmente.

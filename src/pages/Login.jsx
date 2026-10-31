@@ -134,6 +134,12 @@ export default function LoginPage() {
               </button>
             </Field>
 
+            <div className="text-right">
+              <Link to="/esqueci-senha" className="text-sm font-medium text-primary hover:underline">
+                Esqueci minha senha
+              </Link>
+            </div>
+
             {erroGeral ? (
               <p className="text-sm text-destructive" role="alert">
                 {erroGeral}
@@ -149,12 +155,6 @@ export default function LoginPage() {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
-
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            <Link to="/" className="font-medium text-primary hover:underline">
-              Voltar para a lista
-            </Link>
-          </p>
         </section>
       </div>
     </main>

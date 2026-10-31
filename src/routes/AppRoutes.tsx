@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import EsqueciSenha from "../pages/EsqueciSenha";
 import ConfiguracoesPage from "../pages/ConfiguracoesPage";
 import PerfilPage from "../pages/PerfilPage";
 import ComodatoPage from "../pages/ComodatoPage";
@@ -25,6 +26,7 @@ export default function AppRoutes(): JSX.Element {
       <Route element={<RotaPublica />}>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
       </Route>
 
       {/* Só logado: deslogado é redirecionado para "/login" */}
