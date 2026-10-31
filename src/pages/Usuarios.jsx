@@ -209,6 +209,7 @@ export default function UsuariosPage() {
             setAviso(`Usuário ${nome} excluído.`);
             recarregar();
           }}
+          onRedefinida={(nome) => setAviso(`Senha de ${nome} redefinida para a provisória.`)}
         />
       )}
     </div>

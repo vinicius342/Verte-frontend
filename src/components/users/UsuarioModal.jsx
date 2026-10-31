@@ -6,6 +6,7 @@ import {
   criarUsuarioPelaRevendedora,
   atualizarUsuario,
   excluirUsuario,
+  redefinirSenha,
 } from "../../services/usuarioAdminService";
 import { traduzirErroAuth } from "../../services/authService";
 
@@ -49,7 +50,14 @@ function SelectResponsavel({ rotulo, valor, onChange, opcoes, vazio, desabilitad
 }
 
 // Renderize só quando precisar ({modal && <UsuarioModal ... />}) para o estado nascer limpo.
-export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo, onExcluido }) {
+export default function UsuarioModal({
+  usuario,
+  usuarios = [],
+  onFechar,
+  onSalvo,
+  onExcluido,
+  onRedefinida,
+}) {
   const { uid, revendedoraId, papel: meuPapel } = useAuth();
   const editando = Boolean(usuario);
   const ehEuMesmo = editando && usuario.id === uid;
@@ -97,6 +105,29 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
     } catch (err) {
       console.error("excluirUsuario:", err?.code, err?.message, err);
       setErroGeral(`${err?.message || "Não foi possível excluir o usuário."}${err?.code ? ` (${err.code})` : ""}`);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function redefinir() {
+    const nomeUsuario = usuario.nome || usuario.email;
+    if (
+      !window.confirm(
+        `Redefinir a senha de ${nomeUsuario}? Ele será desconectado e precisará definir uma nova senha no próximo acesso.`,
+      )
+    ) {
+      return;
+    }
+
+    setEnviando(true);
+    setErroGeral(null);
+    try {
+      await redefinirSenha(usuario.id);
+      onRedefinida?.(nomeUsuario);
+      onFechar();
+    } catch (err) {
+      setErroGeral(err?.message ?? "Não foi possível redefinir a senha.");
     } finally {
       setEnviando(false);
     }
@@ -216,6 +247,23 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
           ) : null}
           {ehEuMesmo ? <span className="usuarios-campo__dica">Você não pode alterar o próprio tipo.</span> : null}
         </label>
+
+        {editando && !ehEuMesmo && (
+          <div className="usuarios-campo">
+            <button
+              type="button"
+              className="usuarios-botao usuarios-botao--contorno"
+              onClick={redefinir}
+              disabled={enviando}
+            >
+              Redefinir senha
+            </button>
+            <span className="usuarios-campo__dica">
+              A senha volta para a provisória 123456 e o usuário definirá uma nova no próximo
+              acesso.
+            </span>
+          </div>
+        )}
 
         {mostraSupervisor && (
           <SelectResponsavel

@@ -21,6 +21,10 @@ export async function definirAtivo(uid, ativo) {
   await apiFetch("usuarios/definir-ativo", { method: "PUT", body: { uid, ativo } });
 }
 
+export async function redefinirSenha(uid) {
+  await apiFetch("usuarios/redefinir-senha", { method: "PUT", body: { uid } });
+}
+
 // TEMPORÁRIO (desenvolvimento): apaga só o documento; a conta no Auth continua.
 export async function excluirUsuario(uid) {
   await apiFetch("usuarios/excluir", { method: "DELETE", params: { uid } });
