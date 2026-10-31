@@ -2709,3 +2709,16 @@ input.mono {
 .comodato-motivo { background: color-mix(in oklab, var(--perigo) 8%, var(--superficie)); border: 1px solid color-mix(in oklab, var(--perigo) 25%, transparent); border-radius: 6px; padding: 0.75rem 0.9rem; }
 .comodato-motivo-titulo { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--perigo); margin-bottom: 0.3rem; }
 .comodato-motivo-texto { margin: 0; font-size: 0.95rem; color: var(--texto); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.colaborador-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primaria);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.colaborador-whatsapp:hover {
+  text-decoration: underline;
+}

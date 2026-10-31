@@ -13,6 +13,7 @@ import ComodatoPage from "../pages/ComodatoPage";
 import LimitePage from "@/pages/LimitePage";
 import AtivosPage from "@/pages/AtivosPage";
 import UsuariosPage from "@/pages/Usuarios";
+import ColaboradoresPage from "../pages/ColaboradoresPage";
 import PrivateRoute from "./PrivateRoute";
 import RotaPublica from "./RotaPublica";
 import RotaGerente from "./RotaGerente";
@@ -42,6 +43,7 @@ export default function AppRoutes(): JSX.Element {
       {/* Só logado: deslogado é redirecionado para "/login" */}
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<Home />} />
+        <Route path="/colaboradores" element={<ColaboradoresPage />} />
         <Route path="/perfil" element={<PerfilPage />} />
 
         <Route element={<RotaMotorista />}>

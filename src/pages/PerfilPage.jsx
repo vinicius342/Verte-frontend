@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Camera, Hash, Trash2, Upload, User } from "lucide-react";
 import Header from "../components/layout/Header";
@@ -10,6 +10,8 @@ import { useAuth } from "../hooks/useAuth";
 import { usePerfil } from "../hooks/usePerfil";
 import { useFotoPerfil, atualizarFotoPerfil } from "../hooks/useFotoPerfil";
 import { salvarPerfil, salvarFotoPerfil, removerFotoPerfil } from "../services/perfilService";
+import { buscarUsuario, salvarWhatsapp } from "../services/userService";
+import { apenasDigitos, celularValido, formatarCelular } from "../utils/whatsapp";
 import "../styles/perfil.css";
 
 const TAMANHO_MAXIMO_FOTO = 10 * 1024 * 1024;
@@ -139,8 +141,119 @@ function IdentidadeCard({ perfil, exigeSupervisor, supervisorEncontrado, supervi
   );
 }
 
+function WhatsappCartao({ usuario, uid }) {
+  const [valor, setValor] = useState("");
+  const [carregado, setCarregado] = useState(false);
+  const [erroCampo, setErroCampo] = useState(null);
+  const [erro, setErro] = useState(null);
+  const [sucesso, setSucesso] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+
+    function aplicar(dados) {
+      if (!ativo) return;
+      setValor(formatarCelular(apenasDigitos(dados?.whatsapp ?? "")));
+      setCarregado(true);
+    }
+
+    if (!uid) return () => {
+      ativo = false;
+    };
+
+    if (usuario && Object.prototype.hasOwnProperty.call(usuario, "whatsapp")) {
+      aplicar(usuario);
+      return () => {
+        ativo = false;
+      };
+    }
+
+    buscarUsuario(uid)
+      .then(aplicar)
+      .catch((e) => {
+        console.error("Erro ao carregar WhatsApp:", e);
+        if (ativo) setCarregado(true);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [uid, usuario]);
+
+  function alterar(e) {
+    setSucesso(false);
+    setErroCampo(null);
+    setValor(formatarCelular(apenasDigitos(e.target.value)));
+  }
+
+  async function enviar(e) {
+    e.preventDefault();
+    setErro(null);
+    setSucesso(false);
+    setErroCampo(null);
+
+    const digitos = apenasDigitos(valor);
+    if (digitos && !celularValido(digitos)) {
+      setErroCampo("Informe um celular válido com DDD.");
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      const resposta = await salvarWhatsapp(digitos);
+      setValor(formatarCelular(apenasDigitos(resposta?.whatsapp ?? digitos)));
+      setSucesso(true);
+    } catch (err) {
+      console.error("Erro ao salvar WhatsApp:", err);
+      setErro(err?.message ?? "Não foi possível salvar o WhatsApp.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <form className="perfil-cartao" onSubmit={enviar} noValidate>
+      <div className="perfil-assinatura-topo">
+        <h3 className="perfil-titulo-cartao">WhatsApp</h3>
+        <p className="perfil-subtitulo">Aparece para todos os colaboradores.</p>
+      </div>
+
+      <label className="campo">
+        <span className="campo-rotulo">WhatsApp</span>
+        <input
+          className="campo-input"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={valor}
+          onChange={alterar}
+          placeholder="(85) 98888-7777"
+          disabled={salvando || !carregado}
+        />
+        <span className="campo-dica">Este número fica visível para todos os colaboradores.</span>
+        {erroCampo ? <span className="campo-erro">{erroCampo}</span> : null}
+      </label>
+
+      {erro ? <p className="estado-erro">{erro}</p> : null}
+      {sucesso ? <p className="estado-sucesso">WhatsApp salvo.</p> : null}
+
+      <div className="perfil-rodape">
+        <button
+          type="submit"
+          className="perfil-btn perfil-btn-primario perfil-btn-salvar"
+          disabled={salvando || !carregado}
+        >
+          {salvando ? "Salvando…" : "Salvar WhatsApp"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function PerfilForm({
   perfil,
+  usuario,
   exigeSupervisor,
   supervisorEncontrado,
   supervisorErro,
@@ -188,6 +301,8 @@ function PerfilForm({
         uid={uid}
       />
 
+      <WhatsappCartao usuario={usuario} uid={uid} />
+
       <form className="perfil-cartao" onSubmit={enviar} noValidate>
         <div className="perfil-assinatura-topo">
           <h3 className="perfil-titulo-cartao">Assinatura</h3>
@@ -227,7 +342,15 @@ export default function PerfilPage() {
     loading: loadingAuth,
     precisaConfigurarAssinatura,
   } = useAuth();
-  const { perfil, supervisor, exigeSupervisor, supervisorErro, loading, erro } = usePerfil();
+  const {
+    perfil,
+    usuario: usuarioPerfil,
+    supervisor,
+    exigeSupervisor,
+    supervisorErro,
+    loading,
+    erro,
+  } = usePerfil();
   const [menuAberto, setMenuAberto] = useState(false);
 
   let conteudo;
@@ -247,6 +370,7 @@ export default function PerfilPage() {
     conteudo = (
       <PerfilForm
         perfil={perfil}
+        usuario={usuarioPerfil}
         exigeSupervisor={exigeSupervisor}
         supervisorEncontrado={Boolean(supervisor)}
         supervisorErro={supervisorErro}

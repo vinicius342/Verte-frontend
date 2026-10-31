@@ -19,6 +19,10 @@ export async function definirSenha(novaSenha) {
   return apiFetch("usuarios/definir-senha", { method: "PUT", body: { novaSenha } });
 }
 
+export async function salvarWhatsapp(whatsapp) {
+  return apiFetch("usuarios/salvar-whatsapp", { method: "PUT", body: { whatsapp } });
+}
+
 export async function buscarUsuario(uid) {
   if (!uid) return null;
   return apiFetch("usuarios/buscar", { params: { uid } });
