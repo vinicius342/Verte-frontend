@@ -24,13 +24,21 @@ export function AuthProvider({ children }) {
   const [revendedoraId, setRevendedoraId] = useState(null);
   const [papel, setPapel] = useState(null);
   const [assinaturaConfigurada, setAssinaturaConfigurada] = useState(null);
+  const [trocarSenha, setTrocarSenha] = useState(false);
+  const [trocandoSenha, setTrocandoSenha] = useState(false);
   const [loading, setLoading] = useState(true);
   const requisicao = useRef(0);
 
   // Só a busca mais recente vale: evita que uma resposta antiga sobrescreva a nova.
   const carregarPerfil = useCallback(async (uid) => {
     const minha = ++requisicao.current;
-    let vinculo = { revendedoraId: null, papel: null, ativo: true, assinaturaConfigurada: true };
+    let vinculo = {
+      revendedoraId: null,
+      papel: null,
+      ativo: true,
+      assinaturaConfigurada: true,
+      trocarSenha: false,
+    };
     try {
       vinculo = await buscarVinculo(uid);
     } catch (e) {
@@ -47,8 +55,14 @@ export function AuthProvider({ children }) {
     setRevendedoraId(vinculo.revendedoraId);
     setPapel(vinculo.papel);
     setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
+    setTrocarSenha(vinculo.trocarSenha === true);
     return vinculo.revendedoraId;
   }, []);
+
+  const recarregarVinculo = useCallback(() => {
+    if (!usuario?.uid) return Promise.resolve();
+    return carregarPerfil(usuario.uid);
+  }, [usuario?.uid, carregarPerfil]);
 
   useEffect(() => {
     const cancelar = observarUsuarioLogado(async (u) => {
@@ -58,6 +72,7 @@ export function AuthProvider({ children }) {
         setRevendedoraId(null);
         setPapel(null);
         setAssinaturaConfigurada(null);
+        setTrocarSenha(false);
         setLoading(false);
         return;
       }
@@ -84,6 +99,10 @@ export function AuthProvider({ children }) {
       nome: usuario?.displayName ?? usuario?.email ?? null,
       loading,
       configurado: isFirebaseConfigured(),
+      trocarSenha,
+      trocandoSenha,
+      setTrocandoSenha,
+      recarregarVinculo,
       login: (email, senha) => loginService(email, senha),
       logout: () => logoutService(),
       // O listener de auth dispara antes de o perfil ser criado; busca de novo ao terminar.
@@ -93,7 +112,17 @@ export function AuthProvider({ children }) {
         return u;
       },
     };
-  }, [usuario, revendedoraId, papel, assinaturaConfigurada, loading, carregarPerfil]);
+  }, [
+    usuario,
+    revendedoraId,
+    papel,
+    assinaturaConfigurada,
+    loading,
+    trocarSenha,
+    trocandoSenha,
+    recarregarVinculo,
+    carregarPerfil,
+  ]);
 
   if (loading) return <Carregando cheia />;
 

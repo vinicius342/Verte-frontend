@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ClipboardCheck,
@@ -21,6 +21,8 @@ const FEATURES = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const mensagem = location.state?.mensagem;
   const { loading } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -101,6 +103,12 @@ export default function LoginPage() {
             <h2 className="font-display text-3xl font-bold">Bem-vindo de volta</h2>
             <p className="mt-2 text-base text-muted-foreground">Entre para continuar suas visitas.</p>
           </div>
+
+          {mensagem ? (
+            <p className="mt-6 text-sm font-medium text-primary" role="status">
+              {mensagem}
+            </p>
+          ) : null}
 
           <form onSubmit={enviar} noValidate className="mt-7 space-y-5 lg:mt-9 lg:space-y-6">
             <Field label="E-mail" icon={<Mail className="h-5 w-5" />} error={erros.email}>

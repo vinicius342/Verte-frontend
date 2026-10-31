@@ -1,5 +1,8 @@
 import { JSX } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import Carregando from "../components/common/Carregando";
+import DefinirSenhaPage from "../pages/DefinirSenhaPage";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
@@ -20,6 +23,13 @@ import RotaFormPage from "../pages/RotaFormPage";
 import RotaDetalhePage from "../pages/RotaDetalhePage";
 
 export default function AppRoutes(): JSX.Element {
+  const { usuario, loading, trocarSenha, trocandoSenha } = useAuth();
+
+  if (loading) return <Carregando cheia />;
+  if (usuario && trocarSenha) return <DefinirSenhaPage />;
+  // Entre a revogação da sessão e o novo login, evita cair na tela de login.
+  if (trocandoSenha && !usuario) return <Carregando cheia />;
+
   return (
     <Routes>
       {/* Só deslogado: usuário logado é redirecionado para "/" */}

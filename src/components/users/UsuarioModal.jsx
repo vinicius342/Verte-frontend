@@ -70,7 +70,6 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
     nome: usuario?.nome ?? "",
     email: usuario?.email ?? "",
     codigo: usuario?.codigo ?? "",
-    senha: "",
     papel: usuario?.papel ?? "vendedor",
     supervisorId: supervisores.some((u) => u.id === usuario?.supervisorId) ? usuario.supervisorId : "",
     gerenteId: gerentes.some((u) => u.id === usuario?.gerenteId) ? usuario.gerenteId : "",
@@ -111,7 +110,6 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
     const novos = {};
     if (!nome) novos.nome = "Informe o nome.";
     if (!editando && !email) novos.email = "Informe o e-mail.";
-    if (!editando && dados.senha.length < 6) novos.senha = "A senha precisa ter pelo menos 6 caracteres.";
     setErros(novos);
     if (Object.keys(novos).length > 0) return;
 
@@ -134,7 +132,6 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
         await criarUsuarioPelaRevendedora(revendedoraId, {
           nome,
           email,
-          senha: dados.senha,
           papel: dados.papel,
           codigo: dados.codigo,
           ...vinculo,
@@ -180,6 +177,13 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
           {erros.email ? <span className="usuarios-campo__erro">{erros.email}</span> : null}
         </label>
 
+        {!editando && (
+          <span className="usuarios-campo__dica">
+            O usuário entra com a senha provisória 123456 e definirá a própria senha no primeiro
+            acesso.
+          </span>
+        )}
+
         <label className="usuarios-campo">
           <span className="usuarios-campo__rotulo">Código</span>
           <input
@@ -190,21 +194,6 @@ export default function UsuarioModal({ usuario, usuarios = [], onFechar, onSalvo
             autoComplete="off"
           />
         </label>
-
-        {!editando && (
-          <label className={`usuarios-campo ${erros.senha ? "usuarios-campo--erro" : ""}`}>
-            <span className="usuarios-campo__rotulo">Senha provisória</span>
-            <input
-              className="usuarios-campo__input"
-              type="text"
-              autoComplete="new-password"
-              value={dados.senha}
-              onChange={alterar("senha")}
-              required
-            />
-            {erros.senha ? <span className="usuarios-campo__erro">{erros.senha}</span> : null}
-          </label>
-        )}
 
         <label className="usuarios-campo">
           <span className="usuarios-campo__rotulo">Tipo de usuário</span>

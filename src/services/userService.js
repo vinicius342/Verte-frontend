@@ -15,6 +15,10 @@ export async function criarPerfilUsuario(uid, dados) {
   await apiFetch("usuarios/criar-perfil", { method: "POST", body: { nome: dados?.nome } });
 }
 
+export async function definirSenha(novaSenha) {
+  return apiFetch("usuarios/definir-senha", { method: "PUT", body: { novaSenha } });
+}
+
 export async function buscarUsuario(uid) {
   if (!uid) return null;
   return apiFetch("usuarios/buscar", { params: { uid } });
