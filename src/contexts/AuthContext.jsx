@@ -23,6 +23,7 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [revendedoraId, setRevendedoraId] = useState(null);
+  const [codigo, setCodigo] = useState("");
   const [papel, setPapel] = useState(null);
   const [assinaturaConfigurada, setAssinaturaConfigurada] = useState(null);
   const [trocarSenha, setTrocarSenha] = useState(false);
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
     }
 
     setRevendedoraId(vinculo.revendedoraId);
+    setCodigo(vinculo.codigo ?? "");
     setPapel(vinculo.papel);
     setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
     setTrocarSenha(vinculo.trocarSenha === true);
@@ -83,6 +85,7 @@ export function AuthProvider({ children }) {
       if (!u) {
         requisicao.current++;
         setRevendedoraId(null);
+        setCodigo("");
         setPapel(null);
         setAssinaturaConfigurada(null);
         setTrocarSenha(false);
@@ -123,6 +126,7 @@ export function AuthProvider({ children }) {
       usuario,
       uid: usuario?.uid ?? null,
       revendedoraId,
+      codigo,
       papel,
       ehMotorista,
       assinaturaConfigurada,
@@ -152,6 +156,7 @@ export function AuthProvider({ children }) {
   }, [
     usuario,
     revendedoraId,
+    codigo,
     papel,
     assinaturaConfigurada,
     loading,

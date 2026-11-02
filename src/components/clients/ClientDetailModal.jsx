@@ -6,7 +6,6 @@ import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { useTutorial } from "../../contexts/TutorialContext";
 import { atualizarCliente, excluirCliente, buscarPrivadoCliente } from "../../services/clientService";
-import { buscarConfiguracao } from "../../services/configService";
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
 import { formatarCep } from "../../utils/validators";
@@ -49,16 +48,14 @@ function textoCadastroContatos(cliente, rota) {
 }
 
 export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false, recemCriado = false }) {
-  const { uid, usuario, revendedoraId, ehMotorista } = useAuth();
+  const { uid, usuario, revendedoraId, ehMotorista, codigo } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [anexoEmAcao, setAnexoEmAcao] = useState(null);
-  const [rota, setRota] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [privado, setPrivado] = useState(null);
   const [privadoCarregado, setPrivadoCarregado] = useState(false);
-  const [rotaCarregada, setRotaCarregada] = useState(false);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const logado = Boolean(uid && usuario);
   const podeVerAnexos = logado && !ehMotorista;
@@ -67,7 +64,6 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     setEditando(false);
     setPrivado(null);
     setPrivadoCarregado(false);
-    setRotaCarregada(false);
   }, [cliente?.id]);
 
   useEffect(() => {
@@ -89,22 +85,6 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
       .finally(() => { if (ativo) setPrivadoCarregado(true); });
     return () => { ativo = false; };
   }, [cliente?.id, revendedoraId]);
-
-  useEffect(() => {
-    if (!cliente || !logado || ehMotorista) return;
-    let ativo = true;
-    buscarConfiguracao(uid)
-      .then((config) => {
-        if (ativo) setRota(config?.codigoVendedor ?? "");
-      })
-      .catch(() => { })
-      .finally(() => {
-        if (ativo) setRotaCarregada(true);
-      });
-    return () => {
-      ativo = false;
-    };
-  }, [cliente, uid, logado, ehMotorista]);
 
   const etapasDetalhe = useMemo(() => {
     if (!cliente || ehMotorista) return [];
@@ -139,7 +119,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
         alvo: '[data-tour="detalhe-cliente-copiar"]',
         titulo: "Copiar cadastro",
         texto: "Copia este texto pronto para você colar no WhatsApp.",
-        preConteudo: textoCadastroContatos(dados, rota),
+        preConteudo: textoCadastroContatos(dados, codigo),
       });
     }
 
@@ -166,11 +146,11 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     });
 
     return lista;
-  }, [cliente, privado, rota, ehMotorista, logado, podeVerAnexos]);
+  }, [cliente, privado, codigo, ehMotorista, logado, podeVerAnexos]);
 
   useEffect(() => {
     if (!cliente?.id || !recemCriado || editando || ehMotorista) return;
-    if (!privadoCarregado || !rotaCarregada) return;
+    if (!privadoCarregado) return;
     iniciarTutorialDetalhe("detalheCliente", etapasDetalhe);
   }, [
     cliente?.id,
@@ -178,7 +158,6 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     editando,
     ehMotorista,
     privadoCarregado,
-    rotaCarregada,
     etapasDetalhe,
     iniciarTutorialDetalhe,
   ]);
@@ -214,7 +193,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
 
   async function copiarContatos() {
     try {
-      await navigator.clipboard.writeText(textoCadastroContatos(clientePrivado, rota));
+      await navigator.clipboard.writeText(textoCadastroContatos(clientePrivado, codigo));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch (erro) {

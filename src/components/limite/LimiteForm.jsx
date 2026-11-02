@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Button from "../common/Button";
 import ClienteAutocomplete from "../common/ClienteAutocomplete";
 import { listarClientes } from "../../services/clientService";
-import { buscarConfiguracao } from "../../services/configService";
 import { useAuth } from "../../hooks/useAuth";
 
 const VAZIO = {
@@ -28,7 +27,7 @@ const VAZIO = {
   motivo: "",
 };
 
-function dadosIniciais(existente) {
+function dadosIniciais(existente, codigo) {
   const d = { ...VAZIO };
   if (existente) {
     Object.keys(VAZIO).forEach((k) => {
@@ -36,6 +35,7 @@ function dadosIniciais(existente) {
     });
   }
   d.telefones = d.telefones?.length ? [...d.telefones] : [""];
+  d.rota = existente?.rota?.trim() ? existente.rota : codigo ?? "";
   return d;
 }
 
@@ -76,8 +76,8 @@ function Campo({ dados, erros, alterar, campo, rotulo, obrigatorio, mono, ...res
 
 export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, limiteExistente }) {
   const navigate = useNavigate();
-  const { uid, revendedoraId } = useAuth();
-  const [dados, setDados] = useState(() => dadosIniciais(limiteExistente));
+  const { revendedoraId, codigo } = useAuth();
+  const [dados, setDados] = useState(() => dadosIniciais(limiteExistente, codigo));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
@@ -87,33 +87,12 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
 
   useEffect(() => {
-    if (!uid) return undefined;
-
-    let ativo = true;
-    buscarConfiguracao(uid)
-      .then((config) => {
-        if (!ativo || !config) return;
-        setDados((atual) => ({
-          ...atual,
-          rota: atual.rota?.trim() ? atual.rota : config.codigoVendedor ?? "",
-        }));
-      })
-      .catch((erro) => {
-        console.error("Falha ao carregar configuração do usuário:", erro);
-      });
-
-    return () => {
-      ativo = false;
-    };
-  }, [uid]);
-
-  useEffect(() => {
-    setDados(dadosIniciais(limiteExistente));
+    setDados(dadosIniciais(limiteExistente, codigo));
     setErros({});
     setErroGeral(null);
     setErroClienteNaoCadastrado("");
     setClienteInicialAplicado(false);
-  }, [limiteExistente]);
+  }, [limiteExistente, codigo]);
 
   useEffect(() => {
     let ativo = true;
