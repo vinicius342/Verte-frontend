@@ -112,10 +112,10 @@ const icones = {
 /* Itens do menu principal. `restrito` = só aparece se podeConfigurar. */
 const itensMenu = [
   { caminho: "/", rotulo: "Início", icone: icones.inicio },
-  { caminho: "/colaboradores", rotulo: "Colaboradores", icone: icones.usuarios },
   { caminho: "/rota-do-dia", rotulo: "Rota do dia", icone: icones.rota, soMotorista: true },
   { caminho: "/comodato", rotulo: "Comodato", icone: icones.comodato, ocultoMotorista: true },
   { caminho: "/limite", rotulo: "Solicitação de limites", icone: icones.limite, ocultoMotorista: true },
+  { caminho: "/colaboradores", rotulo: "Colaboradores", icone: icones.usuarios },
   { caminho: "/ativos", rotulo: "Ativos", icone: icones.ativos, ocultoMotorista: true },
   { caminho: "/usuarios", rotulo: "Usuários", icone: icones.usuarios, restrito: true },
   { caminho: "/configuracoes", rotulo: "Configurações", icone: icones.configuracoes, restrito: true },

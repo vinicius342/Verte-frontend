@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 function normalizar(texto) {
   return (texto ?? "")
@@ -23,6 +24,7 @@ export default function AtivoAutocomplete({
   onIrParaAtivos,
 }) {
   const [aberto, setAberto] = useState(false);
+  const { podeConfigurar } = useAuth();
   const termo = normalizar(valor).trim();
 
   const sugestoes = useMemo(() => {
@@ -73,10 +75,16 @@ export default function AtivoAutocomplete({
 
       {naoCadastrado ? (
         <span className="campo-erro">
-          Ativo não cadastrado.{" "}
-          <button type="button" className="ativo-autocomplete-link" onClick={onIrParaAtivos}>
-            Cadastrar ativo
-          </button>
+          {podeConfigurar ? (
+            <>
+              Ativo não cadastrado.{" "}
+              <button type="button" className="ativo-autocomplete-link" onClick={onIrParaAtivos}>
+                Cadastrar ativo
+              </button>
+            </>
+          ) : (
+            "Ativo não cadastrado. Peça a um responsável para cadastrá-lo."
+          )}
         </span>
       ) : null}
     </div>

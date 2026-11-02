@@ -12,7 +12,7 @@ import { useAtivos } from "../hooks/useAtivos";
 import AtivoDetailModal from "../components/ativo/AtivoDetailModal";
 
 export default function AtivosPage() {
-  const { usuario, loading: authLoading } = useAuth();
+  const { usuario, podeConfigurar, loading: authLoading } = useAuth();
   const { ativos, loading, erro } = useAtivos();
   const carregando = authLoading || loading;
   const [menuAberto, setMenuAberto] = useState(false);
@@ -25,10 +25,14 @@ export default function AtivosPage() {
   useEffect(() => {
     const novo = location.state?.novoAtivo;
     if (!novo) return;
+    if (!podeConfigurar) {
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
     setValoresIniciais(novo);
     setAdicionando(true);
     navigate(location.pathname, { replace: true, state: null }); // evita reabrir ao recarregar
-  }, [location, navigate]);
+  }, [location, navigate, podeConfigurar]);
 
   return (
     <div className="pagina">
@@ -47,26 +51,28 @@ export default function AtivosPage() {
         )}
       </main>
 
-      {usuario && (
+      {usuario && podeConfigurar && (
         <Button className="botao-adicionar-fixo" aria-label="Novo ativo" onClick={() => setAdicionando(true)}>
           <Plus aria-hidden="true" size={22} strokeWidth={2.4} />
           <span>Novo ativo</span>
         </Button>
       )}
 
-      <AddAtivoModal
-        aberto={adicionando}
-        valoresIniciais={valoresIniciais}
-        onFechar={() => {
-          setAdicionando(false);
-          setValoresIniciais(null);
-        }}
-        onSalvo={(ativo) => {
-          setAdicionando(false);
-          setValoresIniciais(null);
-          setSelecionado(ativo);
-        }}
-      />
+      {podeConfigurar && (
+        <AddAtivoModal
+          aberto={adicionando}
+          valoresIniciais={valoresIniciais}
+          onFechar={() => {
+            setAdicionando(false);
+            setValoresIniciais(null);
+          }}
+          onSalvo={(ativo) => {
+            setAdicionando(false);
+            setValoresIniciais(null);
+            setSelecionado(ativo);
+          }}
+        />
+      )}
 
       <AtivoDetailModal
         ativo={selecionado}

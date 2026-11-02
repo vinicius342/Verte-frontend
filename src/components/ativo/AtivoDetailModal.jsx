@@ -6,7 +6,7 @@ import { atualizarAtivo, excluirAtivo } from "../../services/ativoService";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function AtivoDetailModal({ ativo, onFechar }) {
-  const { revendedoraId } = useAuth();
+  const { revendedoraId, podeConfigurar } = useAuth();
   const [editando, setEditando] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
@@ -63,14 +63,16 @@ export default function AtivoDetailModal({ ativo, onFechar }) {
 
           {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
-          <div className="formulario-acoes">
-            <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
-              Editar
-            </Button>
-            <Button variant="danger" onClick={excluir} disabled={processando}>
-              {processando ? "Excluindo…" : "Excluir"}
-            </Button>
-          </div>
+          {podeConfigurar && (
+            <div className="formulario-acoes">
+              <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
+                Editar
+              </Button>
+              <Button variant="danger" onClick={excluir} disabled={processando}>
+                {processando ? "Excluindo…" : "Excluir"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Modal>
