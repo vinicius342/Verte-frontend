@@ -20,6 +20,7 @@ export default function ComodatoPage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [selecionado, setSelecionado] = useState(null);
+  const [recemCriado, setRecemCriado] = useState(false);
   const [filtro, setFiltro] = useState("todos");
   const [verificacao, setVerificacao] = useState(0);
   const tentativaRef = useRef({ id: null, concluida: false });
@@ -112,7 +113,7 @@ export default function ComodatoPage() {
           </span>
         </div>
 
-        <div className="comodato-filtros">
+        <div className="comodato-filtros" data-tour="comodato-filtros">
           {filtros.map(({ id, rotulo }) => (
             <button
               key={id}
@@ -126,23 +127,26 @@ export default function ComodatoPage() {
           ))}
         </div>
 
-        {carregando ? (
-          <Carregando tela />
-        ) : mostrarNenhumNoFiltro ? (
-          <p className="estado-vazio">Nenhum comodato neste filtro.</p>
-        ) : (
-          <ComodatoList
-            comodatos={comodatosFiltrados}
-            loading={loading}
-            erro={erro}
-            onSelecionar={setSelecionado}
-          />
-        )}
+        <div data-tour="comodatos-lista">
+          {carregando ? (
+            <Carregando tela />
+          ) : mostrarNenhumNoFiltro ? (
+            <p className="estado-vazio">Nenhum comodato neste filtro.</p>
+          ) : (
+            <ComodatoList
+              comodatos={comodatosFiltrados}
+              loading={loading}
+              erro={erro}
+              onSelecionar={setSelecionado}
+            />
+          )}
+        </div>
       </main>
 
       {papel === "vendedor" && (
         <Button
           className="botao-adicionar-fixo"
+          data-tour="novo-comodato"
           aria-label="Novo comodato"
           onClick={() => setAdicionando(true)}
         >
@@ -157,9 +161,17 @@ export default function ComodatoPage() {
         onSalvo={(dados) => {
           setAdicionando(false);
           setSelecionado(dados);
+          setRecemCriado(true);
         }}
       />
-      <ComodatoDetailModal comodato={selecionado} onFechar={() => setSelecionado(null)} />
+      <ComodatoDetailModal
+        comodato={selecionado}
+        recemCriado={recemCriado}
+        onFechar={() => {
+          setSelecionado(null);
+          setRecemCriado(false);
+        }}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import Modal from "../common/Modal";
@@ -7,6 +7,7 @@ import Carregando from "../common/Carregando";
 import ComodatoPrintable from "./ComodatoPrintable";
 import StatusConfirmacao from "./StatusConfirmacao";
 import { useAuth } from "../../hooks/useAuth";
+import { useTutorial } from "../../contexts/TutorialContext";
 import ComodatoForm from "./ComodatoForm";
 import {
   atualizarComodato,
@@ -54,8 +55,9 @@ function textoParaCopiar(comodato) {
   ].join("\n");
 }
 
-export default function ComodatoDetailModal({ comodato, onFechar }) {
+export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = false }) {
   const { uid, papel, revendedoraId } = useAuth();
+  const { iniciarTutorialDetalhe } = useTutorial();
   const [assinaturas, setAssinaturas] = useState({ vendedor: "", supervisor: "", gerente: "" });
   const [carregandoAssinaturas, setCarregandoAssinaturas] = useState(false);
   const printRef = useRef(null);
@@ -69,6 +71,7 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
   useEffect(() => {
     setRejeitando(false);
     setMotivoRejeicao("");
+    setEditando(false);
 
     if (!comodato?.id || !revendedoraId) {
       setAssinaturas({ vendedor: "", supervisor: "", gerente: "" });
@@ -100,6 +103,67 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
       ativo = false;
     };
   }, [comodato?.id, revendedoraId]);
+
+  const etapasDetalhe = useMemo(() => {
+    if (!comodato || papel !== "vendedor") return [];
+    const confirmado = comodato.statusComodato === "confirmado";
+    const ehDono = comodato.createdBy === uid;
+    const podeEditar = ehDono && !confirmado;
+    const podeExcluir = ehDono && !confirmado;
+
+    const lista = [
+      {
+        id: "detalhe-comodato-cabecalho",
+        alvo: '[data-tour="detalhe-comodato-cabecalho"]',
+        titulo: "Comodato enviado!",
+        texto:
+          "A solicitação do comodato já foi enviada para o seu supervisor e para o gerente. Eles vão confirmar ou rejeitar, e você acompanha o status na lista.",
+      },
+      {
+        id: "detalhe-comodato-copiar",
+        alvo: '[data-tour="detalhe-comodato-copiar"]',
+        titulo: "Copiar mensagem",
+        texto: "Copia este texto pronto para você colar no WhatsApp.",
+        preConteudo: textoParaCopiar(comodato),
+      },
+      {
+        id: "detalhe-comodato-pdf",
+        alvo: '[data-tour="detalhe-comodato-pdf"]',
+        titulo: "PDF do termo",
+        texto: "Gera o termo de solicitação de comodato em PDF.",
+      },
+      {
+        id: "detalhe-comodato-imagem",
+        alvo: '[data-tour="detalhe-comodato-imagem"]',
+        titulo: "Compartilhar imagem",
+        texto: "Compartilha ou baixa a imagem do termo para enviar ao cliente.",
+      },
+    ];
+
+    if (podeEditar) {
+      lista.push({
+        id: "detalhe-comodato-editar",
+        alvo: '[data-tour="detalhe-comodato-editar"]',
+        titulo: "Editar",
+        texto: "Corrija os dados do comodato.",
+      });
+    }
+    if (podeExcluir) {
+      lista.push({
+        id: "detalhe-comodato-excluir",
+        alvo: '[data-tour="detalhe-comodato-excluir"]',
+        titulo: "Excluir",
+        texto: "Remove o comodato. O app pede confirmação antes.",
+      });
+    }
+
+    return lista;
+  }, [comodato, papel, uid]);
+
+  useEffect(() => {
+    if (!comodato?.id || !recemCriado || editando) return;
+    iniciarTutorialDetalhe("detalheComodato", etapasDetalhe);
+  }, [comodato?.id, recemCriado, editando, etapasDetalhe, iniciarTutorialDetalhe]);
 
   if (!comodato) return null;
 
@@ -257,7 +321,12 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
   }
 
   return (
-    <Modal aberto={Boolean(comodato)} titulo="Comodato salvo" onFechar={onFechar}>
+    <Modal
+      aberto={Boolean(comodato)}
+      titulo="Comodato salvo"
+      onFechar={onFechar}
+      dataTourCabecalho="detalhe-comodato-cabecalho"
+    >
       {editando ? (
         <ComodatoForm comodatoExistente={comodato} onSalvar={salvar} onCancelar={cancelarEdicao} />
       ) : (
@@ -365,22 +434,41 @@ export default function ComodatoDetailModal({ comodato, onFechar }) {
           {carregandoAssinaturas ? <Carregando escala={0.6} /> : null}
 
           <div className="formulario-acoes comodato-acoes-modal">
-            <Button variant="ghost" onClick={copiar}>
+            <Button variant="ghost" data-tour="detalhe-comodato-copiar" onClick={copiar}>
               {copiado ? "Copiado!" : "Copiar"}
             </Button>
-            <Button variant="secondary" onClick={baixarImagem} disabled={processando || carregandoAssinaturas}>
+            <Button
+              variant="secondary"
+              data-tour="detalhe-comodato-imagem"
+              onClick={baixarImagem}
+              disabled={processando || carregandoAssinaturas}
+            >
               {podeCompartilharArquivo ? "Compartilhar" : "Baixar imagem"}
             </Button>
-            <Button onClick={baixarPdf} disabled={processando || carregandoAssinaturas}>
+            <Button
+              data-tour="detalhe-comodato-pdf"
+              onClick={baixarPdf}
+              disabled={processando || carregandoAssinaturas}
+            >
               Baixar PDF
             </Button>
             {podeEditar ? (
-              <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
+              <Button
+                variant="secondary"
+                data-tour="detalhe-comodato-editar"
+                onClick={() => setEditando(true)}
+                disabled={processando}
+              >
                 Editar
               </Button>
             ) : null}
             {podeExcluir ? (
-              <Button variant="danger" onClick={excluir} disabled={processando}>
+              <Button
+                variant="danger"
+                data-tour="detalhe-comodato-excluir"
+                onClick={excluir}
+                disabled={processando}
+              >
                 Excluir
               </Button>
             ) : null}

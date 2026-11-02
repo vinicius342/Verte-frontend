@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export default function Modal({ aberto, titulo, onFechar, children }) {
+export default function Modal({ aberto, titulo, onFechar, children, dataTourCabecalho }) {
   useEffect(() => {
     if (!aberto) return;
     const aoTeclar = (e) => {
@@ -25,7 +25,7 @@ export default function Modal({ aberto, titulo, onFechar, children }) {
         aria-label={titulo}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-cabecalho">
+        <div className="modal-cabecalho" data-tour={dataTourCabecalho}>
           <h2 className="modal-titulo">{titulo}</h2>
           <button type="button" className="modal-fechar" onClick={onFechar} aria-label="Fechar">
             ✕

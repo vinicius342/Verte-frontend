@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useTutorial } from "../../contexts/TutorialContext";
 import { useDadosUsuario } from "../../hooks/useFotoPerfil";
 import { logout } from "../../services/authService";
 import Avatar from "../common/Avatar";
@@ -123,16 +124,37 @@ const itensMenu = [
 
 export default function Sidebar({ aberta, onFechar, onAdicionar }) {
   const { usuario, nome: nomeAuth, podeConfigurar, ehMotorista } = useAuth();
+  const { notificarAberturaSidebar, manterSidebarAberta } = useTutorial();
   const { nome: nomeCadastro, fotoUrl } = useDadosUsuario();
   const nome = nomeCadastro ?? nomeAuth;
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
+  const manterAnterior = useRef(manterSidebarAberta);
+  const notificadaRef = useRef(false);
+  const abertaEfetiva = aberta || manterSidebarAberta;
+
+  // Um módulo por abertura: só tenta iniciar uma vez a cada menu aberto.
+  useEffect(() => {
+    if (!aberta) {
+      notificadaRef.current = false;
+      return;
+    }
+    if (notificadaRef.current) return;
+    notificadaRef.current = true;
+    notificarAberturaSidebar();
+  }, [aberta, notificarAberturaSidebar]);
+
+  // Ao sair da etapa da sidebar, fecha também o menu que o usuário tinha aberto.
+  useEffect(() => {
+    if (manterAnterior.current && !manterSidebarAberta) onFechar();
+    manterAnterior.current = manterSidebarAberta;
+  }, [manterSidebarAberta, onFechar]);
 
   // Ao fechar a sidebar, o dropdown do usuário volta a ficar recolhido.
   useEffect(() => {
-    if (!aberta) setMenuUsuarioAberto(false);
-  }, [aberta]);
+    if (!abertaEfetiva) setMenuUsuarioAberto(false);
+  }, [abertaEfetiva]);
 
   async function sair() {
     await logout();
@@ -152,8 +174,12 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
 
   return (
     <>
-      <div className={`overlay ${aberta ? "overlay-visivel" : ""}`} onClick={onFechar} role="presentation" />
-      <aside className={`sidebar ${aberta ? "sidebar-aberta" : ""}`} inert={!aberta}>
+      <div
+        className={`overlay ${abertaEfetiva ? "overlay-visivel" : ""}`}
+        onClick={onFechar}
+        role="presentation"
+      />
+      <aside className={`sidebar ${abertaEfetiva ? "sidebar-aberta" : ""}`} inert={!abertaEfetiva}>
         <div className="sidebar-cabecalho">
           <div className="sidebar-marca">
             <span className="marca-pino sidebar-marca-pino" aria-hidden>
@@ -181,6 +207,15 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
                       type="button"
                       className={`sidebar-item ${ativo ? "sidebar-item-ativo" : ""}`}
                       aria-current={ativo ? "page" : undefined}
+                      data-tour={
+                        item.caminho === "/"
+                          ? "menu-inicio"
+                          : item.caminho === "/comodato"
+                            ? "menu-comodatos"
+                            : item.caminho === "/limite"
+                              ? "menu-limites"
+                              : undefined
+                      }
                       onClick={() => irPara(item.caminho)}
                     >
                       {item.icone}

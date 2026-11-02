@@ -20,7 +20,7 @@ function normalizar(texto) {
 }
 
 export default function HomePage() {
-  const { clientes, loading, erro } = useClients();
+  const { clientes, loading, erro, recarregar } = useClients();
   const { usuario, ehMotorista, loading: authLoading } = useAuth();
   const carregando = authLoading || loading;
   const [busca, setBusca] = useState("");
@@ -29,6 +29,7 @@ export default function HomePage() {
   const [novoCliente, setNovoCliente] = useState("");
   const [selecionadoId, setSelecionadoId] = useState(null);
   const [iniciarEdicaoSelecionado, setIniciarEdicaoSelecionado] = useState(false);
+  const [recemCriado, setRecemCriado] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -88,24 +89,28 @@ export default function HomePage() {
           <h1 className="titulo-secao">Clientes</h1>
           <span className="contador mono">{filtrados.length}</span>
         </div>
-        {carregando ? (
-          <Carregando tela />
-        ) : (
-          <ClientList
-            clientes={filtrados}
-            loading={loading}
-            erro={erro}
-            onSelecionar={(cliente) => {
-              setSelecionadoId(cliente.id);
-              setIniciarEdicaoSelecionado(false);
-            }}
-          />
-        )}
+
+        <div data-tour="clientes-lista">
+          {carregando ? (
+            <Carregando tela />
+          ) : (
+            <ClientList
+              clientes={filtrados}
+              loading={loading}
+              erro={erro}
+              onSelecionar={(cliente) => {
+                setSelecionadoId(cliente.id);
+                setIniciarEdicaoSelecionado(false);
+              }}
+            />
+          )}
+        </div>
       </main>
 
       {usuario && !ehMotorista && (
         <Button
           className="botao-adicionar-fixo"
+          data-tour="novo-cliente"
           aria-label="Novo cliente"
           onClick={() => {
             setNovoCliente("");
@@ -124,13 +129,21 @@ export default function HomePage() {
           setAdicionando(false);
           setNovoCliente("");
         }}
+        onSalvo={async (id) => {
+          setRecemCriado(true);
+          await recarregar();
+          setSelecionadoId(id);
+          setIniciarEdicaoSelecionado(false);
+        }}
       />}
       <ClientDetailModal
         cliente={atual}
         iniciarEdicao={iniciarEdicaoSelecionado}
+        recemCriado={recemCriado}
         onFechar={() => {
           setSelecionadoId(null);
           setIniciarEdicaoSelecionado(false);
+          setRecemCriado(false);
         }}
       />
     </div>

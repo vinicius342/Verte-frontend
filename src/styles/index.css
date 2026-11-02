@@ -2948,3 +2948,218 @@ input.mono {
     font-size: 0.75rem;
   }
 }
+
+/* ---------- Tutorial guiado ---------- */
+:root {
+  --tutorial-safe-top: env(safe-area-inset-top, 0px);
+  --tutorial-safe-right: env(safe-area-inset-right, 0px);
+  --tutorial-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tutorial-safe-left: env(safe-area-inset-left, 0px);
+}
+
+.tutorial-bloqueio {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
+.tutorial-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  animation: tutorial-fundo-entrar 0.18s ease-out both;
+}
+
+.tutorial-furo {
+  position: fixed;
+  z-index: 1001;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  outline: 3px solid var(--primaria);
+  outline-offset: 0;
+  transition:
+    top 0.25s ease,
+    left 0.25s ease,
+    width 0.25s ease,
+    height 0.25s ease,
+    border-radius 0.25s ease;
+}
+
+.tutorial-bloqueio-area {
+  position: fixed;
+  z-index: 1000;
+  background: transparent;
+}
+
+.tutorial-pre {
+  max-height: 24vh;
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.7rem;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.12);
+  color: var(--texto-2);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tutorial-balao {
+  position: fixed;
+  z-index: 1002;
+  box-sizing: border-box;
+  width: min(22rem, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  font-family: var(--fonte-texto);
+  animation: tutorial-balao-entrar 0.18s ease-out both;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.tutorial-balao-saindo {
+  opacity: 0;
+  transform: translateY(5px);
+  animation: none;
+}
+
+@keyframes tutorial-fundo-entrar {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes tutorial-balao-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.tutorial-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tutorial-indicador {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--texto-3);
+  white-space: nowrap;
+}
+
+.tutorial-progresso {
+  height: 3px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--linha);
+}
+
+.tutorial-progresso span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primaria);
+  transition: width 0.25s ease;
+}
+
+.tutorial-titulo {
+  margin: 0.85rem 0 0.35rem;
+  font-family: var(--fonte-titulo);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--texto);
+}
+
+.tutorial-texto {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--texto-2);
+}
+
+.tutorial-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tutorial-seta {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--superficie);
+}
+
+.tutorial-seta-topo {
+  top: -6px;
+  border-top: 1px solid var(--linha);
+  border-left: 1px solid var(--linha);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.tutorial-seta-baixo {
+  bottom: -6px;
+  border-bottom: 1px solid var(--linha);
+  border-right: 1px solid var(--linha);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.tutorial-seta-esquerda {
+  left: -6px;
+  border-left: 1px solid var(--linha);
+  border-bottom: 1px solid var(--linha);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tutorial-seta-direita {
+  right: -6px;
+  border-top: 1px solid var(--linha);
+  border-right: 1px solid var(--linha);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+@media (max-width: 640px) {
+  .tutorial-balao {
+    width: calc(
+      100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+    );
+    padding: 0.95rem;
+    padding-bottom: max(0.95rem, env(safe-area-inset-bottom));
+  }
+
+  .tutorial-acoes {
+    gap: 0.45rem;
+  }
+
+  .tutorial-acoes .btn {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-fundo,
+  .tutorial-balao,
+  .tutorial-furo,
+  .tutorial-progresso span {
+    animation: none !important;
+    transition: none !important;
+  }
+}

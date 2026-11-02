@@ -1,6 +1,6 @@
 export default function ClientSearchBar({ valor, onChange }) {
   return (
-    <div className="busca">
+    <div className="busca" data-tour="busca-clientes">
       <span className="busca-icone" aria-hidden>
         <svg
           viewBox="0 0 24 24"

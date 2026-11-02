@@ -3,12 +3,13 @@ import ClientForm from "./ClientForm";
 import { useAuth } from "../../hooks/useAuth";
 import { criarCliente } from "../../services/clientService";
 
-export default function AddClientModal({ aberto, onFechar, cliente }) {
+export default function AddClientModal({ aberto, onFechar, cliente, onSalvo }) {
   const { uid, revendedoraId } = useAuth();
 
   async function salvar(dados) {
-    await criarCliente(revendedoraId, dados, uid);
+    const id = await criarCliente(revendedoraId, dados, uid);
     onFechar();
+    onSalvo?.(id);
   }
 
   return (

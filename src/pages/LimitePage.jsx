@@ -17,6 +17,7 @@ export default function LimitePage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [selecionado, setSelecionado] = useState(null);
+  const [recemCriado, setRecemCriado] = useState(false);
 
   return (
     <div className="pagina">
@@ -28,16 +29,20 @@ export default function LimitePage() {
           <h1 className="titulo-secao">Solicitações de limite</h1>
           <span className="contador mono">{limites.length}</span>
         </div>
-        {carregando ? (
-          <Carregando tela />
-        ) : (
-          <LimiteList limites={limites} loading={loading} erro={erro} onSelecionar={setSelecionado} />
-        )}
+
+        <div data-tour="limites-lista">
+          {carregando ? (
+            <Carregando tela />
+          ) : (
+            <LimiteList limites={limites} loading={loading} erro={erro} onSelecionar={setSelecionado} />
+          )}
+        </div>
       </main>
 
       {usuario && (
         <Button
           className="botao-adicionar-fixo"
+          data-tour="novo-limite"
           aria-label="Nova solicitação de limite"
           onClick={() => setAdicionando(true)}
         >
@@ -52,9 +57,17 @@ export default function LimitePage() {
         onSalvo={(dados) => {
           setAdicionando(false);
           setSelecionado(dados);
+          setRecemCriado(true);
         }}
       />
-      <LimiteDetailModal limite={selecionado} onFechar={() => setSelecionado(null)} />
+      <LimiteDetailModal
+        limite={selecionado}
+        recemCriado={recemCriado}
+        onFechar={() => {
+          setSelecionado(null);
+          setRecemCriado(false);
+        }}
+      />
     </div>
   );
 }

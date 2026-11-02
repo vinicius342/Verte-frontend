@@ -2,7 +2,6 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import type { JSX } from "react";
 import { useAuth } from "../hooks/useAuth";
 import Carregando from "../components/common/Carregando";
-import AssinaturaPendenteModal from "../components/common/AssinaturaPendenteModal";
 import { logout } from "../services/authService";
 
 export default function PrivateRoute(): JSX.Element {
@@ -24,7 +23,7 @@ export default function PrivateRoute(): JSX.Element {
   }
 
   if (precisaConfigurarAssinatura && location.pathname !== "/perfil") {
-    return <AssinaturaPendenteModal />;
+    return <Navigate to="/perfil" replace />;
   }
 
   return <Outlet />;

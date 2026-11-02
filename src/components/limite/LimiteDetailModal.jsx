@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
 import LimiteForm from "./LimiteForm";
 import { atualizarLimite, excluirLimite } from "../../services/limiteService";
 import { textoLimite } from "../../utils/limiteTexto";
 import { useAuth } from "../../hooks/useAuth";
+import { useTutorial } from "../../contexts/TutorialContext";
 
-export default function LimiteDetailModal({ limite, onFechar }) {
-  const { revendedoraId } = useAuth();
+export default function LimiteDetailModal({ limite, onFechar, recemCriado = false }) {
+  const { revendedoraId, papel, ehMotorista, usuario } = useAuth();
+  const { iniciarTutorialDetalhe } = useTutorial();
   const [atual, setAtual] = useState(limite);
   const [editando, setEditando] = useState(false);
   const [processando, setProcessando] = useState(false);
@@ -19,6 +21,41 @@ export default function LimiteDetailModal({ limite, onFechar }) {
     setEditando(false);
     setErroGeral(null);
   }, [limite]);
+
+  const etapasDetalhe = useMemo(() => {
+    if (!limite || !usuario || ehMotorista || !papel || papel === "admin") return [];
+    return [
+      {
+        id: "detalhe-limite-texto",
+        alvo: '[data-tour="detalhe-limite-texto"]',
+        titulo: "Solicitação criada!",
+        texto: "Esta é a mensagem pronta da sua solicitação de limite.",
+      },
+      {
+        id: "detalhe-limite-copiar",
+        alvo: '[data-tour="detalhe-limite-copiar"]',
+        titulo: "Copiar mensagem",
+        texto: "Copia a mensagem para você colar no WhatsApp e enviar.",
+      },
+      {
+        id: "detalhe-limite-editar",
+        alvo: '[data-tour="detalhe-limite-editar"]',
+        titulo: "Editar",
+        texto: "Corrija algum dado e a mensagem é atualizada.",
+      },
+      {
+        id: "detalhe-limite-excluir",
+        alvo: '[data-tour="detalhe-limite-excluir"]',
+        titulo: "Excluir",
+        texto: "Apaga a solicitação. O app pede confirmação antes.",
+      },
+    ];
+  }, [limite, usuario, ehMotorista, papel]);
+
+  useEffect(() => {
+    if (!limite?.id || !recemCriado || editando) return;
+    iniciarTutorialDetalhe("detalheLimite", etapasDetalhe);
+  }, [limite?.id, recemCriado, editando, etapasDetalhe, iniciarTutorialDetalhe]);
 
   if (!limite || !atual) return null;
 
@@ -64,6 +101,7 @@ export default function LimiteDetailModal({ limite, onFechar }) {
       aberto={Boolean(limite)}
       titulo={editando ? "Editar solicitação" : "Solicitação de limite"}
       onFechar={onFechar}
+      dataTourCabecalho="detalhe-limite-cabecalho"
     >
       {editando ? (
         <LimiteForm
@@ -74,16 +112,30 @@ export default function LimiteDetailModal({ limite, onFechar }) {
         />
       ) : (
         <div className="detalhe">
-          <pre className="limite-texto-copia">{texto}</pre>
+          <pre className="limite-texto-copia" data-tour="detalhe-limite-texto">
+            {texto}
+          </pre>
 
           {erroGeral ? <p className="estado-erro">{erroGeral}</p> : null}
 
           <div className="formulario-acoes comodato-acoes-modal">
-            <Button onClick={copiar}>{copiado ? "Copiado!" : "Copiar"}</Button>
-            <Button variant="secondary" onClick={() => setEditando(true)} disabled={processando}>
+            <Button data-tour="detalhe-limite-copiar" onClick={copiar}>
+              {copiado ? "Copiado!" : "Copiar"}
+            </Button>
+            <Button
+              variant="secondary"
+              data-tour="detalhe-limite-editar"
+              onClick={() => setEditando(true)}
+              disabled={processando}
+            >
               Editar
             </Button>
-            <Button variant="danger" onClick={excluir} disabled={processando}>
+            <Button
+              variant="danger"
+              data-tour="detalhe-limite-excluir"
+              onClick={excluir}
+              disabled={processando}
+            >
               Excluir
             </Button>
           </div>

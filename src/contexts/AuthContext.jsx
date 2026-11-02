@@ -14,6 +14,7 @@ import {
   observarUsuarioLogado,
 } from "../services/authService";
 import { buscarVinculo } from "../services/userService";
+import { buscarConfiguracao, salvarConfiguracao } from "../services/configService";
 import { isFirebaseConfigured } from "../firebase/config";
 import Carregando from "../components/common/Carregando";
 
@@ -26,6 +27,7 @@ export function AuthProvider({ children }) {
   const [assinaturaConfigurada, setAssinaturaConfigurada] = useState(null);
   const [trocarSenha, setTrocarSenha] = useState(false);
   const [trocandoSenha, setTrocandoSenha] = useState(false);
+  const [dicasVistas, setDicasVistas] = useState({});
   const [loading, setLoading] = useState(true);
   const requisicao = useRef(0);
 
@@ -52,6 +54,17 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    try {
+      const config = await buscarConfiguracao(uid);
+      if (minha !== requisicao.current) return vinculo.revendedoraId;
+      setDicasVistas(config?.dicasVistas ?? {});
+    } catch (e) {
+      console.error("Falha ao buscar as dicas vistas:", e);
+      if (minha !== requisicao.current) return vinculo.revendedoraId;
+      // Sem a configuração não dá para saber o que já foi visto: não mostra nada.
+      setDicasVistas(null);
+    }
+
     setRevendedoraId(vinculo.revendedoraId);
     setPapel(vinculo.papel);
     setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
@@ -73,6 +86,7 @@ export function AuthProvider({ children }) {
         setPapel(null);
         setAssinaturaConfigurada(null);
         setTrocarSenha(false);
+        setDicasVistas({});
         setLoading(false);
         return;
       }
@@ -82,6 +96,26 @@ export function AuthProvider({ children }) {
     });
     return cancelar;
   }, [carregarPerfil]);
+
+  const dicaVista = useCallback(
+    (chave) => {
+      if (dicasVistas == null) return true;
+      return dicasVistas[chave] === true;
+    },
+    [dicasVistas],
+  );
+
+  const marcarDicaVista = useCallback(
+    (chave) => {
+      setDicasVistas((anterior) => ({ ...(anterior ?? {}), [chave]: true }));
+      const uid = usuario?.uid;
+      if (!uid) return;
+      salvarConfiguracao(uid, { dicasVistas: { [chave]: true } }).catch((e) => {
+        console.error("Falha ao salvar a dica vista:", e);
+      });
+    },
+    [usuario?.uid],
+  );
 
   const value = useMemo(() => {
     const ehMotorista = papel === "motorista" || papel === "auxiliar_motorista";
@@ -102,6 +136,9 @@ export function AuthProvider({ children }) {
       trocarSenha,
       trocandoSenha,
       setTrocandoSenha,
+      dicasVistas,
+      dicaVista,
+      marcarDicaVista,
       recarregarVinculo,
       login: (email, senha) => loginService(email, senha),
       logout: () => logoutService(),
@@ -120,6 +157,9 @@ export function AuthProvider({ children }) {
     loading,
     trocarSenha,
     trocandoSenha,
+    dicasVistas,
+    dicaVista,
+    marcarDicaVista,
     recarregarVinculo,
     carregarPerfil,
   ]);
