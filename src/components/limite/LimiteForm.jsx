@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../common/Button";
 import ClienteAutocomplete from "../common/ClienteAutocomplete";
-import { listarClientes } from "../../services/clientService";
+import { buscarPrivadoCliente, listarClientes } from "../../services/clientService";
 import { useAuth } from "../../hooks/useAuth";
 
 const VAZIO = {
@@ -85,8 +85,10 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
   const [carregandoClientes, setCarregandoClientes] = useState(true);
   const [clienteInicialAplicado, setClienteInicialAplicado] = useState(false);
   const [erroClienteNaoCadastrado, setErroClienteNaoCadastrado] = useState("");
+  const telefonesEditadosRef = useRef(0);
 
   useEffect(() => {
+    telefonesEditadosRef.current += 1;
     setDados(dadosIniciais(limiteExistente, codigo));
     setErros({});
     setErroGeral(null);
@@ -150,6 +152,9 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
   }
 
   function selecionarCliente(cliente) {
+    const telefonesLista = [cliente.whatsapp, cliente.whatsapp2, cliente.whatsapp3].filter(Boolean);
+    const versaoTelefones = telefonesEditadosRef.current;
+
     setDados((atual) => ({
       ...atual,
       clienteId: cliente.id,
@@ -158,11 +163,27 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
       fantasia: cliente.nomeComercio ?? "",
       seguimento: cliente.seguimento ?? cliente.segmento ?? "",
       responsavel: cliente.responsavel ?? "",
-      telefones: [cliente.whatsapp, cliente.whatsapp2, cliente.whatsapp3].filter(Boolean).length
-        ? [cliente.whatsapp, cliente.whatsapp2, cliente.whatsapp3].filter(Boolean)
-        : [""],
+      telefones: telefonesLista.length ? telefonesLista : [""],
     }));
     setErroClienteNaoCadastrado("");
+
+    buscarPrivadoCliente(revendedoraId, cliente.id)
+      .then((privado) => {
+        if (!privado) return;
+        const telefones = [
+          privado.whatsapp ?? cliente.whatsapp,
+          privado.whatsapp2 ?? cliente.whatsapp2,
+          privado.whatsapp3 ?? cliente.whatsapp3,
+        ].filter(Boolean);
+        setDados((atual) => {
+          if (atual.clienteId !== cliente.id) return atual;
+          if (telefonesEditadosRef.current !== versaoTelefones) return atual;
+          return { ...atual, telefones: telefones.length ? telefones : [""] };
+        });
+      })
+      .catch((erro) => {
+        console.error("Falha ao buscar dados privados do cliente:", erro);
+      });
   }
 
   function irParaCliente(estado) {
@@ -172,6 +193,7 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
   }
 
   function alterarTelefone(indice, valor) {
+    telefonesEditadosRef.current += 1;
     setDados((atual) => ({
       ...atual,
       telefones: atual.telefones.map((t, i) => (i === indice ? valor : t)),
@@ -179,10 +201,12 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
   }
 
   function adicionarTelefone() {
+    telefonesEditadosRef.current += 1;
     setDados((atual) => ({ ...atual, telefones: [...atual.telefones, ""] }));
   }
 
   function removerTelefone(indice) {
+    telefonesEditadosRef.current += 1;
     setDados((atual) => {
       const novos = atual.telefones.filter((_, i) => i !== indice);
       return { ...atual, telefones: novos.length ? novos : [""] };
