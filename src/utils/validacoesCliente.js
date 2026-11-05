@@ -72,8 +72,9 @@ export function validarCliente(dados = {}) {
   if (!preenchido(dados.numero)) erros.numero = "Informe o número (use S/N se não houver).";
   if (!preenchido(dados.bairro)) erros.bairro = "Informe o bairro.";
   if (!preenchido(dados.cidade)) erros.cidade = "Informe a cidade.";
-  if (!preenchido(dados.cep)) erros.cep = "Informe o CEP.";
-  else if (!validarCep(dados.cep)) erros.cep = "CEP inválido. Use 8 dígitos.";
+  if (preenchido(dados.cep) && !validarCep(dados.cep)) {
+    erros.cep = "CEP inválido: informe 8 dígitos ou deixe em branco.";
+  }
 
   const camposTelefone = ["whatsapp", "whatsapp2", "whatsapp3"];
   let temCelularValido = false;

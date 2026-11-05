@@ -6,7 +6,9 @@ import Sidebar from "../components/layout/Sidebar";
 import SignaturePad from "../components/common/SignaturePad";
 import Carregando from "../components/common/Carregando";
 import Avatar from "../components/common/Avatar";
+import Button from "../components/common/Button";
 import { useAuth } from "../hooks/useAuth";
+import { useTutorial } from "../contexts/TutorialContext";
 import { usePerfil } from "../hooks/usePerfil";
 import { useFotoPerfil, atualizarFotoPerfil } from "../hooks/useFotoPerfil";
 import { salvarPerfil, salvarFotoPerfil, removerFotoPerfil } from "../services/perfilService";
@@ -15,6 +17,14 @@ import { apenasDigitos, celularValido, formatarCelular } from "../utils/whatsapp
 import "../styles/perfil.css";
 
 const TAMANHO_MAXIMO_FOTO = 10 * 1024 * 1024;
+
+const PAPEIS_COM_TUTORIAL = [
+  "vendedor",
+  "supervisor",
+  "gerente",
+  "motorista",
+  "auxiliar_motorista",
+];
 
 function Quadro({ icone: Icone, rotulo, valor, mono = false }) {
   return (
@@ -251,6 +261,58 @@ function WhatsappCartao({ usuario, uid }) {
   );
 }
 
+function AjudaTutoriais() {
+  const { reiniciarTutoriais } = useAuth();
+  const { resetar } = useTutorial();
+  const [reiniciando, setReiniciando] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  async function reiniciar() {
+    if (!window.confirm("Deseja rever os tutoriais?")) return;
+
+    setErro(null);
+    setSucesso(false);
+    setReiniciando(true);
+    try {
+      await reiniciarTutoriais();
+      resetar();
+      setSucesso(true);
+    } catch (err) {
+      console.error("Erro ao reiniciar tutoriais:", err);
+      setErro("Não foi possível reiniciar os tutoriais. Tente novamente.");
+    } finally {
+      setReiniciando(false);
+    }
+  }
+
+  return (
+    <section className="perfil-cartao">
+      <div className="perfil-assinatura-topo">
+        <h3 className="perfil-titulo-cartao">Ajuda</h3>
+        <p className="detalhe-aviso">
+          Quer ver o passo a passo de novo? Os tutoriais recomeçam quando você abrir o menu.
+        </p>
+      </div>
+
+      <div className="perfil-rodape">
+        <Button variant="secondary" disabled={reiniciando} onClick={reiniciar}>
+          {reiniciando ? "Reiniciando…" : "Rever tutoriais"}
+        </Button>
+      </div>
+
+      {erro || sucesso ? (
+        <div className="perfil-mensagens">
+          {erro ? <p className="estado-erro">{erro}</p> : null}
+          {sucesso ? (
+            <p className="estado-sucesso">Pronto! O tutorial recomeça quando você abrir o menu.</p>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function PerfilForm({
   perfil,
   usuario,
@@ -260,7 +322,7 @@ function PerfilForm({
   uid,
   revendedoraId,
 }) {
-  const { definirAssinaturaConfigurada } = useAuth();
+  const { definirAssinaturaConfigurada, papel } = useAuth();
   const [assinatura, setAssinatura] = useState(perfil?.assinatura ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -330,6 +392,8 @@ function PerfilForm({
           </button>
         </div>
       </form>
+
+      {PAPEIS_COM_TUTORIAL.includes(papel) ? <AjudaTutoriais /> : null}
     </>
   );
 }

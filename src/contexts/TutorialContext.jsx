@@ -197,6 +197,11 @@ export function TutorialProvider({ children }) {
     setChave(null);
   }, []);
 
+  const resetar = useCallback(() => {
+    clearTimeout(timerRef.current);
+    encerrarEstado();
+  }, [encerrarEstado]);
+
   useEffect(() => {
     if (!ativo) return;
     if (!usuario || precisaConfigurarAssinatura) {
@@ -305,6 +310,7 @@ export function TutorialProvider({ children }) {
       notificarAberturaSidebar,
       iniciarTutorialDetalhe,
       detalheVisto,
+      resetar,
       manterSidebarAberta:
         tutorialAtivo && tipo === "tela" && Boolean(etapa?.naSidebar),
     }),
@@ -313,6 +319,7 @@ export function TutorialProvider({ children }) {
       notificarAberturaSidebar,
       iniciarTutorialDetalhe,
       detalheVisto,
+      resetar,
       tipo,
       etapa,
     ],

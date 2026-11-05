@@ -369,7 +369,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
       </div>
 
       <label className="campo">
-        <span className="campo-rotulo">CEP *</span>
+        <span className="campo-rotulo">CEP</span>
         <input
           ref={registrarRef("cep")}
           className="campo-input mono"
@@ -377,9 +377,10 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
           onChange={alterar("cep")}
           inputMode="numeric"
           placeholder="00000-000"
-          required
         />
-        <span className="campo-dica">Usado para localizar o cliente quando não houver GPS capturado.</span>
+        <span className="campo-dica">
+          Opcional. Ajuda a localizar o cliente quando o endereço não for encontrado.
+        </span>
         {erros.cep ? <span className="campo-erro">{erros.cep}</span> : null}
       </label>
 

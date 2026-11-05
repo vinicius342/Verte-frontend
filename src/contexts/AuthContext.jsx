@@ -20,6 +20,19 @@ import Carregando from "../components/common/Carregando";
 
 export const AuthContext = createContext(null);
 
+const DICAS_REINICIADAS = {
+  tutorialInicio: false,
+  tutorialComodato: false,
+  tutorialLimite: false,
+  detalheCliente: false,
+  detalheComodato: false,
+  detalheLimite: false,
+  tutorial: false,
+  copiarCliente: false,
+  copiarComodato: false,
+  copiarLimite: false,
+};
+
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [revendedoraId, setRevendedoraId] = useState(null);
@@ -120,6 +133,13 @@ export function AuthProvider({ children }) {
     [usuario?.uid],
   );
 
+  const reiniciarTutoriais = useCallback(async () => {
+    const uid = usuario?.uid;
+    if (!uid) throw new Error("Usuário não autenticado.");
+    await salvarConfiguracao(uid, { dicasVistas: DICAS_REINICIADAS });
+    setDicasVistas((anterior) => ({ ...(anterior ?? {}), ...DICAS_REINICIADAS }));
+  }, [usuario?.uid]);
+
   const value = useMemo(() => {
     const ehMotorista = papel === "motorista" || papel === "auxiliar_motorista";
     return {
@@ -143,6 +163,7 @@ export function AuthProvider({ children }) {
       dicasVistas,
       dicaVista,
       marcarDicaVista,
+      reiniciarTutoriais,
       recarregarVinculo,
       login: (email, senha) => loginService(email, senha),
       logout: () => logoutService(),
@@ -165,6 +186,7 @@ export function AuthProvider({ children }) {
     dicasVistas,
     dicaVista,
     marcarDicaVista,
+    reiniciarTutoriais,
     recarregarVinculo,
     carregarPerfil,
   ]);
