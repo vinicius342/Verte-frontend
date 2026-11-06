@@ -2,7 +2,11 @@
 export function formatDate(valor) {
   if (!valor) return "—";
   const data =
-    typeof valor?.toDate === "function" ? valor.toDate() : valor instanceof Date ? valor : new Date(valor);
+    typeof valor?.toDate === "function"
+      ? valor.toDate()
+      : valor instanceof Date
+        ? valor
+        : new Date(valor);
   if (Number.isNaN(data?.getTime?.())) return "—";
   return data.toLocaleString("pt-BR", {
     day: "2-digit",

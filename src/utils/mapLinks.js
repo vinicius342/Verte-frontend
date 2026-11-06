@@ -3,7 +3,11 @@ export function gerarLinkMapa(cliente) {
   if (!cliente) return null;
   const { coordenada, rua, numero } = cliente;
 
-  if (coordenada && Number.isFinite(Number(coordenada.lat)) && Number.isFinite(Number(coordenada.lng))) {
+  if (
+    coordenada &&
+    Number.isFinite(Number(coordenada.lat)) &&
+    Number.isFinite(Number(coordenada.lng))
+  ) {
     return `https://www.google.com/maps/search/?api=1&query=${coordenada.lat},${coordenada.lng}`;
   }
 

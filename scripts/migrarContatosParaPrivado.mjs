@@ -20,14 +20,17 @@ for (const revendedora of revendedoras.docs) {
   const clientes = await revendedora.ref.collection("clientes").get();
   for (const cliente of clientes.docs) {
     const dados = cliente.data();
-    const privados = Object.fromEntries(campos
-      .filter((campo) => Object.hasOwn(dados, campo))
-      .map((campo) => [campo, dados[campo]]));
+    const privados = Object.fromEntries(
+      campos.filter((campo) => Object.hasOwn(dados, campo)).map((campo) => [campo, dados[campo]]),
+    );
     if (Object.keys(privados).length === 0) continue;
 
     const privadoRef = cliente.ref.collection("privado").doc("dados");
     batch.set(privadoRef, privados, { merge: true });
-    batch.update(cliente.ref, Object.fromEntries(campos.map((campo) => [campo, admin.firestore.FieldValue.delete()])));
+    batch.update(
+      cliente.ref,
+      Object.fromEntries(campos.map((campo) => [campo, admin.firestore.FieldValue.delete()])),
+    );
     operacoes += 2;
     migrados += 1;
 
@@ -41,4 +44,6 @@ for (const revendedora of revendedoras.docs) {
 }
 
 await concluirBatch();
-console.log(`${dryRun ? "Dry-run: " : ""}${migrados} cliente(s) ${dryRun ? "seriam migrados" : "migrados"}.`);
+console.log(
+  `${dryRun ? "Dry-run: " : ""}${migrados} cliente(s) ${dryRun ? "seriam migrados" : "migrados"}.`,
+);

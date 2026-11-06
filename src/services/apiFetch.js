@@ -30,7 +30,8 @@ async function obterToken() {
 
 // - params: vai na query (GET/DELETE)
 // - body: objeto (vira JSON) ou FormData (anexos)
-export async function apiFetch(caminho, { method = "GET", params, body } = {}) {
+// - publico: rotas públicas não pedem nem enviam o token do usuário
+export async function apiFetch(caminho, { method = "GET", params, body, publico = false } = {}) {
   if (!BASE_URL) {
     throw new Error("VITE_VERTE_API_URL não definida no .env");
   }
@@ -44,7 +45,7 @@ export async function apiFetch(caminho, { method = "GET", params, body } = {}) {
       ).toString()
     : "";
 
-  const headers = { Authorization: `Bearer ${await obterToken()}` };
+  const headers = publico ? {} : { Authorization: `Bearer ${await obterToken()}` };
   let corpo;
   if (body instanceof FormData) {
     corpo = body; // o navegador define o Content-Type com o boundary

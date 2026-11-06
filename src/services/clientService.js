@@ -27,6 +27,11 @@ export async function listarClientes(revendedoraId) {
   return apiFetch("clientes/listar", { params: { revendedoraId } });
 }
 
+// Link público do vendedor: sem token e já filtrado pelo dono do slug.
+export async function listarClientesPublicos(slug) {
+  return apiFetch("publico/clientes", { params: { slug }, publico: true });
+}
+
 export async function buscarClientePorId(revendedoraId, id) {
   return apiFetch("clientes/buscar-por-id", { params: { revendedoraId, id } });
 }

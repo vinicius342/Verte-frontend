@@ -13,7 +13,9 @@ function obterArquivo(blobOuUrl, nomeArquivo) {
       }
       return resposta.blob();
     })
-    .then((blob) => new File([blob], nomeArquivo, { type: blob.type || "application/octet-stream" }));
+    .then(
+      (blob) => new File([blob], nomeArquivo, { type: blob.type || "application/octet-stream" }),
+    );
 }
 
 function baixarArquivo(arquivo, nomeArquivo) {

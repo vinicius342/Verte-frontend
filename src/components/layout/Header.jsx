@@ -2,16 +2,18 @@ import { useAuth } from "../../hooks/useAuth";
 import ClientSearchBar from "../clients/ClientSearchBar";
 import NotificacaoSino from "./NotificacaoSino";
 
-export default function Header({ busca, onBuscar, onAbrirMenu }) {
+export default function Header({ busca, onBuscar, onAbrirMenu, semMenu = false }) {
   const { papel } = useAuth();
 
   return (
     <header className="cabecalho">
       <div className="cabecalho-conteudo">
         <div className={`cabecalho-topo ${onBuscar ? "cabecalho-topo-com-busca" : ""}`}>
-          <button type="button" className="menu-botao" onClick={onAbrirMenu} aria-label="Abrir menu">
-            <span aria-hidden>☰</span>
-          </button>
+          {!semMenu && (
+            <button type="button" className="menu-botao" onClick={onAbrirMenu} aria-label="Abrir menu">
+              <span aria-hidden>☰</span>
+            </button>
+          )}
 
           <div className="marca">
             <span className="marca-pino marca-pino-icone" aria-hidden>
@@ -30,11 +32,12 @@ export default function Header({ busca, onBuscar, onAbrirMenu }) {
             <span className="marca-nome">Verte</span>
           </div>
 
-          {(papel === "supervisor" || papel === "gerente" || papel === "vendedor") && (
-            <div className="cabecalho-usuario">
-              <NotificacaoSino />
-            </div>
-          )}
+          {!semMenu &&
+            (papel === "supervisor" || papel === "gerente" || papel === "vendedor") && (
+              <div className="cabecalho-usuario">
+                <NotificacaoSino />
+              </div>
+            )}
         </div>
 
         {onBuscar ? <ClientSearchBar valor={busca} onChange={onBuscar} /> : null}

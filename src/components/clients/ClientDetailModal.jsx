@@ -47,7 +47,13 @@ function textoCadastroContatos(cliente, rota) {
   ].join("\n");
 }
 
-export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = false, recemCriado = false }) {
+export default function ClientDetailModal({
+  cliente,
+  onFechar,
+  iniciarEdicao = false,
+  recemCriado = false,
+  somenteLeitura = false,
+}) {
   const { uid, usuario, revendedoraId, ehMotorista, codigo } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
   const [editando, setEditando] = useState(false);
@@ -58,7 +64,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   const [privadoCarregado, setPrivadoCarregado] = useState(false);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const logado = Boolean(uid && usuario);
-  const podeVerAnexos = logado && !ehMotorista;
+  const podeVerAnexos = !somenteLeitura && logado && !ehMotorista;
 
   useEffect(() => {
     setEditando(false);
@@ -67,27 +73,27 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
   }, [cliente?.id]);
 
   useEffect(() => {
-    if (ehMotorista) setEditando(false);
-  }, [ehMotorista]);
+    if (ehMotorista || somenteLeitura) setEditando(false);
+  }, [ehMotorista, somenteLeitura]);
 
   useEffect(() => {
-    if (cliente && iniciarEdicao && !ehMotorista) {
+    if (cliente && iniciarEdicao && !ehMotorista && !somenteLeitura) {
       setEditando(true);
     }
-  }, [cliente, iniciarEdicao, ehMotorista]);
+  }, [cliente, iniciarEdicao, ehMotorista, somenteLeitura]);
 
   useEffect(() => {
-    if (!cliente || !revendedoraId) return;
+    if (!cliente || !revendedoraId || somenteLeitura) return;
     let ativo = true;
     buscarPrivadoCliente(revendedoraId, cliente.id)
       .then((dados) => { if (ativo) setPrivado(dados); })
       .catch((erro) => console.error("Falha ao buscar dados privados do cliente:", erro))
       .finally(() => { if (ativo) setPrivadoCarregado(true); });
     return () => { ativo = false; };
-  }, [cliente?.id, revendedoraId]);
+  }, [cliente?.id, revendedoraId, somenteLeitura]);
 
   const etapasDetalhe = useMemo(() => {
-    if (!cliente || ehMotorista) return [];
+    if (!cliente || ehMotorista || somenteLeitura) return [];
     const dados = { ...cliente, ...(privado ?? {}) };
     const lista = [
       {
@@ -146,10 +152,10 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     });
 
     return lista;
-  }, [cliente, privado, codigo, ehMotorista, logado, podeVerAnexos]);
+  }, [cliente, privado, codigo, ehMotorista, somenteLeitura, logado, podeVerAnexos]);
 
   useEffect(() => {
-    if (!cliente?.id || !recemCriado || editando || ehMotorista) return;
+    if (!cliente?.id || !recemCriado || editando || ehMotorista || somenteLeitura) return;
     if (!privadoCarregado) return;
     iniciarTutorialDetalhe("detalheCliente", etapasDetalhe);
   }, [
@@ -157,13 +163,14 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
     recemCriado,
     editando,
     ehMotorista,
+    somenteLeitura,
     privadoCarregado,
     etapasDetalhe,
     iniciarTutorialDetalhe,
   ]);
 
   if (!cliente) return null;
-  const clientePrivado = { ...cliente, ...(privado ?? {}) };
+  const clientePrivado = somenteLeitura ? cliente : { ...cliente, ...(privado ?? {}) };
   const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   async function salvar(dados) {
@@ -307,7 +314,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             </div>
           ) : null}
 
-          {!ehMotorista && logado ? (
+          {!somenteLeitura && !ehMotorista && logado ? (
             <div className="detalhe-copia-contatos">
               <span className="campo-rotulo">Cadastro de contatos</span>
               <Button variant="ghost" data-tour="detalhe-cliente-copiar" onClick={copiarContatos}>
@@ -341,7 +348,7 @@ export default function ClientDetailModal({ cliente, onFechar, iniciarEdicao = f
             </div>
           ) : null}
 
-          {!ehMotorista && <ProtectedAction
+          {!somenteLeitura && !ehMotorista && <ProtectedAction
             fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}
           >
             <div className="detalhe-acoes">

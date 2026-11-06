@@ -1,7 +1,5 @@
 export function textoLimite(l) {
-  const telefones = (l.telefones ?? [])
-    .filter((t) => t?.trim())
-    .map((t) => `*Tel:* ${t.trim()}`);
+  const telefones = (l.telefones ?? []).filter((t) => t?.trim()).map((t) => `*Tel:* ${t.trim()}`);
 
   return [
     `*SOLICITAÇÃO DE LIMITE ROTA ${l.rota}*`,

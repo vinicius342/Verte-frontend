@@ -142,7 +142,8 @@ async function limpar(tarefas) {
   console.log("\nResumo:");
   console.table(stats);
   if (!EXECUTAR) console.log("Rode novamente com --executar para aplicar.");
-  if (EXECUTAR && !LIMPAR) console.log("Originais mantidos. Valide e rode com --executar --limpar.");
+  if (EXECUTAR && !LIMPAR)
+    console.log("Originais mantidos. Valide e rode com --executar --limpar.");
 })().catch((e) => {
   console.error(e);
   process.exit(1);

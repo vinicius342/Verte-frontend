@@ -42,7 +42,9 @@ export function useDadosUsuario() {
       });
   }, [uid]);
 
-  return snap.uid === uid ? { fotoUrl: snap.fotoUrl, nome: snap.nome } : { fotoUrl: null, nome: null };
+  return snap.uid === uid
+    ? { fotoUrl: snap.fotoUrl, nome: snap.nome }
+    : { fotoUrl: null, nome: null };
 }
 
 // Mantido para quem só quer a foto.

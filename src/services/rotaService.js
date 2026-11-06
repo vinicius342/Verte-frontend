@@ -17,7 +17,10 @@ export async function atualizarRota(revendedoraId, id, clienteIds) {
 }
 
 export async function atualizarStatusParada(revendedoraId, id, clienteId, status) {
-  return apiFetch("rotas/status-parada", { method: "PUT", body: { revendedoraId, id, clienteId, status } });
+  return apiFetch("rotas/status-parada", {
+    method: "PUT",
+    body: { revendedoraId, id, clienteId, status },
+  });
 }
 
 export async function finalizarRota(revendedoraId, id) {

@@ -5,7 +5,9 @@ import { useAuth } from "./useAuth";
 
 export function usePendentes() {
   const { revendedoraId, papel } = useAuth();
-  const ativo = Boolean(revendedoraId) && (papel === "supervisor" || papel === "gerente" || papel === "vendedor");
+  const ativo =
+    Boolean(revendedoraId) &&
+    (papel === "supervisor" || papel === "gerente" || papel === "vendedor");
   const [itens, setItens] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
