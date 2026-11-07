@@ -105,9 +105,11 @@ export default function HomePage() {
       />
 
       <main className="conteudo">
-        <div className="conteudo-topo">
+        <div className="conteudo-topo clientes-topo">
           <h1 className="titulo-secao">Clientes</h1>
-          <span className="contador mono">{filtrados.length}</span>
+          <span className="contador-clientes" aria-live="polite">
+            {filtrados.length} {filtrados.length === 1 ? "cliente" : "clientes"}
+          </span>
         </div>
 
         {papel === "supervisor" && !carregando && (
