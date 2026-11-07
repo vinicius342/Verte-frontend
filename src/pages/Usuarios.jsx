@@ -25,7 +25,7 @@ const PAPEIS = {
 const PAPEIS_DO_GERENTE = ["vendedor", "motorista", "auxiliar_motorista", "supervisor"];
 
 export default function UsuariosPage() {
-  const { uid, papel: meuPapel, loading: authLoading, recarregarVinculo } = useAuth();
+  const { uid, papel: meuPapel, loading: authLoading } = useAuth();
   const { usuarios, loading, erro, recarregar } = useUsuarios();
   const carregando = authLoading || loading;
   const [menuAberto, setMenuAberto] = useState(false);
@@ -203,7 +203,6 @@ export default function UsuariosPage() {
           onFechar={() => setModal(null)}
           onSalvo={(nome, editou) => {
             setAviso(editou ? `Usuário ${nome} atualizado.` : `Usuário ${nome} criado.`);
-            if (modal.usuario?.id === uid) recarregarVinculo();
             recarregar();
           }}
           onExcluido={(nome) => {

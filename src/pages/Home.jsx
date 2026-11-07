@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Copy } from "lucide-react";
+import { Plus } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import ClientList from "../components/clients/ClientList";
@@ -22,7 +22,7 @@ function normalizar(texto) {
 
 export default function HomePage() {
   const { clientes, loading, erro, recarregar } = useClients();
-  const { usuario, papel, slug, ehMotorista, loading: authLoading } = useAuth();
+  const { usuario, papel, ehMotorista, loading: authLoading } = useAuth();
   const carregando = authLoading || loading;
   const [busca, setBusca] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
@@ -31,24 +31,10 @@ export default function HomePage() {
   const [selecionadoId, setSelecionadoId] = useState(null);
   const [iniciarEdicaoSelecionado, setIniciarEdicaoSelecionado] = useState(false);
   const [recemCriado, setRecemCriado] = useState(false);
-  const [linkCopiado, setLinkCopiado] = useState(false);
   const [vendedorFiltro, setVendedorFiltro] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-
-  console.log("slug", slug);
-
-  async function copiarLink() {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
-      setLinkCopiado(true);
-      setTimeout(() => setLinkCopiado(false), 2000);
-    } catch (erro) {
-      console.error("Falha ao copiar o link:", erro);
-      window.alert("Não foi possível copiar.");
-    }
-  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -145,17 +131,6 @@ export default function HomePage() {
         >
           <Plus aria-hidden="true" size={22} strokeWidth={2.4} />
           <span>Novo cliente</span>
-        </Button>
-      )}
-
-      {papel === "vendedor" && slug && (
-        <Button
-          className="botao-adicionar-fixo botao-copiar-link-fixo"
-          aria-label="Copiar meu link"
-          onClick={copiarLink}
-        >
-          <Copy aria-hidden="true" size={20} strokeWidth={2.2} />
-          <span>{linkCopiado ? "Link copiado!" : "Copiar meu link"}</span>
         </Button>
       )}
 

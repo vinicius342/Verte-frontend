@@ -38,7 +38,6 @@ export function AuthProvider({ children }) {
   const [revendedoraId, setRevendedoraId] = useState(null);
   const [codigo, setCodigo] = useState("");
   const [papel, setPapel] = useState(null);
-  const [slug, setSlug] = useState(null);
   const [assinaturaConfigurada, setAssinaturaConfigurada] = useState(null);
   const [trocarSenha, setTrocarSenha] = useState(false);
   const [trocandoSenha, setTrocandoSenha] = useState(false);
@@ -83,7 +82,6 @@ export function AuthProvider({ children }) {
     setRevendedoraId(vinculo.revendedoraId);
     setCodigo(vinculo.codigo ?? "");
     setPapel(vinculo.papel);
-    setSlug(vinculo.slug ?? null);
     setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
     setTrocarSenha(vinculo.trocarSenha === true);
     return vinculo.revendedoraId;
@@ -102,7 +100,6 @@ export function AuthProvider({ children }) {
         setRevendedoraId(null);
         setCodigo("");
         setPapel(null);
-        setSlug(null);
         setAssinaturaConfigurada(null);
         setTrocarSenha(false);
         setDicasVistas({});
@@ -151,7 +148,6 @@ export function AuthProvider({ children }) {
       revendedoraId,
       codigo,
       papel,
-      slug,
       ehMotorista,
       assinaturaConfigurada,
       precisaConfigurarAssinatura:
@@ -183,7 +179,6 @@ export function AuthProvider({ children }) {
     revendedoraId,
     codigo,
     papel,
-    slug,
     assinaturaConfigurada,
     loading,
     trocarSenha,

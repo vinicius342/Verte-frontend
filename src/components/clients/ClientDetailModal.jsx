@@ -52,7 +52,6 @@ export default function ClientDetailModal({
   onFechar,
   iniciarEdicao = false,
   recemCriado = false,
-  somenteLeitura = false,
 }) {
   const { uid, usuario, revendedoraId, ehMotorista, codigo } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
@@ -64,7 +63,7 @@ export default function ClientDetailModal({
   const [privadoCarregado, setPrivadoCarregado] = useState(false);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const logado = Boolean(uid && usuario);
-  const podeVerAnexos = !somenteLeitura && logado && !ehMotorista;
+  const podeVerAnexos = logado && !ehMotorista;
 
   useEffect(() => {
     setEditando(false);
@@ -73,27 +72,27 @@ export default function ClientDetailModal({
   }, [cliente?.id]);
 
   useEffect(() => {
-    if (ehMotorista || somenteLeitura) setEditando(false);
-  }, [ehMotorista, somenteLeitura]);
+    if (ehMotorista) setEditando(false);
+  }, [ehMotorista]);
 
   useEffect(() => {
-    if (cliente && iniciarEdicao && !ehMotorista && !somenteLeitura) {
+    if (cliente && iniciarEdicao && !ehMotorista) {
       setEditando(true);
     }
-  }, [cliente, iniciarEdicao, ehMotorista, somenteLeitura]);
+  }, [cliente, iniciarEdicao, ehMotorista]);
 
   useEffect(() => {
-    if (!cliente || !revendedoraId || somenteLeitura) return;
+    if (!cliente || !revendedoraId) return;
     let ativo = true;
     buscarPrivadoCliente(revendedoraId, cliente.id)
       .then((dados) => { if (ativo) setPrivado(dados); })
       .catch((erro) => console.error("Falha ao buscar dados privados do cliente:", erro))
       .finally(() => { if (ativo) setPrivadoCarregado(true); });
     return () => { ativo = false; };
-  }, [cliente?.id, revendedoraId, somenteLeitura]);
+  }, [cliente?.id, revendedoraId]);
 
   const etapasDetalhe = useMemo(() => {
-    if (!cliente || ehMotorista || somenteLeitura) return [];
+    if (!cliente || ehMotorista) return [];
     const dados = { ...cliente, ...(privado ?? {}) };
     const lista = [
       {
@@ -152,10 +151,10 @@ export default function ClientDetailModal({
     });
 
     return lista;
-  }, [cliente, privado, codigo, ehMotorista, somenteLeitura, logado, podeVerAnexos]);
+  }, [cliente, privado, codigo, ehMotorista, logado, podeVerAnexos]);
 
   useEffect(() => {
-    if (!cliente?.id || !recemCriado || editando || ehMotorista || somenteLeitura) return;
+    if (!cliente?.id || !recemCriado || editando || ehMotorista) return;
     if (!privadoCarregado) return;
     iniciarTutorialDetalhe("detalheCliente", etapasDetalhe);
   }, [
@@ -163,14 +162,13 @@ export default function ClientDetailModal({
     recemCriado,
     editando,
     ehMotorista,
-    somenteLeitura,
     privadoCarregado,
     etapasDetalhe,
     iniciarTutorialDetalhe,
   ]);
 
   if (!cliente) return null;
-  const clientePrivado = somenteLeitura ? cliente : { ...cliente, ...(privado ?? {}) };
+  const clientePrivado = { ...cliente, ...(privado ?? {}) };
   const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   async function salvar(dados) {
@@ -314,7 +312,7 @@ export default function ClientDetailModal({
             </div>
           ) : null}
 
-          {!somenteLeitura && !ehMotorista && logado ? (
+          {!ehMotorista && logado ? (
             <div className="detalhe-copia-contatos">
               <span className="campo-rotulo">Cadastro de contatos</span>
               <Button variant="ghost" data-tour="detalhe-cliente-copiar" onClick={copiarContatos}>
@@ -348,7 +346,7 @@ export default function ClientDetailModal({
             </div>
           ) : null}
 
-          {!somenteLeitura && !ehMotorista && <ProtectedAction
+          {!ehMotorista && <ProtectedAction
             fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}
           >
             <div className="detalhe-acoes">

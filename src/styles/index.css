@@ -562,10 +562,6 @@ input.mono {
   white-space: nowrap;
 }
 
-.botao-copiar-link-fixo {
-  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4.15rem);
-}
-
 @media (max-width: 420px) {
   .botao-adicionar-fixo {
     right: max(1rem, env(safe-area-inset-right));

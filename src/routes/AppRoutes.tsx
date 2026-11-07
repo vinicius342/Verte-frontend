@@ -22,7 +22,6 @@ import RotaMotorista from "./RotaMotorista";
 import RotaDoDiaPage from "../pages/RotaDoDiaPage";
 import RotaFormPage from "../pages/RotaFormPage";
 import RotaDetalhePage from "../pages/RotaDetalhePage";
-import ClientesPublicaPage from "../pages/ClientesPublicaPage";
 
 export default function AppRoutes(): JSX.Element {
   const { usuario, loading, trocarSenha, trocandoSenha } = useAuth();
@@ -65,9 +64,6 @@ export default function AppRoutes(): JSX.Element {
           <Route path="/usuarios" element={<UsuariosPage />} />
         </Route>
       </Route>
-
-      {/* Página pública do vendedor: acessível logado e deslogado. */}
-      <Route path="/:slug" element={<ClientesPublicaPage />} />
 
       {/* Qualquer rota desconhecida cai em "/", que redireciona para o login se não houver sessão */}
       <Route path="*" element={<Navigate to="/" replace />} />
