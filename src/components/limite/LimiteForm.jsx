@@ -56,6 +56,12 @@ function localizarClienteInicial(limiteExistente, clientes) {
   return clientes.find((cliente) => normalizarNome(cliente.nomeCliente) === nomeLimite) ?? null;
 }
 
+function segmentoDoCliente(cliente) {
+  const candidatos = [cliente?.seguimento, cliente?.segmento];
+  const valor = candidatos.find((v) => typeof v === "string" && v.trim());
+  return valor ? valor.trim() : "";
+}
+
 function Campo({ dados, erros, alterar, campo, rotulo, obrigatorio, mono, ...resto }) {
   return (
     <label className="campo">
@@ -121,7 +127,11 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
 
     const clienteInicial = localizarClienteInicial(limiteExistente, clientes);
     if (clienteInicial) {
-      setDados((atual) => ({ ...atual, clienteId: clienteInicial.id }));
+      setDados((atual) => ({
+        ...atual,
+        clienteId: clienteInicial.id,
+        seguimento: atual.seguimento?.trim() ? atual.seguimento : segmentoDoCliente(clienteInicial),
+      }));
     }
 
     setClienteInicialAplicado(true);
@@ -161,7 +171,7 @@ export default function LimiteForm({ onSalvar, onCancelar, onFecharFormulario, l
       razaoSocial: cliente.nomeCliente ?? "",
       codPdv: cliente.codPdv ?? "",
       fantasia: cliente.nomeComercio ?? "",
-      seguimento: cliente.seguimento ?? cliente.segmento ?? "",
+      seguimento: segmentoDoCliente(cliente),
       responsavel: cliente.responsavel ?? "",
       telefones: telefonesLista.length ? telefonesLista : [""],
     }));

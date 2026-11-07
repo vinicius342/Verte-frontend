@@ -4,6 +4,7 @@ import { Plus, Copy } from "lucide-react";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import ClientList from "../components/clients/ClientList";
+import FiltroVendedor from "../components/clients/FiltroVendedor";
 import Carregando from "../components/common/Carregando";
 import ClientDetailModal from "../components/clients/ClientDetailModal";
 import AddClientModal from "../components/clients/AddClientModal";
@@ -31,6 +32,7 @@ export default function HomePage() {
   const [iniciarEdicaoSelecionado, setIniciarEdicaoSelecionado] = useState(false);
   const [recemCriado, setRecemCriado] = useState(false);
   const [linkCopiado, setLinkCopiado] = useState(false);
+  const [vendedorFiltro, setVendedorFiltro] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -80,12 +82,16 @@ export default function HomePage() {
   }, [location.pathname, location.state, navigate, ehMotorista, authLoading]);
 
   const filtrados = useMemo(() => {
+    const base =
+      papel === "supervisor" && vendedorFiltro
+        ? clientes.filter((c) => c.createdBy === vendedorFiltro)
+        : clientes;
     const termo = normalizar(busca).trim();
-    if (!termo) return clientes;
-    return clientes.filter((c) =>
+    if (!termo) return base;
+    return base.filter((c) =>
       [c.nomeCliente, c.nomeComercio, c.rua].some((campo) => normalizar(campo).includes(termo)),
     );
-  }, [clientes, busca]);
+  }, [clientes, busca, papel, vendedorFiltro]);
 
   const atual = selecionadoId ? clientes.find((c) => c.id === selecionadoId) ?? null : null;
 
@@ -103,6 +109,10 @@ export default function HomePage() {
           <h1 className="titulo-secao">Clientes</h1>
           <span className="contador mono">{filtrados.length}</span>
         </div>
+
+        {papel === "supervisor" && !carregando && (
+          <FiltroVendedor clientes={clientes} valor={vendedorFiltro} onChange={setVendedorFiltro} />
+        )}
 
         <div data-tour="clientes-lista">
           {carregando ? (
