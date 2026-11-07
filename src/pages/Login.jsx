@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
   ArrowRight,
   ClipboardCheck,
   Eye,
@@ -23,7 +24,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const mensagem = location.state?.mensagem;
-  const { loading } = useAuth();
+  const { ehVisitante, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -62,6 +63,16 @@ export default function LoginPage() {
           </defs>
           <rect width="100%" height="100%" fill="url(#dots)" className="text-brand-deep-foreground" />
         </svg>
+
+        {ehVisitante ? (
+        <Link
+          to="/"
+          className="botao-voltar-inicio absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-brand-deep-foreground/90 ring-1 ring-brand-deep-foreground/20 backdrop-blur transition-colors hover:bg-brand-deep-foreground/10 lg:left-8 lg:top-8"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          <span>Voltar ao início</span>
+        </Link>
+        ) : null}
 
         <div className="relative mx-auto flex min-h-[42vh] w-full max-w-md flex-col justify-center px-6 pb-16 pt-14 text-center lg:min-h-screen lg:max-w-xl lg:items-start lg:px-16 lg:text-left">
           <header className="animate-rise text-brand-deep-foreground">

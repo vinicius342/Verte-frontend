@@ -168,6 +168,7 @@ export function TutorialProvider({ children }) {
     usuario,
     papel,
     ehMotorista,
+    ehVisitante,
     precisaConfigurarAssinatura,
     dicaVista,
     marcarDicaVista,
@@ -204,11 +205,11 @@ export function TutorialProvider({ children }) {
 
   useEffect(() => {
     if (!ativo) return;
-    if (!usuario || precisaConfigurarAssinatura) {
+    if (!usuario || ehVisitante || precisaConfigurarAssinatura) {
       clearTimeout(timerRef.current);
       encerrarEstado();
     }
-  }, [ativo, usuario, precisaConfigurarAssinatura, encerrarEstado]);
+  }, [ativo, usuario, ehVisitante, precisaConfigurarAssinatura, encerrarEstado]);
 
   // Mantém o usuário na rota do módulo nos passos informativos.
   useEffect(() => {
@@ -244,7 +245,7 @@ export function TutorialProvider({ children }) {
 
   const notificarAberturaSidebar = useCallback(() => {
     if (sessaoRef.current || ativo || saindo) return false;
-    if (!usuario || precisaConfigurarAssinatura) return false;
+    if (!usuario || ehVisitante || precisaConfigurarAssinatura) return false;
     const chaves = modulosDoPapel(papel, ehMotorista);
     const proxima = chaves.find((chaveModulo) => !moduloVisto(chaveModulo));
     if (!proxima) return false;
@@ -253,6 +254,7 @@ export function TutorialProvider({ children }) {
     ativo,
     saindo,
     usuario,
+    ehVisitante,
     precisaConfigurarAssinatura,
     papel,
     ehMotorista,
@@ -263,7 +265,7 @@ export function TutorialProvider({ children }) {
   const iniciarTutorialDetalhe = useCallback(
     (chaveDetalhe, lista) => {
       if (sessaoRef.current || ativo || saindo) return false;
-      if (!usuario || precisaConfigurarAssinatura) return false;
+      if (!usuario || ehVisitante || precisaConfigurarAssinatura) return false;
       if (!lista?.length) return false;
       if (detalheVisto(chaveDetalhe)) return false;
       // Pula passos cujo elemento não está na tela (ex.: sem WhatsApp, sem anexos).
@@ -273,7 +275,7 @@ export function TutorialProvider({ children }) {
       marcarDicaVista(chaveDetalhe);
       return iniciar("detalhe", chaveDetalhe, validas);
     },
-    [ativo, saindo, usuario, precisaConfigurarAssinatura, detalheVisto, marcarDicaVista, iniciar],
+    [ativo, saindo, usuario, ehVisitante, precisaConfigurarAssinatura, detalheVisto, marcarDicaVista, iniciar],
   );
 
   const finalizar = useCallback(() => {

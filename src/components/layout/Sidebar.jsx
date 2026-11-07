@@ -123,7 +123,7 @@ const itensMenu = [
 ];
 
 export default function Sidebar({ aberta, onFechar, onAdicionar }) {
-  const { usuario, nome: nomeAuth, podeConfigurar, ehMotorista } = useAuth();
+  const { usuario, nome: nomeAuth, podeConfigurar, ehMotorista, ehVisitante } = useAuth();
   const { notificarAberturaSidebar, manterSidebarAberta } = useTutorial();
   const { nome: nomeCadastro, fotoUrl } = useDadosUsuario();
   const nome = nomeCadastro ?? nomeAuth;
@@ -159,7 +159,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
   async function sair() {
     await logout();
     onFechar();
-    navigate("/");
+    navigate("/login");
   }
 
   function irPara(caminho) {
@@ -189,7 +189,7 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
           </div>
         </div>
 
-        {usuario ? (
+        {usuario && !ehVisitante ? (
           <>
             <nav className="sidebar-nav" aria-label="Menu principal">
               {itensMenu
@@ -262,6 +262,24 @@ export default function Sidebar({ aberta, onFechar, onAdicionar }) {
               </button>
             </div>
           </>
+        ) : ehVisitante ? (
+          <nav className="sidebar-nav" aria-label="Menu principal">
+            {[itensMenu[0], itensMenu[1]].map((item) => (
+              <button
+                key={item.caminho}
+                type="button"
+                className={`sidebar-item ${estaAtivo(item.caminho) ? "sidebar-item-ativo" : ""}`}
+                onClick={() => irPara(item.caminho)}
+              >
+                {item.icone}
+                <span>{item.rotulo}</span>
+              </button>
+            ))}
+            <button type="button" className="sidebar-item" onClick={() => irPara("/login")}>
+              {icones.entrar}
+              <span>Entrar</span>
+            </button>
+          </nav>
         ) : (
           <nav className="sidebar-nav" aria-label="Menu principal">
             <button type="button" className="sidebar-item" onClick={() => irPara("/login")}>

@@ -4,13 +4,13 @@ import { useAuth } from "./useAuth";
 
 // Configurações da revendedora (o perfil do usuário agora fica em usePerfil).
 export function useConfiguracoes() {
-  const { uid, revendedoraId } = useAuth();
+  const { uid, revendedoraId, ehVisitante } = useAuth();
   const [revendedora, setRevendedora] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   const carregar = useCallback(async () => {
-    if (!uid || !revendedoraId) {
+    if (!uid || !revendedoraId || ehVisitante) {
       setLoading(false);
       return;
     }
@@ -25,7 +25,7 @@ export function useConfiguracoes() {
     } finally {
       setLoading(false);
     }
-  }, [uid, revendedoraId]);
+  }, [uid, revendedoraId, ehVisitante]);
 
   useEffect(() => {
     carregar();

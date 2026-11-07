@@ -3259,3 +3259,23 @@ input.mono {
   line-height: 16px;
   font-weight: 700;
 }
+
+button.botao-voltar-inicio,
+a.botao-voltar-inicio {
+  background: #ffffff;
+  color: #004e4b;
+  border: 1px solid #ffffff;
+  font-weight: 600;
+}
+
+button.botao-voltar-inicio:hover,
+a.botao-voltar-inicio:hover {
+  background: #eef4f1;
+  border-color: #eef4f1;
+}
+
+button.botao-voltar-inicio:focus-visible,
+a.botao-voltar-inicio:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}

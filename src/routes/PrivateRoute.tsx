@@ -5,11 +5,11 @@ import Carregando from "../components/common/Carregando";
 import { logout } from "../services/authService";
 
 export default function PrivateRoute(): JSX.Element {
-  const { uid, revendedoraId, loading, precisaConfigurarAssinatura } = useAuth();
+  const { usuario, revendedoraId, loading, precisaConfigurarAssinatura } = useAuth();
   const location = useLocation();
 
   if (loading) return <Carregando cheia />;
-  if (!uid) return <Navigate to="/login" replace />;
+  if (!usuario) return <Navigate to="/login" replace />;
 
   if (!revendedoraId) {
     return (

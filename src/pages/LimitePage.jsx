@@ -11,7 +11,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLimites } from "../hooks/useLimites";
 
 export default function LimitePage() {
-  const { usuario, loading: authLoading } = useAuth();
+  const { ehMotorista, loading: authLoading } = useAuth();
   const { limites, loading, erro } = useLimites();
   const carregando = authLoading || loading;
   const [menuAberto, setMenuAberto] = useState(false);
@@ -39,7 +39,7 @@ export default function LimitePage() {
         </div>
       </main>
 
-      {usuario && (
+      {!ehMotorista && (
         <Button
           className="botao-adicionar-fixo"
           data-tour="novo-limite"

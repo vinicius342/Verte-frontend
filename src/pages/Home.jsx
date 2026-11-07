@@ -22,7 +22,7 @@ function normalizar(texto) {
 
 export default function HomePage() {
   const { clientes, loading, erro, recarregar } = useClients();
-  const { usuario, papel, ehMotorista, loading: authLoading } = useAuth();
+  const { papel, ehMotorista, loading: authLoading } = useAuth();
   const carregando = authLoading || loading;
   const [busca, setBusca] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
@@ -39,11 +39,11 @@ export default function HomePage() {
   useEffect(() => {
     if (authLoading) return;
     if (searchParams.get("adicionar") === "1") {
-      if (usuario && !ehMotorista) setAdicionando(true);
+      if (!ehMotorista) setAdicionando(true);
       searchParams.delete("adicionar");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, usuario, ehMotorista, authLoading]);
+  }, [searchParams, setSearchParams, ehMotorista, authLoading]);
 
   useEffect(() => {
     const estado = location.state;
@@ -119,7 +119,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {usuario && !ehMotorista && (
+      {!ehMotorista && (
         <Button
           className="botao-adicionar-fixo"
           data-tour="novo-cliente"

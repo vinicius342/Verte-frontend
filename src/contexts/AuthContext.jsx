@@ -13,9 +13,10 @@ import {
   cadastrarUsuario as cadastrarService,
   observarUsuarioLogado,
 } from "../services/authService";
-import { buscarVinculo } from "../services/userService";
+import { buscarVinculo, REVENDEDORA_PADRAO } from "../services/userService";
 import { buscarConfiguracao, salvarConfiguracao } from "../services/configService";
-import { isFirebaseConfigured } from "../firebase/config";
+import { getFirebaseAuth, isFirebaseConfigured } from "../firebase/config";
+import { signInAnonymously } from "firebase/auth";
 import Carregando from "../components/common/Carregando";
 
 export const AuthContext = createContext(null);
@@ -44,9 +45,10 @@ export function AuthProvider({ children }) {
   const [dicasVistas, setDicasVistas] = useState({});
   const [loading, setLoading] = useState(true);
   const requisicao = useRef(0);
+  const tentouAnonimo = useRef(false);
 
   // Só a busca mais recente vale: evita que uma resposta antiga sobrescreva a nova.
-  const carregarPerfil = useCallback(async (uid) => {
+  const carregarPerfil = useCallback(async (uid, ehVisitante = false) => {
     const minha = ++requisicao.current;
     let vinculo = {
       revendedoraId: null,
@@ -68,29 +70,40 @@ export function AuthProvider({ children }) {
       return null;
     }
 
-    try {
-      const config = await buscarConfiguracao(uid);
-      if (minha !== requisicao.current) return vinculo.revendedoraId;
-      setDicasVistas(config?.dicasVistas ?? {});
-    } catch (e) {
-      console.error("Falha ao buscar as dicas vistas:", e);
-      if (minha !== requisicao.current) return vinculo.revendedoraId;
-      // Sem a configuração não dá para saber o que já foi visto: não mostra nada.
+    if (ehVisitante) {
+      vinculo = {
+        ...vinculo,
+        revendedoraId: REVENDEDORA_PADRAO,
+        papel: "visitante",
+        assinaturaConfigurada: true,
+        trocarSenha: false,
+      };
       setDicasVistas(null);
+    } else {
+      try {
+        const config = await buscarConfiguracao(uid);
+        if (minha !== requisicao.current) return vinculo.revendedoraId;
+        setDicasVistas(config?.dicasVistas ?? {});
+      } catch (e) {
+        console.error("Falha ao buscar as dicas vistas:", e);
+        if (minha !== requisicao.current) return vinculo.revendedoraId;
+        // Sem a configuração não dá para saber o que já foi visto: não mostra nada.
+        setDicasVistas(null);
+      }
     }
 
     setRevendedoraId(vinculo.revendedoraId);
     setCodigo(vinculo.codigo ?? "");
     setPapel(vinculo.papel);
     setAssinaturaConfigurada(vinculo.assinaturaConfigurada);
-    setTrocarSenha(vinculo.trocarSenha === true);
+    setTrocarSenha(!ehVisitante && vinculo.trocarSenha === true);
     return vinculo.revendedoraId;
   }, []);
 
   const recarregarVinculo = useCallback(() => {
     if (!usuario?.uid) return Promise.resolve();
-    return carregarPerfil(usuario.uid);
-  }, [usuario?.uid, carregarPerfil]);
+    return carregarPerfil(usuario.uid, usuario.isAnonymous === true);
+  }, [usuario, carregarPerfil]);
 
   useEffect(() => {
     const cancelar = observarUsuarioLogado(async (u) => {
@@ -103,15 +116,27 @@ export function AuthProvider({ children }) {
         setAssinaturaConfigurada(null);
         setTrocarSenha(false);
         setDicasVistas({});
-        setLoading(false);
+        if (!isFirebaseConfigured() || tentouAnonimo.current || trocandoSenha) {
+          setLoading(false);
+          return;
+        }
+        tentouAnonimo.current = true;
+        setLoading(true);
+        try {
+          await signInAnonymously(getFirebaseAuth());
+        } catch (e) {
+          console.error("Falha ao criar sessão de visitante:", e);
+          setLoading(false);
+        }
         return;
       }
+      if (!u.isAnonymous) tentouAnonimo.current = false;
       setLoading(true);
-      await carregarPerfil(u.uid);
+      await carregarPerfil(u.uid, u.isAnonymous === true);
       setLoading(false);
     });
     return cancelar;
-  }, [carregarPerfil]);
+  }, [carregarPerfil, trocandoSenha]);
 
   const dicaVista = useCallback(
     (chave) => {
@@ -123,6 +148,7 @@ export function AuthProvider({ children }) {
 
   const marcarDicaVista = useCallback(
     (chave) => {
+      if (usuario?.isAnonymous) return;
       setDicasVistas((anterior) => ({ ...(anterior ?? {}), [chave]: true }));
       const uid = usuario?.uid;
       if (!uid) return;
@@ -134,6 +160,7 @@ export function AuthProvider({ children }) {
   );
 
   const reiniciarTutoriais = useCallback(async () => {
+    if (usuario?.isAnonymous) throw new Error("Visitantes não possuem tutoriais.");
     const uid = usuario?.uid;
     if (!uid) throw new Error("Usuário não autenticado.");
     await salvarConfiguracao(uid, { dicasVistas: DICAS_REINICIADAS });
@@ -141,7 +168,8 @@ export function AuthProvider({ children }) {
   }, [usuario?.uid]);
 
   const value = useMemo(() => {
-    const ehMotorista = papel === "motorista" || papel === "auxiliar_motorista";
+    const ehVisitante = usuario?.isAnonymous === true;
+    const ehMotorista = ehVisitante || papel === "motorista" || papel === "auxiliar_motorista";
     return {
       usuario,
       uid: usuario?.uid ?? null,
@@ -149,11 +177,16 @@ export function AuthProvider({ children }) {
       codigo,
       papel,
       ehMotorista,
+      ehVisitante,
       assinaturaConfigurada,
       precisaConfigurarAssinatura:
-        papel !== "admin" && !ehMotorista && papel != null && assinaturaConfigurada === false,
+        !ehVisitante &&
+        papel !== "admin" &&
+        !ehMotorista &&
+        papel != null &&
+        assinaturaConfigurada === false,
       definirAssinaturaConfigurada: setAssinaturaConfigurada,
-      podeConfigurar: papel === "admin" || papel === "gerente",
+      podeConfigurar: !ehVisitante && (papel === "admin" || papel === "gerente"),
       nome: usuario?.displayName ?? usuario?.email ?? null,
       loading,
       configurado: isFirebaseConfigured(),

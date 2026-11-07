@@ -24,11 +24,11 @@ export function atualizarFotoPerfil(uid, fotoUrl) {
 
 // Retorna { fotoUrl, nome } do cadastro em "usuarios" (nome é null até carregar).
 export function useDadosUsuario() {
-  const { uid } = useAuth();
+  const { uid, ehVisitante } = useAuth();
   const snap = useSyncExternalStore(assinar, () => estado);
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || ehVisitante) {
       uidBuscado = null;
       return;
     }
@@ -40,7 +40,7 @@ export function useDadosUsuario() {
         console.error("Erro ao carregar dados do usuário:", e);
         uidBuscado = null;
       });
-  }, [uid]);
+  }, [uid, ehVisitante]);
 
   return snap.uid === uid
     ? { fotoUrl: snap.fotoUrl, nome: snap.nome }

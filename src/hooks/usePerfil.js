@@ -19,14 +19,14 @@ const ESTADO_INICIAL = {
 // O `perfil` retornado já traz vendedor/vendedorCodigo/supervisor/supervisorCodigo
 // atualizados, então quem consome (Comodato, Limite...) não precisa mudar.
 export function usePerfil() {
-  const { uid, revendedoraId, loading: loadingAuth } = useAuth();
+  const { uid, revendedoraId, ehVisitante, loading: loadingAuth } = useAuth();
   const [estado, setEstado] = useState(ESTADO_INICIAL);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
     if (loadingAuth) return;
-    if (!uid || !revendedoraId) {
+    if (!uid || !revendedoraId || ehVisitante) {
       setLoading(false);
       return;
     }
@@ -85,7 +85,7 @@ export function usePerfil() {
     return () => {
       cancelado = true;
     };
-  }, [uid, revendedoraId, loadingAuth]);
+  }, [uid, revendedoraId, ehVisitante, loadingAuth]);
 
   return { ...estado, loading, erro };
 }

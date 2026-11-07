@@ -4,9 +4,9 @@ import { useAuth } from "../hooks/useAuth";
 import Carregando from "../components/common/Carregando";
 
 export default function RotaPublica(): JSX.Element {
-  const { uid, loading } = useAuth();
+  const { usuario, loading } = useAuth();
 
   if (loading) return <Carregando cheia />;
 
-  return uid ? <Navigate to="/" replace /> : <Outlet />;
+  return usuario && !usuario.isAnonymous ? <Navigate to="/" replace /> : <Outlet />;
 }

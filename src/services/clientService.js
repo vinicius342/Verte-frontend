@@ -24,7 +24,8 @@ export async function criarCliente(revendedoraId, dados) {
 }
 
 export async function listarClientes(revendedoraId) {
-  return apiFetch("clientes/listar", { params: { revendedoraId } });
+  const resposta = await apiFetch("clientes/listar-paginado", { params: { revendedoraId } });
+  return resposta?.itens ?? resposta;
 }
 
 export async function buscarClientePorId(revendedoraId, id) {
