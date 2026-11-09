@@ -1,5 +1,6 @@
 import { comprimirImagem } from "../utils/imageCompressor";
-import { apiFetch } from "./apiFetch";
+import { apiFetch, escutarAlteracoes } from "./apiFetch";
+import { getFirebaseAuth } from "../firebase/config";
 
 // Os anexos novos viajam como arquivos (multipart); o resto vai como JSON no campo "corpo".
 // A compressão continua aqui para a foto subir já reduzida (o backend recomprime só se ainda ajudar).
@@ -23,9 +24,46 @@ export async function criarCliente(revendedoraId, dados) {
   return resposta.id;
 }
 
-export async function listarClientes(revendedoraId) {
-  const resposta = await apiFetch("clientes/listar-paginado", { params: { revendedoraId } });
-  return resposta?.itens ?? resposta;
+const VALIDADE_CACHE_MS = 5 * 60 * 1000;
+const cacheClientes = new Map(); // chave -> { lista, em } ou { promessa }
+let versaoCache = 0;
+
+// A chave inclui o uid: a lista depende do papel do usuário e não pode vazar entre contas.
+function chaveCache(revendedoraId) {
+  return `${getFirebaseAuth().currentUser?.uid ?? ""}:${revendedoraId}`;
+}
+
+// Qualquer criação, edição ou exclusão de cliente feita neste navegador invalida o cache.
+escutarAlteracoes("clientes", () => {
+  versaoCache += 1;
+  cacheClientes.clear();
+});
+
+export async function listarClientes(revendedoraId, { forcar = false } = {}) {
+  const chave = chaveCache(revendedoraId);
+  const existente = cacheClientes.get(chave);
+
+  if (!forcar && existente) {
+    if (existente.promessa) return existente.promessa;
+    if (Date.now() - existente.em < VALIDADE_CACHE_MS) return existente.lista;
+  }
+
+  const versaoInicial = versaoCache;
+  const promessa = apiFetch("clientes/listar-paginado", { params: { revendedoraId } })
+    .then((resposta) => {
+      const lista = resposta?.itens ?? resposta;
+      if (versaoInicial === versaoCache) {
+        cacheClientes.set(chave, { lista, em: Date.now() });
+      }
+      return lista;
+    })
+    .catch((erro) => {
+      cacheClientes.delete(chave);
+      throw erro;
+    });
+
+  cacheClientes.set(chave, { promessa });
+  return promessa;
 }
 
 export async function buscarClientePorId(revendedoraId, id) {
