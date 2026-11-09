@@ -30,7 +30,7 @@ async function obterToken() {
 
 // - params: vai na query (GET/DELETE)
 // - body: objeto (vira JSON) ou FormData (anexos)
-export async function apiFetch(caminho, { method = "GET", params, body } = {}) {
+export async function apiFetch(caminho, { method = "GET", params, body, cache } = {}) {
   if (!BASE_URL) {
     throw new Error("VITE_VERTE_API_URL não definida no .env");
   }
@@ -59,6 +59,7 @@ export async function apiFetch(caminho, { method = "GET", params, body } = {}) {
       method,
       headers,
       body: corpo,
+      cache,
     });
   } catch {
     throw criarErro("Sem conexão. Verifique a internet.", 0, "sem-conexao");

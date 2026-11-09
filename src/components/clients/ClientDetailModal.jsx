@@ -12,18 +12,19 @@ import { formatarCep } from "../../utils/validators";
 import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
 function CampoWhatsapp({ rotulo, numero, dataTour }) {
-  if (!numero) return null;
-  const link = gerarLinkWhatsapp(numero);
+  const numeroExibido = String(numero ?? "").trim();
+  if (!numeroExibido) return null;
+  const link = gerarLinkWhatsapp(numeroExibido);
   return (
     <div className="detalhe-item" data-tour={dataTour}>
       <dt>{rotulo}</dt>
       <dd className="mono">
         {link ? (
           <a className="detalhe-link" href={link} target="_blank" rel="noopener noreferrer">
-            {numero}
+            {numeroExibido}
           </a>
         ) : (
-          numero
+          numeroExibido
         )}
       </dd>
     </div>
@@ -173,6 +174,10 @@ export default function ClientDetailModal({
 
   async function salvar(dados) {
     await atualizarCliente(revendedoraId, cliente.id, dados, uid);
+    setPrivadoCarregado(false);
+    const dadosPrivadosAtualizados = await buscarPrivadoCliente(revendedoraId, cliente.id);
+    setPrivado(dadosPrivadosAtualizados);
+    setPrivadoCarregado(true);
     setEditando(false);
   }
 

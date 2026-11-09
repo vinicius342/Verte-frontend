@@ -1,3 +1,5 @@
+import { apenasDigitos } from "./whatsapp";
+
 // Gera a URL do Google Maps a partir de coordenada OU de rua + número.
 export function gerarLinkMapa(cliente) {
   if (!cliente) return null;
@@ -24,7 +26,7 @@ export function abrirMapa(cliente) {
 
 // Monta o link do WhatsApp (https://wa.me/55NUMERO) a partir do número exibido.
 export function gerarLinkWhatsapp(numero) {
-  const digitos = (numero ?? "").replace(/\D/g, "");
+  const digitos = apenasDigitos(numero);
   if (digitos.length < 10) return null;
   const comDdi = digitos.startsWith("55") && digitos.length > 11 ? digitos : `55${digitos}`;
   return `https://wa.me/${comDdi}`;

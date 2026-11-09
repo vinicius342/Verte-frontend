@@ -34,7 +34,10 @@ export async function buscarClientePorId(revendedoraId, id) {
 
 // WhatsApp e anexos ficam no documento privado do cliente (clientes antigos: no principal).
 export async function buscarPrivadoCliente(revendedoraId, id) {
-  return apiFetch("clientes/buscar-privado", { params: { revendedoraId, id } });
+  return apiFetch("clientes/buscar-privado", {
+    params: { revendedoraId, id },
+    cache: "no-store",
+  });
 }
 
 // dados.anexosRemovidos = caminhos a remover. Os anexos mantidos o backend lê do documento salvo.
