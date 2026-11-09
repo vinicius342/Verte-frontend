@@ -16,11 +16,11 @@ const ORDEM_CAMPOS = [
   "codPdv",
   "responsavel",
   "segmento",
+  "cep",
   "rua",
   "numero",
   "bairro",
   "cidade",
-  "cep",
   "whatsapp",
   "whatsapp2",
   "whatsapp3",
@@ -115,8 +115,9 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         if (consulta !== consultaCepRef.current || !endereco || endereco.erro) return;
         setDados((atual) => ({
           ...atual,
-          bairro: atual.bairro?.trim() ? atual.bairro : endereco.bairro ?? "",
-          cidade: atual.cidade?.trim() ? atual.cidade : endereco.localidade ?? "",
+          rua: endereco.logradouro?.trim() ? endereco.logradouro : atual.rua,
+          bairro: endereco.bairro?.trim() ? endereco.bairro : atual.bairro,
+          cidade: endereco.localidade?.trim() ? endereco.localidade : atual.cidade,
         }));
       })
       .catch(() => {});
@@ -316,6 +317,22 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
         {erros.responsavel ? <span className="campo-erro">{erros.responsavel}</span> : null}
       </label>
 
+      <label className="campo">
+        <span className="campo-rotulo">CEP (Opcional)</span>
+        <input
+          ref={registrarRef("cep")}
+          className="campo-input mono"
+          value={dados.cep}
+          onChange={alterar("cep")}
+          inputMode="numeric"
+          placeholder="00000-000"
+        />
+        <span className="campo-dica">
+          Ao digitar o CEP, o app preenche bairro e cidade (e a rua, quando o CEP for de uma rua só), substituindo o que estiver escrito.
+        </span>
+        {erros.cep ? <span className="campo-erro">{erros.cep}</span> : null}
+      </label>
+
       <div className="campo-linha">
         <label className="campo">
           <span className="campo-rotulo">Rua *</span>
@@ -367,22 +384,6 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
           {erros.cidade ? <span className="campo-erro">{erros.cidade}</span> : null}
         </label>
       </div>
-
-      <label className="campo">
-        <span className="campo-rotulo">CEP</span>
-        <input
-          ref={registrarRef("cep")}
-          className="campo-input mono"
-          value={dados.cep}
-          onChange={alterar("cep")}
-          inputMode="numeric"
-          placeholder="00000-000"
-        />
-        <span className="campo-dica">
-          Opcional. Ajuda a localizar o cliente quando o endereço não for encontrado.
-        </span>
-        {erros.cep ? <span className="campo-erro">{erros.cep}</span> : null}
-      </label>
 
       <label className="campo">
         <span className="campo-rotulo">Complemento</span>
