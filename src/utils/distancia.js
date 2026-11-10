@@ -50,7 +50,7 @@ export function textoLocalizacaoAproximada(cliente) {
   const ponto = obterPonto(cliente);
   if (!ponto?.estimada) return null;
   const rotulo = ROTULOS_PRECISAO[ponto.precisao] ?? "endereço";
-  return `Localização aproximada pelo ${rotulo}. Capture o GPS para maior precisão.`;
+  return;
 }
 
 export function obterCoordenadasCliente(cliente) {

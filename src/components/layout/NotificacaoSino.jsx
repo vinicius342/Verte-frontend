@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Carregando from "../common/Carregando";
 import { usePendentes } from "../../hooks/usePendentes";
 import { useAuth } from "../../hooks/useAuth";
+import { useNotificacoesPush } from "../../hooks/useNotificacoesPush";
 
 const formatadorRelativo = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
 
@@ -38,6 +39,7 @@ function obterTextoRejeitado(rejeitadoPor) {
 export default function NotificacaoSino() {
   const { itens, total, loading, recarregar, marcarVisto } = usePendentes();
   const { papel } = useAuth();
+  const push = useNotificacoesPush();
   const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   const sinoRef = useRef(null);
@@ -210,6 +212,27 @@ export default function NotificacaoSino() {
                 <p className="notificacoes-restantes">+{total - itens.length} pendências</p>
               )}
             </div>
+          )}
+
+          {push.elegivel && push.precisaInstalar && (
+            <p className="notificacoes-vazio">
+              No iPhone, instale o app na tela inicial para receber avisos no celular.
+            </p>
+          )}
+          {push.elegivel && push.suportado && push.permissao === "default" && (
+            <button
+              type="button"
+              className="notificacoes-rodape"
+              onClick={push.ativar}
+              disabled={push.ativando}
+            >
+              {push.ativando ? "Ativando…" : "Ativar avisos no celular"}
+            </button>
+          )}
+          {push.elegivel && push.permissao === "denied" && (
+            <p className="notificacoes-vazio">
+              Os avisos estão bloqueados. Libere nas configurações do navegador.
+            </p>
           )}
 
           <button type="button" className="notificacoes-rodape" onClick={verMinhasPendencias}>

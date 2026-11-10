@@ -48,18 +48,58 @@ function textoCadastroContatos(cliente, rota) {
   ].join("\n");
 }
 
+function revendaDoId(revendedoraId) {
+  const partes = String(revendedoraId ?? "").split("-").filter(Boolean);
+  if (partes.length < 2) return String(revendedoraId ?? "").toUpperCase();
+  const codigoRevenda = partes[partes.length - 1];
+  const nomeRevenda = partes.slice(0, -1).join(" ").toUpperCase();
+  return `${codigoRevenda} / ${nomeRevenda}`;
+}
+
+function textoCadastroCliente(cliente, { codigo, nome, revendedoraId }) {
+  const telefones = [cliente.whatsapp, cliente.whatsapp2, cliente.whatsapp3]
+    .map((t) => String(t ?? "").replace(/\D/g, ""))
+    .filter(Boolean)
+    .map((t) => `*N° TEL:* ${t}`);
+
+  const canal = [cliente.seguimento, cliente.segmento].find((v) => typeof v === "string" && v.trim()) ?? "";
+  const ruaNumero = [cliente.rua, cliente.numero]
+    .map((v) => String(v ?? "").trim())
+    .filter(Boolean)
+    .join(",");
+  const comBairro = [ruaNumero, String(cliente.bairro ?? "").trim()].filter(Boolean).join("-");
+  const endereco = `${[comBairro, String(cliente.cidade ?? "").trim()].filter(Boolean).join(", ")} .`;
+  const cep = cliente.cep ? formatarCep(cliente.cep) : "";
+
+  return [
+    `*CADASTRO NOVO ${codigo ?? ""}*`.trim(),
+    "",
+    `*REVENDA:* ${revendaDoId(revendedoraId)}`,
+    `*VENDEDOR:* ${`${codigo ?? ""} ${nome ?? ""}`.trim().toUpperCase()}`,
+    `*RAZÃO SOCIAL:* ${cliente.nomeCliente ?? ""}`,
+    `*FANTASIA:* ${cliente.nomeComercio ?? ""}`,
+    `*CNPJ/CPF:* ${cliente.cpf ?? ""}`,
+    `*CANAL:* ${canal.trim()}`,
+    `*CONTATO:* ${cliente.responsavel ?? ""}`,
+    ...telefones,
+    `*ENDEREÇO:* ${endereco}`,
+    ...(cep ? [`*CEP:* ${cep}`] : []),
+  ].join("\n");
+}
+
 export default function ClientDetailModal({
   cliente,
   onFechar,
   iniciarEdicao = false,
   recemCriado = false,
 }) {
-  const { uid, usuario, revendedoraId, ehMotorista, codigo } = useAuth();
+  const { uid, usuario, revendedoraId, ehMotorista, codigo, nome } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
   const [editando, setEditando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [anexoEmAcao, setAnexoEmAcao] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [copiadoCadastro, setCopiadoCadastro] = useState(false);
   const [privado, setPrivado] = useState(null);
   const [privadoCarregado, setPrivadoCarregado] = useState(false);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
@@ -212,6 +252,19 @@ export default function ClientDetailModal({
     }
   }
 
+  async function copiarCadastroCliente() {
+    try {
+      await navigator.clipboard.writeText(
+        textoCadastroCliente(clientePrivado, { codigo, nome, revendedoraId }),
+      );
+      setCopiadoCadastro(true);
+      setTimeout(() => setCopiadoCadastro(false), 2000);
+    } catch (erro) {
+      console.error("Falha ao copiar:", erro);
+      window.alert("Não foi possível copiar.");
+    }
+  }
+
   async function abrirAnexo(anexo) {
     try {
       setAnexoEmAcao(anexo.caminho);
@@ -322,6 +375,15 @@ export default function ClientDetailModal({
               <span className="campo-rotulo">Cadastro de contatos</span>
               <Button variant="ghost" data-tour="detalhe-cliente-copiar" onClick={copiarContatos}>
                 {copiado ? "Copiado!" : "Copiar"}
+              </Button>
+            </div>
+          ) : null}
+
+          {!ehMotorista && logado ? (
+            <div className="detalhe-copia-contatos">
+              <span className="campo-rotulo">Cadastro do cliente</span>
+              <Button variant="ghost" onClick={copiarCadastroCliente}>
+                {copiadoCadastro ? "Copiado!" : "Copiar"}
               </Button>
             </div>
           ) : null}
