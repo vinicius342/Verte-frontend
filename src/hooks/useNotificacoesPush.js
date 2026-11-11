@@ -43,6 +43,12 @@ export function useNotificacoesPush() {
     };
   }, []);
 
+  useEffect(() => {
+    const atualizar = () => setPermissao(permissaoAtual());
+    window.addEventListener("verte:push-permissao", atualizar);
+    return () => window.removeEventListener("verte:push-permissao", atualizar);
+  }, []);
+
   const registrar = useCallback(async () => {
     if (!elegivel || permissaoAtual() !== "granted") return;
     const registro = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
@@ -69,7 +75,9 @@ export function useNotificacoesPush() {
     if (!suportado) return;
     setAtivando(true);
     try {
-      setPermissao(await Notification.requestPermission());
+      const resultado = await Notification.requestPermission();
+      setPermissao(resultado);
+      window.dispatchEvent(new Event("verte:push-permissao"));
     } finally {
       setAtivando(false);
     }

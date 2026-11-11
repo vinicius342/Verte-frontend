@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import type { JSX } from "react";
 import { useAuth } from "../hooks/useAuth";
 import Carregando from "../components/common/Carregando";
+import AvisoNotificacoes from "../components/common/AvisoNotificacoes";
 import { logout } from "../services/authService";
 
 export default function PrivateRoute(): JSX.Element {
@@ -26,5 +27,10 @@ export default function PrivateRoute(): JSX.Element {
     return <Navigate to="/perfil" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <AvisoNotificacoes />
+    </>
+  );
 }
