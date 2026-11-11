@@ -1,3 +1,5 @@
+import { ehClienteNovo } from "../../utils/clienteNovo";
+
 export default function ClientRow({ cliente, onSelecionar }) {
   return (
     <li className="linha-cliente">
@@ -8,6 +10,9 @@ export default function ClientRow({ cliente, onSelecionar }) {
         <span className="linha-texto">
           <span className="linha-nome-linha">
             <span className="linha-nome">{cliente.nomeCliente}</span>
+            {ehClienteNovo(cliente) ? (
+              <span className="selo-confirmacao selo-confirmacao--novo">Novo cliente</span>
+            ) : null}
             {cliente.cadastroIncompleto ? (
               <span className="selo-confirmacao selo-confirmacao--pendente">Cadastro incompleto</span>
             ) : null}

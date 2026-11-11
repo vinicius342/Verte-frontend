@@ -11,6 +11,7 @@ import AddClientModal from "../components/clients/AddClientModal";
 import Button from "../components/common/Button";
 import { useAuth } from "../hooks/useAuth";
 import { useClients } from "../hooks/useClients";
+import { ehClienteNovo } from "../utils/clienteNovo";
 
 function normalizar(texto) {
   return (texto ?? "")
@@ -73,10 +74,20 @@ export default function HomePage() {
         ? clientes.filter((c) => c.createdBy === vendedorFiltro)
         : clientes;
     const termo = normalizar(busca).trim();
-    if (!termo) return base;
-    return base.filter((c) =>
-      [c.nomeCliente, c.nomeComercio, c.rua].some((campo) => normalizar(campo).includes(termo)),
-    );
+    const lista = !termo
+      ? base
+      : base.filter((c) =>
+          [c.nomeCliente, c.nomeComercio, c.rua].some((campo) => normalizar(campo).includes(termo)),
+        );
+
+    const agora = Date.now();
+    return [...lista].sort((a, b) => {
+      const aNovo = ehClienteNovo(a, agora);
+      const bNovo = ehClienteNovo(b, agora);
+      if (aNovo !== bNovo) return aNovo ? -1 : 1;
+      if (!aNovo) return 0;
+      return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    });
   }, [clientes, busca, papel, vendedorFiltro]);
 
   const atual = selecionadoId ? clientes.find((c) => c.id === selecionadoId) ?? null : null;

@@ -47,8 +47,8 @@ export default function AvisoNotificacoes() {
           </p>
         ) : (
           <p>
-            Receba no celular os avisos de comodato (novas solicitações e respostas), mesmo com o app
-            fechado.
+            Receba no celular os avisos de comodato (novas solicitações e respostas) e de clientes novos
+            cadastrados pela sua equipe, mesmo com o app fechado.
           </p>
         )}
         <div className="formulario-acoes">

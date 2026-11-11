@@ -1436,6 +1436,11 @@ input.mono {
   color: var(--mapa);
   border-color: color-mix(in oklab, var(--mapa) 30%, transparent);
 }
+.selo-confirmacao--novo {
+  background: color-mix(in oklab, var(--primaria) 12%, var(--superficie));
+  color: var(--primaria);
+  border-color: color-mix(in oklab, var(--primaria) 30%, transparent);
+}
 .selo-confirmacao--confirmado {
   background: color-mix(in oklab, var(--primaria) 12%, var(--superficie));
   color: var(--primaria);
