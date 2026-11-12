@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getApp } from "firebase/app";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { registrarDispositivo } from "../services/notificacaoService";
@@ -8,9 +8,15 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 const CHAVE_REGISTRO = "verte:push-registrado";
 const PAPEIS = ["vendedor", "supervisor", "gerente"];
 
-function lerRegistro() {
+function chaveRegistro(uid) {
+  return `${CHAVE_REGISTRO}:${uid}`;
+}
+
+// Guarda o token registrado para este usuário neste aparelho.
+function lerRegistro(uid) {
+  if (!uid) return null;
   try {
-    return JSON.parse(localStorage.getItem(CHAVE_REGISTRO) ?? "null");
+    return localStorage.getItem(chaveRegistro(uid));
   } catch {
     return null;
   }
@@ -25,6 +31,8 @@ export function useNotificacoesPush() {
   const [suportado, setSuportado] = useState(false);
   const [permissao, setPermissao] = useState(permissaoAtual);
   const [ativando, setAtivando] = useState(false);
+  const registrando = useRef(false);
+  const registrarRef = useRef(null);
 
   const elegivel = Boolean(uid && usuario && revendedoraId && VAPID_KEY && PAPEIS.includes(papel));
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -50,26 +58,39 @@ export function useNotificacoesPush() {
   }, []);
 
   const registrar = useCallback(async () => {
-    if (!elegivel || permissaoAtual() !== "granted") return;
-    const registro = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
-      scope: "/firebase-cloud-messaging-push-scope",
-    });
-    const token = await getToken(getMessaging(getApp()), {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registro,
-    });
-    if (!token) return;
-    // Só chama o backend quando o aparelho ou o usuário mudou (evita escrita à toa).
-    const anterior = lerRegistro();
-    if (anterior?.token === token && anterior?.uid === uid) return;
-    await registrarDispositivo(revendedoraId, token);
-    localStorage.setItem(CHAVE_REGISTRO, JSON.stringify({ token, uid }));
+    if (registrando.current) return;
+    registrando.current = true;
+    try {
+      if (!uid) return;
+      if (!elegivel || permissaoAtual() !== "granted") return;
+      const registro = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+        scope: "/firebase-cloud-messaging-push-scope",
+      });
+      const token = await getToken(getMessaging(getApp()), {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registro,
+      });
+      if (!token) return;
+      // Só chama o backend quando o token deste usuário neste aparelho mudou (evita escrita à toa).
+      if (lerRegistro(uid) === token) return;
+      await registrarDispositivo(revendedoraId, token);
+      localStorage.setItem(chaveRegistro(uid), token);
+    } finally {
+      registrando.current = false;
+    }
   }, [elegivel, uid, revendedoraId]);
 
+  // Mantém a chamada do efeito sempre com a versão atual de registrar().
   useEffect(() => {
-    if (!suportado || !elegivel || permissao !== "granted") return;
-    registrar().catch((e) => console.error("Falha ao registrar o aparelho para avisos:", e));
-  }, [suportado, elegivel, permissao, registrar]);
+    registrarRef.current = registrar;
+  }, [registrar]);
+
+  useEffect(() => {
+    if (!uid || !suportado || !elegivel || permissao !== "granted") return;
+    registrarRef
+      .current?.()
+      .catch((erro) => console.error("Falha ao registrar o aparelho para avisos", erro));
+  }, [uid, elegivel, suportado, permissao]);
 
   const ativar = useCallback(async () => {
     if (!suportado) return;
