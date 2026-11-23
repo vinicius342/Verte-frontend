@@ -15,7 +15,7 @@ async function montarFormData(corpo, arquivos) {
 // O uid recebido é ignorado: o backend usa o do token.
 export async function criarCliente(revendedoraId, dados) {
   const arquivos = dados.anexosNovos ?? [];
-  const resto = { ...dados };
+  const resto = { ...dados, rota: dados.rota ?? "" };
   delete resto.anexosNovos;
   delete resto.anexosExistentes;
 
@@ -81,7 +81,7 @@ export async function buscarPrivadoCliente(revendedoraId, id) {
 // dados.anexosRemovidos = caminhos a remover. Os anexos mantidos o backend lê do documento salvo.
 export async function atualizarCliente(revendedoraId, id, dados) {
   const arquivos = dados.anexosNovos ?? [];
-  const resto = { ...dados };
+  const resto = { ...dados, rota: dados.rota ?? "" };
   delete resto.anexosNovos;
   delete resto.anexosExistentes;
 

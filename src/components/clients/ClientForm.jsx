@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Button from "../common/Button";
 import { formatarWhatsapp, formatarCpfCnpj, formatarCep } from "../../utils/validators";
 import { validarCliente } from "../../utils/validacoesCliente";
+import { ROTAS_CLIENTE } from "../../utils/rotasCliente";
 import { parseCoordenada, formatarCoordenada } from "../../utils/coordinateParser";
 import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
@@ -15,6 +16,7 @@ const ORDEM_CAMPOS = [
   "cpf",
   "codPdv",
   "responsavel",
+  "rota",
   "segmento",
   "cep",
   "rua",
@@ -35,6 +37,7 @@ function estadoInicial(cliente) {
     cpf: cliente?.cpf ?? "",
     segmento: cliente?.segmento ?? cliente?.seguimento ?? "",
     responsavel: cliente?.responsavel ?? "",
+    rota: cliente?.rota ?? "",
     rua: cliente?.rua ?? "",
     numero: cliente?.numero ?? "",
     complemento: cliente?.complemento ?? "",
@@ -225,6 +228,7 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
     try {
       await onSalvar({
         ...dados,
+        rota: dados.rota ?? "",
         cep: (dados.cep ?? "").replace(/\D/g, ""),
         coordenada: parsed.coordenada,
         anexosExistentes,
@@ -239,6 +243,8 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
   }
 
   const totalAnexos = anexosExistentes.length + anexosNovos.length;
+  const rotaForaDaLista =
+    dados.rota && !ROTAS_CLIENTE.some((rota) => rota.codigo === dados.rota) ? dados.rota : "";
   const localizacaoAproximada = textoLocalizacaoAproximada(cliente);
 
   return (
@@ -315,6 +321,25 @@ export default function ClientForm({ cliente, onSalvar, onCancelar, textoSalvar 
           required
         />
         {erros.responsavel ? <span className="campo-erro">{erros.responsavel}</span> : null}
+      </label>
+
+      <label className="campo">
+        <span className="campo-rotulo">Rota</span>
+        <select
+          ref={registrarRef("rota")}
+          className="campo-input"
+          value={dados.rota}
+          onChange={alterar("rota")}
+        >
+          <option value="">Selecione…</option>
+          {rotaForaDaLista ? <option value={rotaForaDaLista}>{rotaForaDaLista}</option> : null}
+          {ROTAS_CLIENTE.map((rota) => (
+            <option key={rota.codigo} value={rota.codigo}>
+              {rota.codigo} - {rota.nome}
+            </option>
+          ))}
+        </select>
+        {erros.rota ? <span className="campo-erro">{erros.rota}</span> : null}
       </label>
 
       <label className="campo">

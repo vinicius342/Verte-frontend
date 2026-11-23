@@ -9,6 +9,7 @@ import { atualizarCliente, excluirCliente, buscarPrivadoCliente } from "../../se
 import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
 import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
 import { formatarCep } from "../../utils/validators";
+import { rotuloDaRota } from "../../utils/rotasCliente";
 import { textoLocalizacaoAproximada } from "../../utils/distancia";
 
 function CampoWhatsapp({ rotulo, numero, dataTour }) {
@@ -70,6 +71,7 @@ function textoCadastroCliente(cliente, { codigo, nome, revendedoraId }) {
   const comBairro = [ruaNumero, String(cliente.bairro ?? "").trim()].filter(Boolean).join("-");
   const endereco = `${[comBairro, String(cliente.cidade ?? "").trim()].filter(Boolean).join(", ")} .`;
   const cep = cliente.cep ? formatarCep(cliente.cep) : "";
+  const rota = cliente.rota ? rotuloDaRota(cliente.rota) : "";
 
   return [
     `*CADASTRO NOVO ${codigo ?? ""}*`.trim(),
@@ -84,6 +86,7 @@ function textoCadastroCliente(cliente, { codigo, nome, revendedoraId }) {
     ...telefones,
     `*ENDEREÇO:* ${endereco}`,
     ...(cep ? [`*CEP:* ${cep}`] : []),
+    ...(rota ? [`*ROTA:* ${rota}`] : []),
   ].join("\n");
 }
 
@@ -349,6 +352,13 @@ export default function ClientDetailModal({
               <div className="detalhe-item">
                 <dt>Responsável</dt>
                 <dd>{cliente.responsavel}</dd>
+              </div>
+            ) : null}
+
+            {cliente.rota ? (
+              <div className="detalhe-item">
+                <dt>Rota</dt>
+                <dd>{rotuloDaRota(cliente.rota)}</dd>
               </div>
             ) : null}
 

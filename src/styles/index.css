@@ -1019,6 +1019,19 @@ input.mono {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primaria) 18%, transparent);
   outline: none;
 }
+select.campo-input {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 2.2rem;
+}
+.modal-painel select.campo-input,
+.formulario-cartao select.campo-input,
+select.campo-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2356635f' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+}
 .campo-erro {
   color: var(--perigo);
   font-size: 0.8rem;
