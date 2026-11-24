@@ -138,3 +138,378 @@
   pointer-events: none;
   user-select: none;
 }
+
+/* ---------- Prévia da assinatura importada no perfil ---------- */
+/* O PNG é transparente; o branco é só da "folha" de exibição. */
+.assinatura-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 140px;
+  padding: 1rem;
+  border: 1px solid var(--linha, #d7ddd4);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+  object-fit: contain;
+}
+
+/* ---------- Modal de importação (recorte + scan) ---------- */
+.assinatura-importar {
+  z-index: 10000;
+}
+
+.assinatura-importar__painel {
+  max-width: 760px;
+  color: var(--texto, #16211f);
+  outline: none;
+}
+
+.assinatura-importar__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assinatura-importar__texto {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-2, #56635f);
+}
+
+.assinatura-importar__erro {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--perigo, #ac2b1f);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.assinatura-importar__input-arquivo {
+  display: none;
+}
+
+/* ---------- Etapa 1: recorte ---------- */
+.assinatura-recorte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.assinatura-recorte__area {
+  position: relative;
+  width: 100%;
+  height: clamp(260px, 48vh, 520px);
+  overflow: hidden;
+  border-radius: 10px;
+  background: #111;
+  touch-action: none; /* não rola a página ao arrastar no celular */
+  user-select: none;
+}
+
+.assinatura-importar__carregando {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 1rem;
+  border: 1px dashed var(--linha, #d7ddd4);
+  border-radius: 10px;
+  background: var(--muted, #eef1ec);
+  color: var(--texto-2, #56635f);
+  text-align: center;
+}
+
+.assinatura-recorte__imagem {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.assinatura-recorte__escuro {
+  position: absolute;
+  pointer-events: none;
+}
+
+.assinatura-recorte__faixa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgb(0 0 0 / 45%);
+}
+
+.assinatura-recorte__moldura {
+  position: absolute;
+  border: 2px solid #ffffff;
+  /* Contorno duplo (claro + escuro) para a moldura não sumir sobre a foto. */
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 80%),
+    inset 0 0 0 1px rgb(0 0 0 / 65%);
+  touch-action: none;
+  cursor: move;
+  outline: none;
+}
+
+.assinatura-recorte__moldura:focus-visible {
+  box-shadow: 0 0 0 3px var(--foco, #0f6f6e);
+}
+
+.assinatura-recorte__linha {
+  position: absolute;
+  background: rgb(17 17 17 / 30%);
+  pointer-events: none;
+}
+
+.assinatura-recorte__linha--v1 {
+  top: 0;
+  bottom: 0;
+  left: 33.333%;
+  width: 1px;
+}
+
+.assinatura-recorte__linha--v2 {
+  top: 0;
+  bottom: 0;
+  left: 66.666%;
+  width: 1px;
+}
+
+.assinatura-recorte__linha--h1 {
+  top: 33.333%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.assinatura-recorte__linha--h2 {
+  top: 66.666%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+/* Área de toque de 44px; o quadrado visível é menor (::after). */
+.assinatura-recorte__alca {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.assinatura-recorte__alca::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--primaria, #0f6f6e);
+  border-radius: 3px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
+}
+
+.assinatura-recorte__alca--no {
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--n {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--ne {
+  top: 0;
+  left: 100%;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--o {
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--l {
+  top: 50%;
+  left: 100%;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--so {
+  top: 100%;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--s {
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.assinatura-recorte__alca--se {
+  top: 100%;
+  left: 100%;
+  transform: translate(-50%, -50%);
+}
+
+.assinatura-recorte__barra {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.assinatura-recorte__dica {
+  font-size: 0.8rem;
+  color: var(--texto-2, #56635f);
+}
+
+/* ---------- Etapa 2: confirmação ---------- */
+.assinatura-importar__folha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 1.25rem;
+  border: 1px solid var(--linha, #d7ddd4);
+  border-radius: 12px;
+  background: #ffffff; /* fixo: não acompanha o tema escuro */
+  box-shadow: 0 2px 12px rgb(0 0 0 / 12%);
+}
+
+/* PNG vem em 2x (até 1000x400); a exibição fica em até 500x200 CSS. */
+.assinatura-importar__imagem {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 500px;
+  max-height: 200px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.assinatura-importar__estado {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 92%);
+  color: #56635f;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.assinatura-importar__folha > .assinatura-importar__erro {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  max-width: none;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 94%);
+}
+
+.assinatura-importar__controle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.assinatura-importar__rotulo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.assinatura-importar__slider {
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  accent-color: var(--primaria, #0f6f6e);
+  cursor: pointer;
+}
+
+.assinatura-importar__dica {
+  font-size: 0.8rem;
+  color: var(--texto-2, #56635f);
+}
+
+.assinatura-importar__acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.assinatura-importar__acoes .assinatura-importar__botao {
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (min-width: 640px) {
+  .assinatura-importar__folha {
+    min-height: 300px;
+  }
+
+  .assinatura-importar__acoes {
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .assinatura-importar__acoes .assinatura-importar__botao {
+    width: auto;
+    flex: 1 1 auto;
+  }
+
+  .assinatura-importar__acoes .assinatura-importar__botao:first-child {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  .assinatura-importar {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .assinatura-importar .modal-painel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  .assinatura-importar__corpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .assinatura-recorte {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .assinatura-recorte__area {
+    flex: 1;
+    height: auto;
+    min-height: 260px;
+  }
+
+  .assinatura-importar__folha {
+    min-height: 220px;
+  }
+}

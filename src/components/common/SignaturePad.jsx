@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import AssinaturaTelaCheia from "./AssinaturaTelaCheia";
+import ImportarAssinaturaModal from "./ImportarAssinaturaModal";
 import "../../styles/assinatura.css";
-
-const LARGURA_MAX = 500;
-const ALTURA_MAX = 200;
 
 // Celular (toque) ou tela estreita: desenhar abre uma tela cheia em vez do canvas pequeno.
 const CONSULTA_MOBILE = "(pointer: coarse), (max-width: 640px)";
@@ -22,33 +20,6 @@ function useEhMobile() {
   return mobile;
 }
 
-function redimensionarImagem(arquivo) {
-  return new Promise((resolve, reject) => {
-    const leitor = new FileReader();
-    leitor.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
-    leitor.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Arquivo não é uma imagem válida."));
-      img.onload = () => {
-        const escala = Math.min(LARGURA_MAX / img.width, ALTURA_MAX / img.height, 1);
-        const largura = Math.round(img.width * escala);
-        const altura = Math.round(img.height * escala);
-
-        const canvas = document.createElement("canvas");
-        canvas.width = largura;
-        canvas.height = altura;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, largura, altura);
-        ctx.drawImage(img, 0, 0, largura, altura);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
-      };
-      img.src = leitor.result;
-    };
-    leitor.readAsDataURL(arquivo);
-  });
-}
-
 export default function SignaturePad({ valor, onAlterar }) {
   const canvasRef = useRef(null);
   const desenhandoRef = useRef(false);
@@ -59,6 +30,7 @@ export default function SignaturePad({ valor, onAlterar }) {
   const [modo, setModo] = useState("desenhar"); // "desenhar" | "imagem"
   const [erroImagem, setErroImagem] = useState(null);
   const [telaCheia, setTelaCheia] = useState(false);
+  const [arquivoPendente, setArquivoPendente] = useState(null);
 
   useEffect(() => {
     if (modo !== "desenhar" || mobile) return;
@@ -129,26 +101,33 @@ export default function SignaturePad({ valor, onAlterar }) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     if (inputArquivoRef.current) inputArquivoRef.current.value = "";
+    setArquivoPendente(null);
     setErroImagem(null);
     setVazio(true);
     onAlterar("");
   }
 
-  async function selecionarArquivo(evento) {
+  function selecionarArquivo(evento) {
     const arquivo = evento.target.files?.[0];
     if (!arquivo) return;
     if (!arquivo.type.startsWith("image/")) {
       setErroImagem("Selecione um arquivo de imagem.");
       return;
     }
-    try {
-      setErroImagem(null);
-      const dataUrl = await redimensionarImagem(arquivo);
-      onAlterar(dataUrl);
-      setVazio(false);
-    } catch (erro) {
-      setErroImagem(erro.message ?? "Não foi possível processar a imagem.");
-    }
+    setErroImagem(null);
+    setArquivoPendente(arquivo);
+  }
+
+  function fecharImportacao() {
+    setArquivoPendente(null);
+    if (inputArquivoRef.current) inputArquivoRef.current.value = "";
+  }
+
+  function confirmarImportacao(dataUrl) {
+    onAlterar(dataUrl);
+    setVazio(false);
+    setErroImagem(null);
+    fecharImportacao();
   }
 
   function trocarModo(novoModo) {
@@ -156,6 +135,7 @@ export default function SignaturePad({ valor, onAlterar }) {
     setModo(novoModo);
     setErroImagem(null);
     if (inputArquivoRef.current) inputArquivoRef.current.value = "";
+    setArquivoPendente(null);
     setVazio(true);
     onAlterar("");
   }
@@ -191,7 +171,11 @@ export default function SignaturePad({ valor, onAlterar }) {
                 <span className="assinatura-mobile__vazio">Nenhuma assinatura</span>
               )}
             </div>
-            <button type="button" className="assinatura-mobile__botao" onClick={() => setTelaCheia(true)}>
+            <button
+              type="button"
+              className="assinatura-mobile__botao"
+              onClick={() => setTelaCheia(true)}
+            >
               {temAssinatura ? "Refazer assinatura" : "Assinar"}
             </button>
           </div>
@@ -214,7 +198,9 @@ export default function SignaturePad({ valor, onAlterar }) {
           {valor && !vazio ? (
             <img src={valor} alt="Assinatura enviada" className="assinatura-preview" />
           ) : (
-            <span className="assinatura-dica assinatura-dica-upload">Nenhuma imagem selecionada</span>
+            <span className="assinatura-dica assinatura-dica-upload">
+              Nenhuma imagem selecionada
+            </span>
           )}
           <input
             ref={inputArquivoRef}
@@ -241,6 +227,14 @@ export default function SignaturePad({ valor, onAlterar }) {
             setVazio(false);
             setTelaCheia(false);
           }}
+        />
+      ) : null}
+
+      {arquivoPendente ? (
+        <ImportarAssinaturaModal
+          arquivo={arquivoPendente}
+          onConfirmar={confirmarImportacao}
+          onCancelar={fecharImportacao}
         />
       ) : null}
     </div>
