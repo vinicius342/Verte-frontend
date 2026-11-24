@@ -22,6 +22,14 @@ import {
   suportaCompartilhamentoArquivo,
 } from "../../utils/compartilharArquivo";
 
+const AVISO_DOWNLOAD = "Seu navegador não permite compartilhar arquivos. O arquivo foi baixado.";
+const NAVEGADOR_EMBUTIDO = /Instagram|FBAN|FBAV|Telegram|Line|Messenger|Twitter/i;
+
+function ehNavegadorEmbutido() {
+  if (typeof navigator === "undefined") return false;
+  return NAVEGADOR_EMBUTIDO.test(navigator.userAgent ?? "");
+}
+
 function formatarCriadoEm(valor) {
   if (!valor) return null;
   const data =
@@ -63,12 +71,14 @@ function textoParaCopiar(comodato) {
 export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = false }) {
   const { uid, papel, revendedoraId } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
-  const podeCompartilharArquivo = useMemo(() => suportaCompartilhamentoArquivo(), []);
+  // Usado só para a dica de navegadores embutidos; nunca para esconder o botão.
+  const compartilhamentoArquivoSuportado = useMemo(() => suportaCompartilhamentoArquivo(), []);
   const [assinaturas, setAssinaturas] = useState({ vendedor: "", supervisor: "", gerente: "" });
   const [carregandoAssinaturas, setCarregandoAssinaturas] = useState(false);
   const printRef = useRef(null);
   const [processando, setProcessando] = useState(false);
   const [menuCompartilharAberto, setMenuCompartilharAberto] = useState(false);
+  const [avisoCompartilhamento, setAvisoCompartilhamento] = useState("");
   const [arquivosCompartilhamento, setArquivosCompartilhamento] = useState({
     imagem: null,
     pdf: null,
@@ -132,6 +142,12 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     setMenuCompartilharAberto(false);
   }, [chaveArquivos]);
 
+  useEffect(() => {
+    if (!avisoCompartilhamento) return;
+    const temporizador = window.setTimeout(() => setAvisoCompartilhamento(""), 5000);
+    return () => window.clearTimeout(temporizador);
+  }, [avisoCompartilhamento]);
+
   const etapasDetalhe = useMemo(() => {
     if (!comodato || papel !== "vendedor") return [];
     const confirmado = comodato.statusComodato === "confirmado";
@@ -166,16 +182,13 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
         titulo: "Baixar PDF",
         texto: "Baixa o termo de solicitação de comodato em PDF.",
       },
-    ];
-
-    if (podeCompartilharArquivo) {
-      lista.push({
+      {
         id: "detalhe-comodato-compartilhar",
         alvo: '[data-tour="detalhe-comodato-compartilhar"]',
         titulo: "Compartilhar",
-        texto: "Envie a imagem ou o PDF do termo por WhatsApp ou outro app.",
-      });
-    }
+        texto: "Envie a imagem ou o PDF do termo, ou a mensagem pelo WhatsApp.",
+      },
+    ];
 
     if (podeEditar) {
       lista.push({
@@ -195,7 +208,7 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     }
 
     return lista;
-  }, [comodato, papel, uid, podeCompartilharArquivo]);
+  }, [comodato, papel, uid]);
 
   useEffect(() => {
     if (!comodato?.id || !recemCriado || editando) return;
@@ -388,10 +401,8 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
         imagem: criarArquivo(blobImagem, nomeArquivo("png")),
         pdf: criarArquivo(blobPdf, nomeArquivo("pdf")),
       };
-      const estados = {
-        imagem: suportaCompartilhamentoArquivo(arquivos.imagem) ? "pronto" : "indisponivel",
-        pdf: suportaCompartilhamentoArquivo(arquivos.pdf) ? "pronto" : "indisponivel",
-      };
+      // Mesmo sem share, o arquivo está pronto: o clique cai no download com aviso.
+      const estados = { imagem: "pronto", pdf: "pronto" };
       if (idGeracao !== geracaoArquivosRef.current) return;
       cacheArquivosRef.current = { chave: chaveArquivos, arquivos, estados };
       setArquivosCompartilhamento(estados);
@@ -414,9 +425,20 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     prepararArquivosCompartilhamento();
   }
 
-  function compartilhar(tipo) {
+  function baixarComAviso(arquivo) {
+    baixarArquivo({ blobOuUrl: arquivo, nomeArquivo: arquivo.name });
+    setAvisoCompartilhamento(AVISO_DOWNLOAD);
+  }
+
+  async function compartilhar(tipo) {
     const arquivo = cacheArquivosRef.current?.arquivos?.[tipo];
     if (!arquivo || arquivosCompartilhamento[tipo] !== "pronto") return;
+
+    if (!suportaCompartilhamentoArquivo(arquivo)) {
+      baixarComAviso(arquivo);
+      fecharMenuCompartilhar();
+      return;
+    }
 
     // Chamar share antes de qualquer await preserva o gesto do usuário no iOS.
     const promessa = compartilharArquivo({
@@ -424,10 +446,23 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
       titulo: `Comodato ${comodato.codPdv || "termo"}`,
     });
     fecharMenuCompartilhar();
-    promessa.catch((erro) => {
+
+    try {
+      await promessa;
+    } catch (erro) {
+      if (erro?.name === "NotAllowedError" || erro instanceof TypeError) {
+        baixarComAviso(arquivo);
+        return;
+      }
       console.error("Falha ao compartilhar:", erro);
-      window.alert("Não foi possível compartilhar.");
-    });
+      setAvisoCompartilhamento("Não foi possível compartilhar.");
+    }
+  }
+
+  function abrirWhatsAppTexto() {
+    const url = `https://wa.me/?text=${encodeURIComponent(textoParaCopiar(comodato))}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    fecharMenuCompartilhar();
   }
 
   async function copiar() {
@@ -587,12 +622,18 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
 
           {carregandoAssinaturas ? <Carregando escala={0.6} /> : null}
 
+          {avisoCompartilhamento ? (
+            <p className="detalhe-aviso comodato-aviso-compartilhamento" role="status">
+              {avisoCompartilhamento}
+            </p>
+          ) : null}
+
           <div className="formulario-acoes comodato-acoes-modal">
             <Button variant="ghost" data-tour="detalhe-comodato-copiar" onClick={copiar}>
               {copiado ? "Copiado!" : "Copiar"}
             </Button>
             <Button
-              variant="secondary"
+              variant="primary"
               data-tour="detalhe-comodato-imagem"
               onClick={baixarImagem}
               disabled={processando || carregandoAssinaturas}
@@ -600,26 +641,24 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
               Baixar imagem
             </Button>
             <Button
-              variant="secondary"
+              variant="primary"
               data-tour="detalhe-comodato-pdf"
               onClick={baixarPdf}
               disabled={processando || carregandoAssinaturas}
             >
               Baixar PDF
             </Button>
-            {podeCompartilharArquivo ? (
-              <Button
-                ref={botaoCompartilharRef}
-                variant="secondary"
-                data-tour="detalhe-comodato-compartilhar"
-                onClick={abrirMenuCompartilhar}
-                disabled={processando || carregandoAssinaturas}
-                aria-haspopup="menu"
-                aria-expanded={menuCompartilharAberto}
-              >
-                Compartilhar
-              </Button>
-            ) : null}
+            <Button
+              ref={botaoCompartilharRef}
+              variant="primary"
+              data-tour="detalhe-comodato-compartilhar"
+              onClick={abrirMenuCompartilhar}
+              disabled={processando || carregandoAssinaturas}
+              aria-haspopup="menu"
+              aria-expanded={menuCompartilharAberto}
+            >
+              Compartilhar
+            </Button>
             {podeEditar ? (
               <Button
                 variant="secondary"
@@ -660,6 +699,11 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
                     <p className="comodato-compartilhar__dica">
                       Escolha o WhatsApp na próxima tela.
                     </p>
+                    {!compartilhamentoArquivoSuportado && ehNavegadorEmbutido() ? (
+                      <p className="comodato-compartilhar__dica">
+                        Para compartilhar o arquivo, abra este site no Chrome ou no Safari.
+                      </p>
+                    ) : null}
                     <div
                       ref={menuCompartilharRef}
                       role="menu"
@@ -695,6 +739,20 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
                           </button>
                         );
                       })}
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="comodato-compartilhar__opcao"
+                        onClick={abrirWhatsAppTexto}
+                        aria-label="Enviar texto pelo WhatsApp"
+                      >
+                        <span className="comodato-compartilhar__opcao-rotulo">
+                          Enviar texto pelo WhatsApp
+                        </span>
+                        <span className="comodato-compartilhar__opcao-estado">
+                          Envia só a mensagem, sem o arquivo
+                        </span>
+                      </button>
                       <Button
                         role="menuitem"
                         variant="ghost"

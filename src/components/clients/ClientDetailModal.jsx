@@ -1,13 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check, Share2 } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
 import ClientForm from "./ClientForm";
 import ProtectedAction from "../common/ProtectedAction";
 import { useAuth } from "../../hooks/useAuth";
 import { useTutorial } from "../../contexts/TutorialContext";
-import { atualizarCliente, excluirCliente, buscarPrivadoCliente } from "../../services/clientService";
-import { abrirMapa, gerarLinkWhatsapp } from "../../utils/mapLinks";
-import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
+import {
+  atualizarCliente,
+  excluirCliente,
+  buscarPrivadoCliente,
+} from "../../services/clientService";
+import {
+  abrirMapa,
+  gerarLinkGoogleMaps,
+  gerarLinkWhatsapp,
+  textoCompartilharLocalizacao,
+} from "../../utils/mapLinks";
+import {
+  compartilharOuBaixar,
+  suportaCompartilhamentoArquivo,
+} from "../../utils/compartilharArquivo";
 import { formatarCep } from "../../utils/validators";
 import { rotuloDaRota } from "../../utils/rotasCliente";
 import { textoLocalizacaoAproximada } from "../../utils/distancia";
@@ -50,7 +63,9 @@ function textoCadastroContatos(cliente, rota) {
 }
 
 function revendaDoId(revendedoraId) {
-  const partes = String(revendedoraId ?? "").split("-").filter(Boolean);
+  const partes = String(revendedoraId ?? "")
+    .split("-")
+    .filter(Boolean);
   if (partes.length < 2) return String(revendedoraId ?? "").toUpperCase();
   const codigoRevenda = partes[partes.length - 1];
   const nomeRevenda = partes.slice(0, -1).join(" ").toUpperCase();
@@ -63,7 +78,8 @@ function textoCadastroCliente(cliente, { codigo, nome, revendedoraId }) {
     .filter(Boolean)
     .map((t) => `*N° TEL:* ${t}`);
 
-  const canal = [cliente.seguimento, cliente.segmento].find((v) => typeof v === "string" && v.trim()) ?? "";
+  const canal =
+    [cliente.seguimento, cliente.segmento].find((v) => typeof v === "string" && v.trim()) ?? "";
   const ruaNumero = [cliente.rua, cliente.numero]
     .map((v) => String(v ?? "").trim())
     .filter(Boolean)
@@ -105,6 +121,8 @@ export default function ClientDetailModal({
   const [copiadoCadastro, setCopiadoCadastro] = useState(false);
   const [privado, setPrivado] = useState(null);
   const [privadoCarregado, setPrivadoCarregado] = useState(false);
+  const [linkCopiado, setLinkCopiado] = useState(false);
+  const linkMapa = useMemo(() => gerarLinkGoogleMaps(cliente), [cliente]);
   const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const logado = Boolean(uid && usuario);
   const podeVerAnexos = logado && !ehMotorista;
@@ -113,6 +131,7 @@ export default function ClientDetailModal({
     setEditando(false);
     setPrivado(null);
     setPrivadoCarregado(false);
+    setLinkCopiado(false);
   }, [cliente?.id]);
 
   useEffect(() => {
@@ -129,10 +148,16 @@ export default function ClientDetailModal({
     if (!cliente || !revendedoraId) return;
     let ativo = true;
     buscarPrivadoCliente(revendedoraId, cliente.id)
-      .then((dados) => { if (ativo) setPrivado(dados); })
+      .then((dados) => {
+        if (ativo) setPrivado(dados);
+      })
       .catch((erro) => console.error("Falha ao buscar dados privados do cliente:", erro))
-      .finally(() => { if (ativo) setPrivadoCarregado(true); });
-    return () => { ativo = false; };
+      .finally(() => {
+        if (ativo) setPrivadoCarregado(true);
+      });
+    return () => {
+      ativo = false;
+    };
   }, [cliente?.id, revendedoraId]);
 
   const etapasDetalhe = useMemo(() => {
@@ -151,6 +176,17 @@ export default function ClientDetailModal({
         titulo: "Mapa",
         texto: "Abre a localização do cliente no mapa.",
       },
+      ...(linkMapa
+        ? [
+            {
+              id: "detalhe-cliente-compartilhar-local",
+              alvo: '[data-tour="detalhe-cliente-compartilhar-local"]',
+              titulo: "Compartilhar localização",
+              texto:
+                "Envie a localização do cliente com o link do Google Maps, por WhatsApp ou outro app.",
+            },
+          ]
+        : []),
     ];
 
     if (dados.whatsapp) {
@@ -195,7 +231,7 @@ export default function ClientDetailModal({
     });
 
     return lista;
-  }, [cliente, privado, codigo, ehMotorista, logado, podeVerAnexos]);
+  }, [cliente, privado, codigo, ehMotorista, logado, podeVerAnexos, linkMapa]);
 
   useEffect(() => {
     if (!cliente?.id || !recemCriado || editando || ehMotorista) return;
@@ -280,6 +316,34 @@ export default function ClientDetailModal({
     }
   }
 
+  async function compartilharLocalizacao() {
+    const texto = textoCompartilharLocalizacao(cliente);
+    if (!texto) return;
+    const titulo = cliente.nomeCliente || cliente.nome || cliente.nomeComercio || "Cliente";
+
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        // O link já está na última linha: passar `url` duplicaria o link em alguns apps.
+        await navigator.share({ title: titulo, text: texto });
+        return;
+      } catch (erro) {
+        if (erro?.name === "AbortError") return;
+        if (erro?.name !== "NotAllowedError" && !(erro instanceof TypeError)) {
+          console.error("Falha ao compartilhar localização:", erro);
+        }
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(texto);
+      setLinkCopiado(true);
+      setTimeout(() => setLinkCopiado(false), 2000);
+    } catch (erro) {
+      console.error("Falha ao copiar localização:", erro);
+      window.alert("Não foi possível compartilhar a localização.");
+    }
+  }
+
   return (
     <Modal
       aberto={Boolean(cliente)}
@@ -298,17 +362,35 @@ export default function ClientDetailModal({
         <div className="detalhe">
           {cliente.nomeComercio ? <p className="detalhe-comercio">{cliente.nomeComercio}</p> : null}
 
-          <Button
-            variant="map"
-            className="botao-mapa"
-            data-tour="detalhe-cliente-mapa"
-            onClick={() => abrirMapa(cliente)}
-          >
-            <span className="botao-mapa-pino" aria-hidden>
-              ⚲
-            </span>
-            Abrir mapa
-          </Button>
+          <div className="detalhe-mapa-linha">
+            <Button
+              variant="map"
+              className="botao-mapa"
+              data-tour="detalhe-cliente-mapa"
+              onClick={() => abrirMapa(cliente)}
+            >
+              <span className="botao-mapa-pino" aria-hidden>
+                ⚲
+              </span>
+              Abrir mapa
+            </Button>
+            {linkMapa ? (
+              <Button
+                variant="secondary"
+                className="detalhe-compartilhar-local"
+                data-tour="detalhe-cliente-compartilhar-local"
+                onClick={compartilharLocalizacao}
+                aria-label={linkCopiado ? "Link copiado!" : "Compartilhar localização"}
+                title={linkCopiado ? "Link copiado!" : "Compartilhar localização"}
+              >
+                {linkCopiado ? (
+                  <Check size={20} aria-hidden="true" />
+                ) : (
+                  <Share2 size={20} aria-hidden="true" />
+                )}
+              </Button>
+            ) : null}
+          </div>
 
           <dl className="detalhe-lista">
             <div className="detalhe-item">
@@ -407,7 +489,9 @@ export default function ClientDetailModal({
                     {anexo.tipo?.startsWith("image/") ? (
                       <img src={anexo.url} alt="" className="lista-anexos-miniatura" />
                     ) : (
-                      <span className="lista-anexos-icone" aria-hidden>📄</span>
+                      <span className="lista-anexos-icone" aria-hidden>
+                        📄
+                      </span>
                     )}
                     <span>{anexo.nome}</span>
                     <Button
@@ -423,27 +507,33 @@ export default function ClientDetailModal({
             </div>
           ) : null}
 
-          {!ehMotorista && <ProtectedAction
-            fallback={<p className="detalhe-aviso">Entre na sua conta para alterar os dados deste cliente.</p>}
-          >
-            <div className="detalhe-acoes">
-              <Button
-                variant="secondary"
-                data-tour="detalhe-cliente-alterar"
-                onClick={() => setEditando(true)}
-              >
-                Alterar
-              </Button>
-              <Button
-                variant="danger"
-                data-tour="detalhe-cliente-excluir"
-                onClick={excluir}
-                disabled={excluindo}
-              >
-                {excluindo ? "Excluindo..." : "Excluir"}
-              </Button>
-            </div>
-          </ProtectedAction>}
+          {!ehMotorista && (
+            <ProtectedAction
+              fallback={
+                <p className="detalhe-aviso">
+                  Entre na sua conta para alterar os dados deste cliente.
+                </p>
+              }
+            >
+              <div className="detalhe-acoes">
+                <Button
+                  variant="secondary"
+                  data-tour="detalhe-cliente-alterar"
+                  onClick={() => setEditando(true)}
+                >
+                  Alterar
+                </Button>
+                <Button
+                  variant="danger"
+                  data-tour="detalhe-cliente-excluir"
+                  onClick={excluir}
+                  disabled={excluindo}
+                >
+                  {excluindo ? "Excluindo..." : "Excluir"}
+                </Button>
+              </div>
+            </ProtectedAction>
+          )}
         </div>
       )}
     </Modal>
