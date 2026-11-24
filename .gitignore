@@ -33,3 +33,5 @@ dist-ssr
 .env
 
 rota-certa-matheus-firebase-adminsdk-fbsvc-98238a2e8a.json
+
+*.zip
