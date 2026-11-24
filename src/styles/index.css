@@ -1495,6 +1495,79 @@ select.campo-input {
 .comodato-acoes-modal {
   flex-wrap: wrap;
 }
+.comodato-acoes-modal > .btn {
+  white-space: nowrap;
+}
+
+/* ---------- Menu de compartilhamento do comodato ---------- */
+.comodato-compartilhar {
+  position: relative;
+  z-index: 80;
+}
+.comodato-compartilhar__fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+}
+.comodato-compartilhar__menu {
+  position: fixed;
+  z-index: 81;
+  top: var(--comodato-menu-top, 50%);
+  right: var(--comodato-menu-right, 1rem);
+  width: min(280px, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  background: var(--superficie, var(--fundo));
+  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+}
+.comodato-compartilhar__opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  outline: none;
+}
+.comodato-compartilhar__dica {
+  margin: 0 0 0.15rem;
+  font-size: 0.8rem;
+  color: var(--texto-3);
+  text-align: center;
+}
+.comodato-compartilhar__opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.15rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--fundo);
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.comodato-compartilhar__opcao:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--primaria) 10%, transparent);
+}
+.comodato-compartilhar__opcao:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.comodato-compartilhar__opcao-estado {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--texto-3);
+}
+.comodato-compartilhar__cancelar {
+  min-height: 44px;
+}
 
 .comodato-barra-decisao {
   position: sticky;
@@ -1691,6 +1764,19 @@ select.campo-input {
   }
   .comodato-acoes-modal > button {
     width: 100%;
+  }
+  .comodato-compartilhar__fundo {
+    background: rgb(0 0 0 / 35%);
+  }
+  .comodato-compartilhar__menu {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    animation: subir 0.2s ease-out;
   }
 }
 
@@ -2723,10 +2809,34 @@ select.campo-input {
   outline-offset: 2px;
 }
 
-.comodato-motivos { display: flex; flex-direction: column; gap: 0.6rem; margin: 0 0 1.25rem; }
-.comodato-motivo { background: color-mix(in oklab, var(--perigo) 8%, var(--superficie)); border: 1px solid color-mix(in oklab, var(--perigo) 25%, transparent); border-radius: 6px; padding: 0.75rem 0.9rem; }
-.comodato-motivo-titulo { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--perigo); margin-bottom: 0.3rem; }
-.comodato-motivo-texto { margin: 0; font-size: 0.95rem; color: var(--texto); white-space: pre-wrap; overflow-wrap: anywhere; }
+.comodato-motivos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+}
+.comodato-motivo {
+  background: color-mix(in oklab, var(--perigo) 8%, var(--superficie));
+  border: 1px solid color-mix(in oklab, var(--perigo) 25%, transparent);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+}
+.comodato-motivo-titulo {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--perigo);
+  margin-bottom: 0.3rem;
+}
+.comodato-motivo-texto {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--texto);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- Colaboradores ---------- */
 .colab-rotulo {
@@ -2769,7 +2879,9 @@ select.campo-input {
 }
 .colab-busca-input:focus {
   outline: none;
-  box-shadow: 0 0 0 1px var(--r-primaria), var(--r-sombra-card);
+  box-shadow:
+    0 0 0 1px var(--r-primaria),
+    var(--r-sombra-card);
 }
 .colab-busca-limpar {
   position: absolute;
@@ -3156,9 +3268,7 @@ select.campo-input {
 
 @media (max-width: 640px) {
   .tutorial-balao {
-    width: calc(
-      100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
-    );
+    width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     padding: 0.95rem;
     padding-bottom: max(0.95rem, env(safe-area-inset-bottom));
   }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import Modal from "../common/Modal";
@@ -15,7 +16,11 @@ import {
   confirmarComodato,
   excluirComodato,
 } from "../../services/comodatoService";
-import { compartilharOuBaixar, suportaCompartilhamentoArquivo } from "../../utils/compartilharArquivo";
+import {
+  baixarArquivo,
+  compartilharArquivo,
+  suportaCompartilhamentoArquivo,
+} from "../../utils/compartilharArquivo";
 
 function formatarCriadoEm(valor) {
   if (!valor) return null;
@@ -58,10 +63,26 @@ function textoParaCopiar(comodato) {
 export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = false }) {
   const { uid, papel, revendedoraId } = useAuth();
   const { iniciarTutorialDetalhe } = useTutorial();
+  const podeCompartilharArquivo = useMemo(() => suportaCompartilhamentoArquivo(), []);
   const [assinaturas, setAssinaturas] = useState({ vendedor: "", supervisor: "", gerente: "" });
   const [carregandoAssinaturas, setCarregandoAssinaturas] = useState(false);
   const printRef = useRef(null);
   const [processando, setProcessando] = useState(false);
+  const [menuCompartilharAberto, setMenuCompartilharAberto] = useState(false);
+  const [arquivosCompartilhamento, setArquivosCompartilhamento] = useState({
+    imagem: null,
+    pdf: null,
+  });
+  const botaoCompartilharRef = useRef(null);
+  const menuCompartilharRef = useRef(null);
+  const cacheArquivosRef = useRef(null);
+  const geracaoArquivosRef = useRef(0);
+  const [posicaoMenu, setPosicaoMenu] = useState({ top: 0, right: 0 });
+  // Inclui o carregamento das assinaturas: ao terminar, um menu reaberto usa arquivos novos.
+  const chaveArquivos = useMemo(
+    () => JSON.stringify([comodato?.id, assinaturas, carregandoAssinaturas]),
+    [comodato?.id, assinaturas, carregandoAssinaturas],
+  );
   const [copiado, setCopiado] = useState(false);
   const [editando, setEditando] = useState(false);
   const [erroGeral, setErroGeral] = useState(null);
@@ -104,6 +125,13 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     };
   }, [comodato?.id, revendedoraId]);
 
+  useEffect(() => {
+    geracaoArquivosRef.current += 1;
+    cacheArquivosRef.current = null;
+    setArquivosCompartilhamento({ imagem: "preparando", pdf: "preparando" });
+    setMenuCompartilharAberto(false);
+  }, [chaveArquivos]);
+
   const etapasDetalhe = useMemo(() => {
     if (!comodato || papel !== "vendedor") return [];
     const confirmado = comodato.statusComodato === "confirmado";
@@ -127,18 +155,27 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
         preConteudo: textoParaCopiar(comodato),
       },
       {
-        id: "detalhe-comodato-pdf",
-        alvo: '[data-tour="detalhe-comodato-pdf"]',
-        titulo: "PDF do termo",
-        texto: "Gera o termo de solicitação de comodato em PDF.",
-      },
-      {
         id: "detalhe-comodato-imagem",
         alvo: '[data-tour="detalhe-comodato-imagem"]',
-        titulo: "Compartilhar imagem",
-        texto: "Compartilha ou baixa a imagem do termo para enviar ao cliente.",
+        titulo: "Baixar imagem",
+        texto: "Baixa a imagem do termo no seu aparelho.",
+      },
+      {
+        id: "detalhe-comodato-pdf",
+        alvo: '[data-tour="detalhe-comodato-pdf"]',
+        titulo: "Baixar PDF",
+        texto: "Baixa o termo de solicitação de comodato em PDF.",
       },
     ];
+
+    if (podeCompartilharArquivo) {
+      lista.push({
+        id: "detalhe-comodato-compartilhar",
+        alvo: '[data-tour="detalhe-comodato-compartilhar"]',
+        titulo: "Compartilhar",
+        texto: "Envie a imagem ou o PDF do termo por WhatsApp ou outro app.",
+      });
+    }
 
     if (podeEditar) {
       lista.push({
@@ -158,16 +195,45 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     }
 
     return lista;
-  }, [comodato, papel, uid]);
+  }, [comodato, papel, uid, podeCompartilharArquivo]);
 
   useEffect(() => {
     if (!comodato?.id || !recemCriado || editando) return;
     iniciarTutorialDetalhe("detalheComodato", etapasDetalhe);
   }, [comodato?.id, recemCriado, editando, etapasDetalhe, iniciarTutorialDetalhe]);
 
+  useEffect(() => {
+    if (!menuCompartilharAberto) return;
+    // Fase de captura: fecha só o menu, sem deixar o Esc fechar o modal também.
+    const aoTeclar = (evento) => {
+      if (evento.key !== "Escape") return;
+      evento.preventDefault();
+      evento.stopPropagation();
+      setMenuCompartilharAberto(false);
+      botaoCompartilharRef.current?.focus();
+    };
+    document.addEventListener("keydown", aoTeclar, true);
+    return () => document.removeEventListener("keydown", aoTeclar, true);
+  }, [menuCompartilharAberto]);
+
+  useEffect(() => {
+    if (!menuCompartilharAberto) return;
+    const aoClicar = (evento) => {
+      if (menuCompartilharRef.current?.contains(evento.target)) return;
+      if (botaoCompartilharRef.current?.contains(evento.target)) return;
+      setMenuCompartilharAberto(false);
+      botaoCompartilharRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", aoClicar, true);
+    return () => document.removeEventListener("pointerdown", aoClicar, true);
+  }, [menuCompartilharAberto]);
+
+  useEffect(() => {
+    if (menuCompartilharAberto) menuCompartilharRef.current?.focus();
+  }, [menuCompartilharAberto]);
+
   if (!comodato) return null;
 
-  const podeCompartilharArquivo = suportaCompartilhamentoArquivo();
   const criadoEm = formatarCriadoEm(comodato.createdAt);
   const confirmacoes = [
     { rotulo: "Vendedor", nome: comodato.vendedor, status: comodato.confirmacaoVendedor },
@@ -230,6 +296,10 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     }
   }
 
+  function nomeArquivo(extensao) {
+    return `comodato-${comodato.codPdv || "termo"}.${extensao}`;
+  }
+
   async function gerarCanvas() {
     return html2canvas(printRef.current, {
       scale: 2,
@@ -239,20 +309,40 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     });
   }
 
+  function gerarBlobImagem(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((resultado) => {
+        if (!resultado) {
+          reject(new Error("Não foi possível gerar a imagem."));
+          return;
+        }
+        resolve(resultado);
+      }, "image/png");
+    });
+  }
+
+  async function gerarBlobPdf(canvas) {
+    const imagem = canvas.toDataURL("image/png");
+    const orientacao = canvas.width > canvas.height ? "landscape" : "portrait";
+    const pdf = new jsPDF({
+      orientation: orientacao,
+      unit: "px",
+      format: [canvas.width, canvas.height],
+    });
+    pdf.addImage(imagem, "PNG", 0, 0, canvas.width, canvas.height);
+    return pdf.output("blob");
+  }
+
+  function criarArquivo(blob, nome) {
+    return new File([blob], nome, { type: blob.type || "application/octet-stream" });
+  }
+
   async function baixarImagem() {
     setProcessando(true);
     try {
       const canvas = await gerarCanvas();
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((resultado) => {
-          if (!resultado) {
-            reject(new Error("Não foi possível gerar a imagem."));
-            return;
-          }
-          resolve(resultado);
-        }, "image/png");
-      });
-      await compartilharOuBaixar({ blobOuUrl: blob, nomeArquivo: `comodato-${comodato.codPdv || "termo"}.png` });
+      const blob = await gerarBlobImagem(canvas);
+      baixarArquivo({ blobOuUrl: blob, nomeArquivo: nomeArquivo("png") });
     } catch (erro) {
       console.error("Falha ao gerar imagem:", erro);
       window.alert("Não foi possível gerar a imagem.");
@@ -265,17 +355,79 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
     setProcessando(true);
     try {
       const canvas = await gerarCanvas();
-      const imagem = canvas.toDataURL("image/png");
-      const orientacao = canvas.width > canvas.height ? "landscape" : "portrait";
-      const pdf = new jsPDF({ orientation: orientacao, unit: "px", format: [canvas.width, canvas.height] });
-      pdf.addImage(imagem, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`comodato-${comodato.codPdv || "termo"}.pdf`);
+      const blob = await gerarBlobPdf(canvas);
+      baixarArquivo({ blobOuUrl: blob, nomeArquivo: nomeArquivo("pdf") });
     } catch (erro) {
       console.error("Falha ao gerar PDF:", erro);
       window.alert("Não foi possível gerar o PDF.");
     } finally {
       setProcessando(false);
     }
+  }
+
+  function fecharMenuCompartilhar() {
+    setMenuCompartilharAberto(false);
+    botaoCompartilharRef.current?.focus();
+  }
+
+  async function prepararArquivosCompartilhamento() {
+    const cache = cacheArquivosRef.current;
+    if (cache?.chave === chaveArquivos) return;
+
+    const idGeracao = ++geracaoArquivosRef.current;
+    setArquivosCompartilhamento({ imagem: "preparando", pdf: "preparando" });
+
+    try {
+      // Um único canvas para os dois formatos: html2canvas é a etapa mais lenta.
+      const canvas = await gerarCanvas();
+      const [blobImagem, blobPdf] = await Promise.all([
+        gerarBlobImagem(canvas),
+        gerarBlobPdf(canvas),
+      ]);
+      const arquivos = {
+        imagem: criarArquivo(blobImagem, nomeArquivo("png")),
+        pdf: criarArquivo(blobPdf, nomeArquivo("pdf")),
+      };
+      const estados = {
+        imagem: suportaCompartilhamentoArquivo(arquivos.imagem) ? "pronto" : "indisponivel",
+        pdf: suportaCompartilhamentoArquivo(arquivos.pdf) ? "pronto" : "indisponivel",
+      };
+      if (idGeracao !== geracaoArquivosRef.current) return;
+      cacheArquivosRef.current = { chave: chaveArquivos, arquivos, estados };
+      setArquivosCompartilhamento(estados);
+    } catch (erro) {
+      if (idGeracao !== geracaoArquivosRef.current) return;
+      console.error("Falha ao preparar arquivos para compartilhamento:", erro);
+      setArquivosCompartilhamento({ imagem: "indisponivel", pdf: "indisponivel" });
+    }
+  }
+
+  function abrirMenuCompartilhar() {
+    const retangulo = botaoCompartilharRef.current?.getBoundingClientRect();
+    if (retangulo) {
+      setPosicaoMenu({
+        top: retangulo.bottom + 8,
+        right: Math.max(8, window.innerWidth - retangulo.right),
+      });
+    }
+    setMenuCompartilharAberto(true);
+    prepararArquivosCompartilhamento();
+  }
+
+  function compartilhar(tipo) {
+    const arquivo = cacheArquivosRef.current?.arquivos?.[tipo];
+    if (!arquivo || arquivosCompartilhamento[tipo] !== "pronto") return;
+
+    // Chamar share antes de qualquer await preserva o gesto do usuário no iOS.
+    const promessa = compartilharArquivo({
+      arquivo,
+      titulo: `Comodato ${comodato.codPdv || "termo"}`,
+    });
+    fecharMenuCompartilhar();
+    promessa.catch((erro) => {
+      console.error("Falha ao compartilhar:", erro);
+      window.alert("Não foi possível compartilhar.");
+    });
   }
 
   async function copiar() {
@@ -408,7 +560,9 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
                 ))}
               </dl>
             ) : (
-              <p className="detalhe-aviso">Sem confirmação (comodato anterior ao fluxo de confirmações)</p>
+              <p className="detalhe-aviso">
+                Sem confirmação (comodato anterior ao fluxo de confirmações)
+              </p>
             )}
           </div>
 
@@ -443,15 +597,29 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
               onClick={baixarImagem}
               disabled={processando || carregandoAssinaturas}
             >
-              {podeCompartilharArquivo ? "Compartilhar" : "Baixar imagem"}
+              Baixar imagem
             </Button>
             <Button
+              variant="secondary"
               data-tour="detalhe-comodato-pdf"
               onClick={baixarPdf}
               disabled={processando || carregandoAssinaturas}
             >
               Baixar PDF
             </Button>
+            {podeCompartilharArquivo ? (
+              <Button
+                ref={botaoCompartilharRef}
+                variant="secondary"
+                data-tour="detalhe-comodato-compartilhar"
+                onClick={abrirMenuCompartilhar}
+                disabled={processando || carregandoAssinaturas}
+                aria-haspopup="menu"
+                aria-expanded={menuCompartilharAberto}
+              >
+                Compartilhar
+              </Button>
+            ) : null}
             {podeEditar ? (
               <Button
                 variant="secondary"
@@ -473,6 +641,74 @@ export default function ComodatoDetailModal({ comodato, onFechar, recemCriado = 
               </Button>
             ) : null}
           </div>
+
+          {menuCompartilharAberto
+            ? createPortal(
+                <div className="comodato-compartilhar">
+                  <div
+                    className="comodato-compartilhar__fundo"
+                    onClick={fecharMenuCompartilhar}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="comodato-compartilhar__menu"
+                    style={{
+                      "--comodato-menu-top": `${posicaoMenu.top}px`,
+                      "--comodato-menu-right": `${posicaoMenu.right}px`,
+                    }}
+                  >
+                    <p className="comodato-compartilhar__dica">
+                      Escolha o WhatsApp na próxima tela.
+                    </p>
+                    <div
+                      ref={menuCompartilharRef}
+                      role="menu"
+                      aria-label="Compartilhar termo de comodato"
+                      tabIndex={-1}
+                      className="comodato-compartilhar__opcoes"
+                    >
+                      {[
+                        { tipo: "imagem", rotulo: "Imagem (PNG)" },
+                        { tipo: "pdf", rotulo: "PDF" },
+                      ].map((opcao) => {
+                        const estado = arquivosCompartilhamento[opcao.tipo];
+                        return (
+                          <button
+                            key={opcao.tipo}
+                            type="button"
+                            role="menuitem"
+                            className="comodato-compartilhar__opcao"
+                            onClick={() => compartilhar(opcao.tipo)}
+                            disabled={estado !== "pronto"}
+                            aria-label={`Compartilhar ${opcao.rotulo} do termo`}
+                          >
+                            <span className="comodato-compartilhar__opcao-rotulo">
+                              {opcao.rotulo}
+                            </span>
+                            {estado !== "pronto" ? (
+                              <span className="comodato-compartilhar__opcao-estado">
+                                {estado === "preparando"
+                                  ? "Preparando…"
+                                  : "Não disponível neste aparelho"}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                      <Button
+                        role="menuitem"
+                        variant="ghost"
+                        className="comodato-compartilhar__cancelar"
+                        onClick={fecharMenuCompartilhar}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </div>,
+                document.body,
+              )
+            : null}
 
           {jaRespondeu ? (
             <p className="comodato-resposta-status">

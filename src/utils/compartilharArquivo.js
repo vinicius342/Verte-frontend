@@ -18,7 +18,7 @@ function obterArquivo(blobOuUrl, nomeArquivo) {
     );
 }
 
-function baixarArquivo(arquivo, nomeArquivo) {
+function iniciarDownload(arquivo, nomeArquivo) {
   const url = URL.createObjectURL(arquivo);
   const link = document.createElement("a");
   link.href = url;
@@ -30,7 +30,22 @@ function baixarArquivo(arquivo, nomeArquivo) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-export function suportaCompartilhamentoArquivo() {
+// Download direto, sem passar pela folha de compartilhamento do aparelho.
+export function baixarArquivo({ blobOuUrl, nomeArquivo }) {
+  const ehUrl = typeof blobOuUrl === "string";
+  const url = ehUrl ? blobOuUrl : URL.createObjectURL(blobOuUrl);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nomeArquivo;
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  if (!ehUrl) window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+// Sem argumento mantém a checagem genérica; com um File verifica aquele tipo.
+export function suportaCompartilhamentoArquivo(arquivo) {
   if (
     typeof navigator === "undefined" ||
     typeof navigator.share !== "function" ||
@@ -40,18 +55,30 @@ export function suportaCompartilhamentoArquivo() {
     return false;
   }
 
+  const alvo =
+    arquivo instanceof File ? arquivo : new File([""], "teste.txt", { type: "text/plain" });
   try {
-    const arquivoTeste = new File([""], "teste.txt", { type: "text/plain" });
-    return navigator.canShare({ files: [arquivoTeste] });
+    return Boolean(navigator.canShare({ files: [alvo] }));
   } catch {
     return false;
   }
 }
 
+export async function compartilharArquivo({ arquivo, titulo }) {
+  try {
+    await navigator.share({ files: [arquivo], title: titulo });
+  } catch (erro) {
+    // O usuário fechou a folha nativa: não é um erro para a interface.
+    if (erro?.name === "AbortError") return;
+    throw erro;
+  }
+}
+
+// Usado por outras telas (anexos de cliente): compartilha se puder, senão baixa.
 export async function compartilharOuBaixar({ blobOuUrl, nomeArquivo }) {
   const arquivo = await obterArquivo(blobOuUrl, nomeArquivo);
 
-  if (suportaCompartilhamentoArquivo() && navigator.canShare({ files: [arquivo] })) {
+  if (suportaCompartilhamentoArquivo(arquivo)) {
     await navigator.share({
       files: [arquivo],
       title: nomeArquivo,
@@ -60,5 +87,5 @@ export async function compartilharOuBaixar({ blobOuUrl, nomeArquivo }) {
     return;
   }
 
-  baixarArquivo(arquivo, nomeArquivo);
+  iniciarDownload(arquivo, nomeArquivo);
 }
